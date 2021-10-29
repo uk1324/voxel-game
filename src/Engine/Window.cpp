@@ -1,13 +1,23 @@
 #include <Engine/Window.hpp>
 #include <Log/Log.hpp>
 
-Window::Window(int width, int height, const char* title)
+Window::Window()
+	: m_handle(nullptr)
+{}
+
+Window::Window(Window&& window) noexcept
+	: m_handle(window.m_handle)
+{
+	window.m_handle = nullptr;
+}
+
+Window::Window(int width, int height, std::string_view title)
 {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
-	m_handle = glfwCreateWindow(width, height, title, nullptr, nullptr);
+	m_handle = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
 	if (m_handle == nullptr)
 	{
 		LOG_FATAL("failed to create window");
@@ -20,7 +30,16 @@ Window::~Window()
 	glfwDestroyWindow(m_handle);
 }
 
-void Window::swapBufers()
+Window& Window::operator=(Window&& window) noexcept
+{
+	m_handle = window.m_handle;
+	window.m_handle = nullptr;
+	return *this;
+}
+
+
+
+void Window::update()
 {
 	glfwSwapBuffers(m_handle);
 }

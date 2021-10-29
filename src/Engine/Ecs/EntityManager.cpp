@@ -1,6 +1,7 @@
 #include <Engine/Ecs/EntityManager.hpp>
 #include <Engine/Ecs/ComponentPool.hpp>
 #include <Engine/Ecs/Component.hpp>
+#include <Log/Log.hpp>
 
 EntityManager::EntityManager()
 	: m_entityCount(0)
@@ -21,6 +22,9 @@ EntityManager::~EntityManager()
 
 Entity& EntityManager::addEntity()
 {
+	if (m_entityCount >= MAX_ENTITES)
+		LOG_FATAL("max entity count exceeded");
+
 	Entity* entity = new (&m_entites[m_entityCount]) Entity(m_createdEntityCount);
 	m_entityCount++;
 	m_createdEntityCount++;
