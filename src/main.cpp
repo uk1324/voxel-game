@@ -6,75 +6,125 @@
 
 // Audio openal
 
-#include <Json/JsonValue.hpp>
-#include <Json/JsonPrinter.hpp>
-#include <Json/JsonParser.hpp>
+// Could use std::filesystem::path
+
+#include <Engine/Window.hpp>
+
+#include <Engine/Init.hpp>
+#include <Json/Json.hpp>
+#include <Utils/FileIo.hpp>
 
 #include <fstream>
+#include <Error/Panic.hpp>
+
+// If cache line size is 64 bytes you must only use small entities
+// How do components access other components
+// Virtual call vs Pointer to enitity which points to components
+// Is there a simple way to do it without using sparse sets
+// Iterate over components in rendering or physics using a system
+// use entity update for everything else
+// accessing data from component is the same cost as from system component->enitity->components
+
+#include <Engine/Ecs/Component.hpp>
+#include <Engine/Ecs/ComponentPool.hpp>
+#include <Engine/Ecs/EntityManager.hpp>
+
+struct Test : public Component
+{
+
+	Test() = default;
+
+	Test(std::string name)
+	{
+		std::cout << name << ": default\n";
+	}
+
+	void print()
+	{
+		std::cout << "hello\n";
+	}
+
+	~Test()
+	{
+		std::cout << "destructor\n";
+	}
+
+	Test(const Test&)
+	{
+		std::cout << "copy\n";
+	}
+
+	Test(Test&&) noexcept
+	{
+		std::cout << "move\n";
+	}
+};
+
+#include <Utils/UninitializedArray.hpp>
+
+// https://gamedev.stackexchange.com/questions/32187/when-and-why-to-use-console-logging
 
 int main(int argc, char* argv[])
 {
+	EntityManager manager;
+	std::cout << "Test id: " << getComponentId<Test>() << '\n';
 
-	//Json::Value json = {
-	//	{"pi", 3.141},
-	//	{"happy", true},
-	//	{"name", "Ni\ne\tls\r"},
-	//	{"nothing", nullptr},
-	//	{"answer", {
-	//		{"everything", 42}
-	//	}},
-	//	{"list", {1, 0, 2}},
-	//	{"object", {
-	//		{"currency", "USD"},
-	//		{"value", 42.99}
-	//	}}
-	//};
-	Json::Value json = Json::parse("{\"glossary\":{\"title\":\"example glossary\",\"GlossDiv\":{\"title\":\"S\",\"GlossList\":{\"GlossEntry\":{\"ID\":\"SGML\",\"SortAs\":\"SGML\",\"GlossTerm\":\"Standard Generalized Markup Language\",\"Acronym\":\"SGML\",\"Abbrev\":\"ISO 8879:1986\",\"GlossDef\":{\"para\":\"A meta-markup language, used to create markup languages such as DocBook.\",\"GlossSeeAlso\":[\"GML\",\"XML\"]},\"GlossSee\":\"markup\"}}}}}   ");
-	Json::prettyPrint(std::cout, json);
+	Entity& a = manager.addEntity();
+	manager.entityAddComponent<Test>(a, "hello");
+
+	Entity& b = manager.addEntity();
+	manager.entityAddComponent<Test>(b, "goodbye");
+
+	manager.removeDeadEntities();
+
+	auto& pool = manager.getComponentPool<Test>();
+
+	for (Test& t : pool)
+	{
+		t.print();
+	}
+
+	a.isAlive = false;
+	//b.isAlive = false;
+
+	manager.removeDeadEntities();
+
+	manager.entityRemoveComponent<Test>(b);
+
+	for (Test& t : pool)
+	{
+		t.print();
+	}
+
+	return 0;
 
 
 
-	//glfwInit();
-	//glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	//glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+	// Have to create the window between glfw and opengl init
+	initGlfw();
 
-	//GLFWwindow* window = glfwCreateWindow(800, 600, "opengl", NULL, NULL);
-	//if (window == nullptr)
-	//{
-	//	std::cout << "Failed to create GLFW window\n";
-	//	glfwTerminate();
-	//	exit(EXIT_FAILURE);
-	//}
+	Json::Value json = jsonFromFile("../../../src/Config/window.json");
+	Window window = [json]() 
+	{
+		try
+		{
+			return Window(json["width"].getIntNumber(), json["height"].getIntNumber(), "voxel-game");
+		}
+		catch (const Json::Value::InvalidTypeAccess&)
+		{
+			panic("invalid data in config file");
+		}
+	}();
+	initOpenGl();
 
-	//glfwMakeContextCurrent(window);
+	while (window.shouldClose() == false)
+	{
+		if (glfwGetKey(window.handle(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
+			window.close();
 
-	//if (gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) == false)
-	//{
-	//	std::cout << "Failed to initialize GLAD\n";
-	//	exit(EXIT_FAILURE);
-	//}
+		window.swapBufers();
+		glfwPollEvents();
+	}
 
-	//while (glfwWindowShouldClose(window) == false)
-	//{
-	//	glfwSwapBuffers(window);
-	//	glfwPollEvents();
-	//}
-
-	//glfwTerminate();
-
-	//std::map<int, int> map = {
-	//	{ 1, 1 },
-	//	{ 2, 1 },
-	//	{ 3, 1 },
-	//	{ 4, 1 },
-	//	{ 5, 1 }
-	//};
-
-	//for (auto [one, two] : map)
-	//{
-	//	std::cout << one << " " << two << '\n';
-	//}
-
-	//std::cout << "tset";
+	glfwTerminate();
 }

@@ -1,6 +1,5 @@
 #include <Json/JsonValue.hpp>
-#include <Assertions.hpp>
-#include "JsonValue.hpp"
+#include <Utils/Assertions.hpp>
 
 Json::Value::Value()
 	: m_type(Type::Null)
@@ -287,6 +286,11 @@ Json::Value& Json::Value::operator[](StringType&& key) noexcept
 	return m_value.object[std::move(key)];
 }
 
+const Json::Value& Json::Value::operator[] (const StringType& key) const
+{
+	return m_value.object.at(key);
+}
+
 Json::Value& Json::Value::at(const StringType& key)
 {
 	if (m_type != Type::Object)
@@ -414,6 +418,20 @@ double& Json::Value::getNumber()
 	throw InvalidTypeAccess();
 }
 
+Json::Value::FloatType& Json::Value::getFloatNumber()
+{
+	if (isFloat())
+		return m_value.floatNumber;
+	throw InvalidTypeAccess();
+}
+
+Json::Value::IntType& Json::Value::getIntNumber()
+{
+	if (isInt())
+		return m_value.intNumber;
+	throw InvalidTypeAccess();
+}
+
 bool& Json::Value::getBoolean()
 {
 	if (isBoolean())
@@ -448,6 +466,20 @@ Json::Value::FloatType Json::Value::getNumber() const
 		return static_cast<FloatType>(m_value.intNumber);
 	else if (isFloat())
 		return m_value.floatNumber;
+	throw InvalidTypeAccess();
+}
+
+Json::Value::FloatType Json::Value::getFloatNumber() const
+{
+	if (isFloat())
+		return m_value.floatNumber;
+	throw InvalidTypeAccess();
+}
+
+Json::Value::IntType Json::Value::getIntNumber() const
+{
+	if (isInt())
+		return m_value.intNumber;
 	throw InvalidTypeAccess();
 }
 

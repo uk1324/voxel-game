@@ -1,0 +1,19 @@
+Using an entity as an index into an array makes it easy to access the components of any entity.
+You have to iterate over the entities not components. Requires to check if an enitity has a component.
+Not all entities have the same components. There will be holes in memory.
+Could store a sorted queue of all the dead entities and fill in the holes, but that doesn't fully solve the issue.
+Because not all entites have the same components.
+
+Storing each component in an packed array so iteration is faster. Requires to also store a reference to the enitity
+inside the component causing indirection. Most systems must access more than one component making
+the iteration less efficient. To make the iteration more efficient if not needed iterate over one array at a time.
+It is hard to fit many components on a cache line. Even a simple position component (3 floats one pointer) takes up 24 bytes
+so you can only fit 2 + 2/3 position components on a 64 byte cache line.
+
+This implementation
+Could add a move constructor to Component but it probably won't be useful. It would also need to calculate the
+offset of the component based on the entity->m_components.data() pointer.
+Could make EntityManager a variadic template of component types the it could automatically initialize all the component pools.
+Could even make m_componentPools a std::tuple so BaseComponentPool wouldn't be needed. This would also require entity
+to also be templated and I would need to write auto instead of entity. Systems or scenes also would need to be templated.
+Nothing can be copied becuase that would break the references between entity and component.

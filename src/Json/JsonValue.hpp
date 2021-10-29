@@ -54,6 +54,7 @@ namespace Json
 		// If key does not exists creates it.
 		Value& operator[] (const StringType& key);
 		Value& operator[] (StringType&& key) noexcept;
+		const Value& operator[] (const StringType& key) const;
 
 		// Throws InvalidTypeAccess when not this->type != Type::Object.
 		// Throws OutOfRangeAccess when key doesn't exist.
@@ -90,13 +91,17 @@ namespace Json
 
 		// Type checked access
 		StringType& getString();
-		double& getNumber();
+		FloatType& getNumber();
+		FloatType& getFloatNumber();
+		IntType& getIntNumber();
 		bool& getBoolean();
 		MapType& getObject();
 		ArrayType& getArray();
 
 		const StringType& getString() const;
-		double getNumber() const;
+		FloatType getNumber() const;
+		FloatType getFloatNumber() const;
+		IntType getIntNumber() const;
 		bool getBoolean() const;
 		const MapType& getObject() const;
 		const ArrayType& getArray() const;

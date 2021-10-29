@@ -1,5 +1,7 @@
 #include <Json/JsonParser.hpp>
 
+#include <iostream>
+
 #include <optional>
 #include <charconv>
 
@@ -458,7 +460,6 @@ namespace
 		return (c >= 'a') && (c <= 'z')
 			|| (c >= 'A') && (c <= 'Z');
 	}
-
 }
 
 Json::Value Json::parse(std::string_view text)
