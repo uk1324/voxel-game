@@ -1,5 +1,5 @@
 #include <Utils/FileIo.hpp>
-#include <Error/Panic.hpp>
+#include <Log/Log.hpp>
 
 #include <fstream>
 
@@ -8,7 +8,7 @@ std::string stringFromFile(std::string_view path)
 	std::ifstream file(path.data(), std::ios::binary);
 
 	if (file.fail())
-		panic("couldn't open file \"%s\"", path.data());
+		LOG_FATAL("couldn't open file \"%s\"", path.data());
 
 	auto start = file.tellg();
 	file.seekg(0, std::ios::end);
@@ -23,7 +23,7 @@ std::string stringFromFile(std::string_view path)
 
 	file.read(result.data(), fileSize);
 	if (file.fail())
-		panic("couldn't read file \"%s\"", path.data());
+		LOG_FATAL("couldn't read file \"%s\"", path.data());
 
 	return result;
 }
@@ -36,6 +36,6 @@ Json::Value jsonFromFile(std::string_view path)
 	}
 	catch (const Json::ParsingError&)
 	{
-		panic("couldn't parse json file \"%s\"", path.data());
+		LOG_FATAL("couldn't parse json file \"%s\"", path.data());
 	}
 }

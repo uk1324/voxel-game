@@ -15,15 +15,7 @@
 #include <Utils/FileIo.hpp>
 
 #include <fstream>
-#include <Error/Panic.hpp>
-
-// If cache line size is 64 bytes you must only use small entities
-// How do components access other components
-// Virtual call vs Pointer to enitity which points to components
-// Is there a simple way to do it without using sparse sets
-// Iterate over components in rendering or physics using a system
-// use entity update for everything else
-// accessing data from component is the same cost as from system component->enitity->components
+#include <Log/Log.hpp>
 
 #include <Engine/Ecs/Component.hpp>
 #include <Engine/Ecs/ComponentPool.hpp>
@@ -96,7 +88,6 @@ int main(int argc, char* argv[])
 		t.print();
 	}
 
-	return 0;
 
 
 
@@ -112,7 +103,7 @@ int main(int argc, char* argv[])
 		}
 		catch (const Json::Value::InvalidTypeAccess&)
 		{
-			panic("invalid data in config file");
+			LOG_FATAL("invalid data in config file");
 		}
 	}();
 	initOpenGl();

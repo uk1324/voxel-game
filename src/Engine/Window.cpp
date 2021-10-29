@@ -1,5 +1,5 @@
 #include <Engine/Window.hpp>
-#include <Error/Panic.hpp>
+#include <Log/Log.hpp>
 
 Window::Window(int width, int height, const char* title)
 {
@@ -10,7 +10,7 @@ Window::Window(int width, int height, const char* title)
 	m_handle = glfwCreateWindow(width, height, title, nullptr, nullptr);
 	if (m_handle == nullptr)
 	{
-		panic("failed to create window");
+		LOG_FATAL("failed to create window");
 	}
 	glfwMakeContextCurrent(m_handle);
 }
