@@ -12,7 +12,7 @@ class Scene
 public:
 	Scene(Engine& engine);
 	virtual ~Scene() {};
-
+	
 	virtual void update() = 0;
 
 	void changeScene(std::string_view name);

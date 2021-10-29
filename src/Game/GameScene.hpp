@@ -5,6 +5,7 @@ class GameScene : public Scene
 {
 public:
 	GameScene(Engine& engine);
+
 	void update() override;
 
 private:

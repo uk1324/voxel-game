@@ -6,5 +6,6 @@ GameScene::GameScene(Engine& engine)
 
 void GameScene::update()
 {
-	meshRenderSystem.update(*this);
+	//meshRenderSystem.update(*this);
+	printf("update\n");
 }
