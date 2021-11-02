@@ -3,6 +3,7 @@
 
 Scene::Scene(Engine& engine)
 	: engine(engine)
+	, input(engine.window())
 {}
 
 void Scene::changeScene(std::string_view name)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Engine/Ecs/EntityManager.hpp>
+#include <Engine/Input/InputManager.hpp>
 
 #include <string_view>
 #include <memory>
@@ -20,4 +21,5 @@ public:
 public:
 	Engine& engine;
 	EntityManager entityManager;
+	InputManager input;
 };

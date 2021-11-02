@@ -1,4 +1,5 @@
-	#include <Engine/Engine.hpp>
+#include "Engine.hpp"
+#include <Engine/Engine.hpp>
 #include <Engine/Init.hpp>
 #include <Engine/Window.hpp>
 #include <Utils/Assertions.hpp>
@@ -68,7 +69,7 @@ void Engine::update()
 {
 	m_time.update();
 	m_window.update();
-	glfwPollEvents();
+	m_currentScene->input.update();
 	m_currentScene->update();
 }
 
@@ -92,4 +93,9 @@ void Engine::changeScene(std::string_view name)
 Time& Engine::time()
 {
 	return m_time;
+}
+
+Window& Engine::window()
+{
+	return m_window;
 }

@@ -24,6 +24,7 @@ public:
 	void changeScene(std::string_view name);
 
 	Time& time();
+	Window& window();
 
 private:
 	Window m_window;
