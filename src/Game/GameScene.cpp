@@ -9,7 +9,11 @@ GameScene::GameScene(Engine& engine)
 	input.registerKeyboardAction(KeyCode::Space, std::unique_ptr<ButtonAction>(new JumpAction));
 	input.registerMouseMoveAction(std::unique_ptr<CameraRotateAction>(new CameraRotateAction));
 	input.registerMouseButtonAction(MouseButton::Left, std::unique_ptr<AttackAction>(new AttackAction));
+
+	glEnable(GL_DEPTH_TEST);;
 }
+
+
 
 void GameScene::update()
 {
