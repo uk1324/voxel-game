@@ -16,8 +16,11 @@ GameScene::GameScene(Engine& engine)
 	Shader fragmentShader("../../../src/Game/shader.frag", ShaderType::Fragment);
 
 	ShaderProgram shader({ vertexShader, fragmentShader });
+    this->shader = &shader;
 
 	shader.use();
+    shader.setVec2("offset", Vec2(0.1, 0.5));
+    shader.setVec3("color", Vec3(1.0, 0.0, 0.0));
 
     // ------------------------------------------------------------------
     float vertices[] = {
@@ -44,6 +47,9 @@ GameScene::GameScene(Engine& engine)
 void GameScene::update()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
+
+    //shader->setVec3("color", Vec3(float(rand() % 100) / 100, 1.0, 0.0));
+    //shader->setVec3("color", Vec3(1.0, 1.0, 0.0));
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 }

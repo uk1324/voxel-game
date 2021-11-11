@@ -23,6 +23,7 @@ public:
 	GenericVec3& operator/=(T rhs);
 
 	T* data();
+	const T* data() const;
 
 public:
 	T x;
@@ -133,6 +134,12 @@ GenericVec3<T>& GenericVec3<T>::operator/= (T rhs)
 
 template<typename T>
 T* GenericVec3<T>::data()
+{
+	return &x;
+}
+
+template<typename T>
+const T* GenericVec3<T>::data() const
 {
 	return &x;
 }

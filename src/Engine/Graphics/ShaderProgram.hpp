@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Engine/Graphics/Shader.hpp>
+#include <Math/Vec2.hpp>
+#include <Math/Vec3.hpp>
 
 #include <vector>
 
@@ -11,6 +13,9 @@ public:
 	~ShaderProgram();
 
 	void use();
+
+	void setVec2(std::string_view name, const Vec2& vec);
+	void setVec3(std::string_view name, const Vec3& vec);
 
 	GLuint handle() const;
 
