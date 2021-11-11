@@ -15,7 +15,10 @@ class Shader
 {
 public:
 	Shader(std::string_view path, ShaderType type);
+	~Shader();
+
+	GLuint handle() const;
 
 private:
-	GLint m_handle;
+	GLuint m_handle;
 };

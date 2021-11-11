@@ -1,4 +1,6 @@
 #include "Shader.hpp"
+#include "Shader.hpp"
+#include "Shader.hpp"
 
 #include <Utils/FileIo.hpp>
 #include <Log/Log.hpp>
@@ -20,4 +22,14 @@ Shader::Shader(std::string_view path, ShaderType type)
 		glGetShaderInfoLog(m_handle, sizeof(infoLog), nullptr, infoLog);
 		LOG_FATAL("failed to compile shader %s\n%s\n", path.data(), infoLog);
 	}
+}
+
+Shader::~Shader()
+{
+	glDeleteShader(m_handle);
+}
+
+GLuint Shader::handle() const
+{
+	return m_handle;
 }

@@ -59,9 +59,7 @@ int main()
 	//Quaternion q(1, 2, 3, 4);
 	//std::cout << q;
 
-	Shader s("")
-
-	return 0;
+	//return 0;
 	Engine engine(60, 800, 600, "game");
 
 	engine.addScene("game", std::unique_ptr<Scene>(new GameScene(engine)));

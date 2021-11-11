@@ -5,6 +5,15 @@ project(voxel-game)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# if linking errors change option
+# googletest\googletest\CMakeLists.txt
+
+# if(MSVC)
+#   target_compile_options(voxel-game PRIVATE /W4 /WX)
+# else()
+#   target_compile_options(voxel-game PRIVATE -Wall -Wextra -Wpedantic)
+# endif()
+
 include_directories(
 	src
 	dependencies/glad/include

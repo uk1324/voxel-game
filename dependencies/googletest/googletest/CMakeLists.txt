@@ -10,10 +10,11 @@
 
 # When other libraries are using a shared version of runtime libraries,
 # Google Test also has to use one.
-option(
-  gtest_force_shared_crt
-  "Use shared (DLL) run-time lib even when Google Test is built as static lib."
-  OFF)
+# this option is weird
+# option(
+#   gtest_force_shared_crt
+#   "Use shared (DLL) run-time lib even when Google Test is built as static lib."
+#   OFF)
 
 option(gtest_build_tests "Build all of gtest's own tests." OFF)
 
