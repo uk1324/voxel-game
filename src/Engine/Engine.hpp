@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <memory>
 
+// Dont store the map of scenes 
+// change scenes by passing a pointer to the scene
 class Engine
 {
 

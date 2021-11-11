@@ -1,10 +1,9 @@
 #pragma once
 
 #include <Engine/Window.hpp>
-#include <Engine/Input/ButtonAction.hpp>
-#include <Engine/Input/MouseMoveAction.hpp>
 #include <Engine/Input/KeyCode.hpp>
 #include <Engine/Input/MouseButton.hpp>
+#include <Math/Vec2.hpp>
 
 #include <memory>
 #include <unordered_map>
@@ -17,13 +16,15 @@ public:
 
 	void update();
 
-	void registerKeyboardAction(KeyCode key, std::unique_ptr<ButtonAction>&& action);
-	void registerMouseMoveAction(std::unique_ptr<MouseMoveAction>&& action);
-	void registerMouseButtonAction(MouseButton button, std::unique_ptr<ButtonAction>&& action);
+	void registerKeyboardButton(std::string name, KeyCode key);
+	void registerMouseButton(std::string name, MouseButton button);
 
-private:
-	void updateKeyboard();
-	void updateMouseButtons();
+	bool isButtonDown(const std::string name);
+	bool isButtonUp(const std::string name);
+	bool isButtonHeld(const std::string name);
+
+	const Vec2& mousePos() const;
+	const Vec2& lastMousePos() const;
 
 private:
 	// Have to use this because you cannot convert a capturing lambda to a function pointer
@@ -36,11 +37,16 @@ private:
 private:
 	Window& m_window;
 
-	std::unordered_map<KeyCode, std::unique_ptr<ButtonAction>> m_keyboardActions;
-	std::unordered_map<KeyCode, bool> m_isKeyHeld;
+	std::unordered_map<KeyCode, std::string> m_keyToAction;
 
-	std::unordered_map<MouseButton, std::unique_ptr<ButtonAction>> m_mouseButtonActions;
-	std::unordered_map<MouseButton, bool> m_isMouseButtonHeld;
+	std::unordered_map<MouseButton, std::string> m_mouseButtonToAction;
 
-	std::vector<std::unique_ptr<MouseMoveAction>> m_mouseMoveActions;
+	// Would it be better to just store a struct with a bitset?
+	std::unordered_map<std::string, bool> m_isButtonDown;
+	std::unordered_map<std::string, bool> m_isButtonUp;
+	std::unordered_map<std::string, bool> m_isButtonHeld;
+
+
+	Vec2 m_mousePos;
+	Vec2 m_lastMousePos;
 };

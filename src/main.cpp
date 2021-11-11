@@ -10,7 +10,6 @@
 
 #include <Engine/Graphics/Shader.hpp>
 
-#include <iostream>
 
 int main()
 {

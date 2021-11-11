@@ -1,4 +1,5 @@
 #include <Engine/Input/InputManager.hpp>
+#include <Utils/Assertions.hpp>
 
 #include <functional>
 
@@ -22,86 +23,88 @@ InputManager::~InputManager()
 
 void InputManager::update()
 {
+	for (auto& [button, isDown] : m_isButtonDown)
+		isDown = false;
+
+	for (auto& [button, isUp] : m_isButtonUp)
+		isUp = false;
+
 	glfwPollEvents();
-	updateKeyboard();
-	updateMouseButtons();
 }
 
-void InputManager::registerKeyboardAction(KeyCode key, std::unique_ptr<ButtonAction>&& action)
+void InputManager::registerKeyboardButton(std::string name, KeyCode key)
 {
-	m_keyboardActions[key] = std::move(action);
-	m_isKeyHeld[key] = false;
+	m_keyToAction[key] = std::move(name);
 }
 
-void InputManager::registerMouseMoveAction(std::unique_ptr<MouseMoveAction>&& action)
+void InputManager::registerMouseButton(std::string name, MouseButton button)
 {
-	m_mouseMoveActions.push_back(std::move(action));
+	m_mouseButtonToAction[button] = std::move(name);
 }
 
-void InputManager::registerMouseButtonAction(MouseButton button, std::unique_ptr<ButtonAction>&& action)
+bool InputManager::isButtonDown(const std::string name)
 {
-	m_mouseButtonActions[button] = std::move(action);
-	m_isMouseButtonHeld[button] = false;
+	return m_isButtonDown[name];
 }
 
-void InputManager::updateKeyboard()
+bool InputManager::isButtonUp(const std::string name)
 {
-	for (auto& [key, isHeld] : m_isKeyHeld)
-	{
-		if (isHeld)
-			m_keyboardActions[key]->buttonHeld();
-	}
+	return m_isButtonUp[name];
 }
 
-void InputManager::updateMouseButtons()
+bool InputManager::isButtonHeld(const std::string name)
 {
-	for (auto& [button, isHeld] : m_isMouseButtonHeld)
-	{
-		if (isHeld)
-			m_mouseButtonActions[button]->buttonHeld();
-	}
+	return m_isButtonHeld[name];
+}
+
+const Vec2& InputManager::mousePos() const
+{
+	return m_mousePos;
+}
+
+const Vec2& InputManager::lastMousePos() const
+{
+	return m_lastMousePos;
 }
 
 void InputManager::keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	auto value = InputManager::self->m_keyboardActions.find(static_cast<KeyCode>(key));
-	if (value != InputManager::self->m_keyboardActions.end())
+	auto button = InputManager::self->m_keyToAction.find(static_cast<KeyCode>(key));
+	if (button != InputManager::self->m_keyToAction.end())
 	{
 		if (action == GLFW_PRESS)
 		{
-			value->second->buttonDown();
-			InputManager::self->m_isKeyHeld[static_cast<KeyCode>(key)] = true;
+			InputManager::self->m_isButtonDown[button->second] = true;
+			InputManager::self->m_isButtonHeld[button->second] = true;
 		}
 		else if (action == GLFW_RELEASE)
 		{
-			value->second->buttonUp();
-			InputManager::self->m_isKeyHeld[static_cast<KeyCode>(key)] = false;
+			InputManager::self->m_isButtonUp[button->second] = true;
+			InputManager::self->m_isButtonHeld[button->second] = false;
 		}
 	}
 }
 
 void InputManager::mouseMoveCallback(GLFWwindow* window, double mouseX, double mouseY)
 {
-	for (const auto& action : InputManager::self->m_mouseMoveActions)
-	{
-		action->execute(mouseX, mouseY);
-	}
+	InputManager::self->m_lastMousePos = InputManager::self->m_mousePos;
+	InputManager::self->m_mousePos = Vec2(static_cast<float>(mouseX), static_cast<float>(mouseY));
 }
 
 void InputManager::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
-	auto value = InputManager::self->m_mouseButtonActions.find(static_cast<MouseButton>(button));
-	if (value != InputManager::self->m_mouseButtonActions.end())
+	auto value = InputManager::self->m_mouseButtonToAction.find(static_cast<MouseButton>(button));
+	if (value != InputManager::self->m_mouseButtonToAction.end())
 	{
 		if (action == GLFW_PRESS)
 		{
-			value->second->buttonDown();
-			InputManager::self->m_isMouseButtonHeld[static_cast<MouseButton>(button)] = true;
+			InputManager::self->m_isButtonDown[value->second] = true;
+			InputManager::self->m_isButtonHeld[value->second] = true;
 		}
 		else if (action == GLFW_RELEASE)
 		{
-			value->second->buttonUp();
-			InputManager::self->m_isMouseButtonHeld[static_cast<MouseButton>(button)] = false;
+			InputManager::self->m_isButtonUp[value->second] = true;
+			InputManager::self->m_isButtonHeld[value->second] = false;
 		}
 	}
 }

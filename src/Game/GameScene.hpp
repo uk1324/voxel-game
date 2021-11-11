@@ -8,7 +8,9 @@ class GameScene : public Scene
 public:
 	GameScene(Engine& engine);
 
-	ShaderProgram* shader;
+	ShaderProgram shader;
+	unsigned int VBO, VAO;
+
 
 	void update() override;
 

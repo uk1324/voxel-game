@@ -14,8 +14,14 @@ enum class ShaderType
 class Shader
 {
 public:
-	Shader(std::string_view path, ShaderType type);
+	explicit Shader(std::string_view path, ShaderType type);
 	~Shader();
+
+	Shader(const Shader&) = delete;
+	Shader& operator= (const Shader&) = delete;
+
+	Shader(Shader&& other) noexcept;
+	Shader& operator= (Shader&& other) noexcept;
 
 	GLuint handle() const;
 

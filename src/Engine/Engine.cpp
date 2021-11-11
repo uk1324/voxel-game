@@ -68,9 +68,9 @@ void Engine::run(std::string_view startingScene)
 void Engine::update()
 {
 	m_time.update();
-	m_window.update();
 	m_currentScene->input.update();
 	m_currentScene->update();
+	m_window.update();
 }
 
 void Engine::stop()

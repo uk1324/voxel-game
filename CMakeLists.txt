@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.11)
+﻿cmake_minimum_required(VERSION 3.15)
 
 project(voxel-game)
 
@@ -8,10 +8,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # if linking errors change option
 # googletest\googletest\CMakeLists.txt
 
+
 # if(MSVC)
-#   target_compile_options(voxel-game PRIVATE /W4 /WX)
+#   add_compile_options(/W4)
 # else()
-#   target_compile_options(voxel-game PRIVATE -Wall -Wextra -Wpedantic)
+#   add_compile_options(-Wall -Wextra -Wpedantic)
 # endif()
 
 include_directories(

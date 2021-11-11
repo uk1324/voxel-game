@@ -6,5 +6,5 @@ enum class MouseButton
 {
 	Left = GLFW_MOUSE_BUTTON_LEFT,
 	Right = GLFW_MOUSE_BUTTON_RIGHT,
-	Middle = GLFW_MOUSE_BUTTON_MIDDLE,
+	Middle = GLFW_MOUSE_BUTTON_MIDDLE
 };

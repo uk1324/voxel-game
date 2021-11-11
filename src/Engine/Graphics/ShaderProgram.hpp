@@ -9,8 +9,18 @@
 class ShaderProgram
 {
 public:
-	ShaderProgram(std::vector<Shader> shaders);
+	ShaderProgram();
 	~ShaderProgram();
+
+	ShaderProgram(const ShaderProgram&) = delete;
+	ShaderProgram& operator== (const ShaderProgram& other) = delete;
+
+	ShaderProgram(ShaderProgram&&) noexcept;
+	ShaderProgram& operator== (ShaderProgram&& other) noexcept;
+
+	// Wanted to use the constructor to pass a vector of shaders but Shader is non copyable and you can't have a reference to a pointer.
+	void addShader(const Shader& shader);
+	void link();
 
 	void use();
 

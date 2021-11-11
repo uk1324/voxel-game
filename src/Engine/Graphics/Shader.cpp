@@ -1,7 +1,4 @@
-#include "Shader.hpp"
-#include "Shader.hpp"
-#include "Shader.hpp"
-
+#include <Engine/Graphics/Shader.hpp>
 #include <Utils/FileIo.hpp>
 #include <Log/Log.hpp>
 
@@ -11,7 +8,7 @@ Shader::Shader(std::string_view path, ShaderType type)
 
 	std::string source = stringFromFile(path);
 	const char* src = source.c_str();
-	GLint length = source.length();
+	GLint length = static_cast<GLint>(source.length());
 	glShaderSource(m_handle, 1, &src, &length);
 	glCompileShader(m_handle);
 	GLint status;
@@ -22,6 +19,19 @@ Shader::Shader(std::string_view path, ShaderType type)
 		glGetShaderInfoLog(m_handle, sizeof(infoLog), nullptr, infoLog);
 		LOG_FATAL("failed to compile shader %s\n%s\n", path.data(), infoLog);
 	}
+}
+
+Shader::Shader(Shader&& other) noexcept
+	: m_handle(other.m_handle)
+{
+	other.m_handle = -1;
+}
+
+Shader& Shader::operator=(Shader&& other) noexcept
+{
+	m_handle = other.m_handle;
+	other.m_handle = -1;
+	return *this;
 }
 
 Shader::~Shader()

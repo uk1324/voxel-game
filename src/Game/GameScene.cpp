@@ -1,26 +1,25 @@
 #include <Game/GameScene.hpp>
-#include <Game/Actions/JumpAction.hpp>
-#include <Game/Actions/CameraRotateAction.hpp>
-#include <Game/Actions/AttackAction.hpp>
 
 #include <Engine/Graphics/ShaderProgram.hpp>
 
 GameScene::GameScene(Engine& engine)
 	: Scene(engine)
+    , shader([]{
+        Shader vertexShader("../../../src/Game/shader.vert", ShaderType::Vertex);
+        Shader fragmentShader("../../../src/Game/shader.frag", ShaderType::Fragment);
+        ShaderProgram s;
+        s.addShader(vertexShader);
+        s.addShader(fragmentShader);
+        s.link();
+        return s;
+    }())
 {
-	input.registerKeyboardAction(KeyCode::Space, std::unique_ptr<ButtonAction>(new JumpAction));
-	input.registerMouseMoveAction(std::unique_ptr<CameraRotateAction>(new CameraRotateAction));
-	input.registerMouseButtonAction(MouseButton::Left, std::unique_ptr<AttackAction>(new AttackAction));
+    input.registerKeyboardButton("jump", KeyCode::Space);
+    input.registerMouseButton("attack", MouseButton::Left);
 
-	Shader vertexShader("../../../src/Game/shader.vert", ShaderType::Vertex);
-	Shader fragmentShader("../../../src/Game/shader.frag", ShaderType::Fragment);
-
-	ShaderProgram shader({ vertexShader, fragmentShader });
-    this->shader = &shader;
-
-	shader.use();
-    shader.setVec2("offset", Vec2(0.1, 0.5));
-    shader.setVec3("color", Vec3(1.0, 0.0, 0.0));
+    //s.use();
+    //s.setVec2("offset", Vec2(.5, 0));
+    //shader = &s;
 
     // ------------------------------------------------------------------
     float vertices[] = {
@@ -29,10 +28,9 @@ GameScene::GameScene(Engine& engine)
          0.0f,  0.5f, 0.0f  // top   
     };
 
-    unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    
+    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -40,16 +38,55 @@ GameScene::GameScene(Engine& engine)
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+
+    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+    glBindVertexArray(0);
 }
 
-
+#include <iostream>
 
 void GameScene::update()
 {
+    float timeValue = glfwGetTime();
+    float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
+    glClearColor(0.2f, greenValue, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-    //shader->setVec3("color", Vec3(float(rand() % 100) / 100, 1.0, 0.0));
-    //shader->setVec3("color", Vec3(1.0, 1.0, 0.0));
+    if (input.isButtonDown("jump"))
+    {
+        std::cout << "Jump down\n";
+        //shader->setVec3("color", Vec3(float(rand() % 100) / 100, 1.0, 0.0));
+    }
+    if (input.isButtonHeld("jump"))
+    {
+        std::cout << "Jump held\n";
+    }
+    if (input.isButtonUp("jump"))
+    {
+        std::cout << "Jump up\n";
+    }
 
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+    if (input.isButtonDown("attack"))
+    {
+        std::cout << "Attack down\n";
+    }
+    if (input.isButtonHeld("attack"))
+    {
+        std::cout << "Attack held\n";
+    }
+    if (input.isButtonUp("attack"))
+    {
+        std::cout << "Attack up\n";
+    }
+
+    // draw our first triangle
+    glUseProgram(shader.handle());
+    shader.setVec3("color", Vec3(0.0, greenValue, 0.0));
+    shader.setVec2("offset", input.mousePos());
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
 }
