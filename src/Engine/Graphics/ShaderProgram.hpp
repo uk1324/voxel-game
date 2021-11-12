@@ -4,10 +4,6 @@
 #include <Math/Vec2.hpp>
 #include <Math/Vec3.hpp>
 
-#include <vector>
-
-// TODO: change invalid object ids to 0;
-
 class ShaderProgram
 {
 public:
@@ -20,7 +16,7 @@ public:
 	ShaderProgram(ShaderProgram&&) noexcept;
 	ShaderProgram& operator== (ShaderProgram&& other) noexcept;
 
-	// Wanted to use the constructor to pass a vector of shaders but Shader is non copyable and you can't have a reference to a pointer.
+	// Wanted to use the constructor to pass a vector of shaders but Shader is non copyable and you can't have a pointer to a reference.
 	void addShader(const Shader& shader);
 	void link();
 

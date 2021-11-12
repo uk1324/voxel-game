@@ -24,13 +24,13 @@ Shader::Shader(std::string_view path, ShaderType type)
 Shader::Shader(Shader&& other) noexcept
 	: m_handle(other.m_handle)
 {
-	other.m_handle = -1;
+	other.m_handle = NULL;
 }
 
 Shader& Shader::operator=(Shader&& other) noexcept
 {
 	m_handle = other.m_handle;
-	other.m_handle = -1;
+	other.m_handle = NULL;
 	return *this;
 }
 

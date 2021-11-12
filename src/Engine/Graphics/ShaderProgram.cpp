@@ -14,13 +14,13 @@ ShaderProgram::~ShaderProgram()
 ShaderProgram::ShaderProgram(ShaderProgram&& other) noexcept
 	: m_handle(other.m_handle)
 {
-	other.m_handle = -1;
+	other.m_handle = NULL;
 }
 
 ShaderProgram& ShaderProgram::operator==(ShaderProgram&& other) noexcept
 {
 	m_handle = other.m_handle;
-	other.m_handle = -1;
+	other.m_handle = NULL;
 	return *this;
 }
 
@@ -47,6 +47,7 @@ void ShaderProgram::use()
 	glUseProgram(m_handle);
 }
 
+// Using glProgramUniform instead of glUniform might be sometimes faster because it doesn't need a glUsePgoram call before it.
 void ShaderProgram::setVec2(std::string_view name, const Vec2& vec)
 {
 	glProgramUniform2fv(m_handle, glGetUniformLocation(m_handle, name.data()), 1, vec.data());
