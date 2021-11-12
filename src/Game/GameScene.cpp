@@ -86,7 +86,7 @@ void GameScene::update()
     // draw our first triangle
     glUseProgram(shader.handle());
     shader.setVec3("color", Vec3(0.0, greenValue, 0.0));
-    shader.setVec2("offset", input.mousePos());
+    //shader.setVec2("offset", input.mousePos());
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 }

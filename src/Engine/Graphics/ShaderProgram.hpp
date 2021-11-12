@@ -6,6 +6,8 @@
 
 #include <vector>
 
+// TODO: change invalid object ids to 0;
+
 class ShaderProgram
 {
 public:

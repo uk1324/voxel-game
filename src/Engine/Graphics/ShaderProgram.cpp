@@ -49,12 +49,12 @@ void ShaderProgram::use()
 
 void ShaderProgram::setVec2(std::string_view name, const Vec2& vec)
 {
-	glUniform2fv(glGetUniformLocation(m_handle, name.data()), 1, vec.data());
+	glProgramUniform2fv(m_handle, glGetUniformLocation(m_handle, name.data()), 1, vec.data());
 }
 
 void ShaderProgram::setVec3(std::string_view name, const Vec3& vec)
 {
-	glUniform3fv(glGetUniformLocation(m_handle, name.data()), 1, vec.data());
+	glProgramUniform3fv(m_handle, glGetUniformLocation(m_handle, name.data()), 1, vec.data());
 }
 
 GLuint ShaderProgram::handle() const
