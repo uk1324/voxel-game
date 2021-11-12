@@ -2,6 +2,7 @@
 
 #include <Engine/Ecs/EntityManager.hpp>
 #include <Engine/Input/InputManager.hpp>
+#include <Engine/Time.hpp>
 
 #include <string_view>
 #include <memory>
@@ -22,4 +23,5 @@ public:
 	Engine& engine;
 	EntityManager entityManager;
 	InputManager input;
+	Time& time;
 };

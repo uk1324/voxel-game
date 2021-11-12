@@ -1,6 +1,13 @@
+#include "GameScene.hpp"
 #include <Game/GameScene.hpp>
+#include <Engine/Engine.hpp>
+#include <Math/Mat4.hpp>
 
 #include <Engine/Graphics/ShaderProgram.hpp>
+#include <Game/Components/Position.hpp>
+#include <Game/Components/Rotation.hpp>
+
+// Should player be a pointer or a reference?
 
 GameScene::GameScene(Engine& engine)
 	: Scene(engine)
@@ -14,19 +21,55 @@ GameScene::GameScene(Engine& engine)
         return s;
     }())
 {
-    input.registerKeyboardButton("jump", KeyCode::Space);
-    input.registerMouseButton("attack", MouseButton::Left);
+    registerActions();
 
-    //s.use();
-    //s.setVec2("offset", Vec2(.5, 0));
-    //shader = &s;
-
-    // ------------------------------------------------------------------
     float vertices[] = {
-        -0.5f, -0.5f, 0.0f, // left  
-         0.5f, -0.5f, 0.0f, // right 
-         0.0f,  0.5f, 0.0f  // top   
+    -0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f, -0.5f,
+     0.5f,  0.5f, -0.5f,
+     0.5f,  0.5f, -0.5f,
+    -0.5f,  0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+
+    -0.5f, -0.5f,  0.5f,
+     0.5f, -0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f,
+    -0.5f, -0.5f,  0.5f,
+
+    -0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f,
+
+     0.5f,  0.5f,  0.5f,
+     0.5f,  0.5f, -0.5f,
+     0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+
+    -0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f,  0.5f,
+     0.5f, -0.5f,  0.5f,
+    -0.5f, -0.5f,  0.5f,
+    -0.5f, -0.5f, -0.5f,
+
+    -0.5f,  0.5f, -0.5f,
+     0.5f,  0.5f, -0.5f,
+     0.5f,  0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f, -0.5f
     };
+
+    player = &entityManager.addEntity();
+    entityManager.entityAddComponent<Position>(*player, Vec3());
+    entityManager.entityAddComponent<Rotation>(*player, Quaternion::identity);
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -45,48 +88,48 @@ GameScene::GameScene(Engine& engine)
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
     glBindVertexArray(0);
+
+    glEnable(GL_DEPTH_TEST);
 }
 
-#include <iostream>
+#include <Math/Angles.hpp>
 
 void GameScene::update()
 {
+    if (input.isButtonDown("exit"))
+    {
+        engine.stop();
+    }
+
     float timeValue = glfwGetTime();
     float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
     glClearColor(0.2f, greenValue, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    if (input.isButtonDown("jump"))
-    {
-        std::cout << "Jump down\n";
-        //shader->setVec3("color", Vec3(float(rand() % 100) / 100, 1.0, 0.0));
-    }
-    if (input.isButtonHeld("jump"))
-    {
-        std::cout << "Jump held\n";
-    }
-    if (input.isButtonUp("jump"))
-    {
-        std::cout << "Jump up\n";
-    }
+    playerMovementSystem.update(*this, *player);
 
-    if (input.isButtonDown("attack"))
-    {
-        std::cout << "Attack down\n";
-    }
-    if (input.isButtonHeld("attack"))
-    {
-        std::cout << "Attack held\n";
-    }
-    if (input.isButtonUp("attack"))
-    {
-        std::cout << "Attack up\n";
-    }
-
-    // draw our first triangle
-    glUseProgram(shader.handle());
+    Mat4 model = translate(Mat4::identity(), player->getComponent<Position>().value);
+    shader.setMat4("model", model);
     shader.setVec3("color", Vec3(0.0, greenValue, 0.0));
-    //shader.setVec2("offset", input.mousePos());
+
+    Mat4 rotation = player->getComponent<Rotation>().value.rotationMatrix();
+    shader.setMat4("rotation", rotation);
+
+    Mat4 projection = Mat4::perspective(90.0f, 800.0 / 600.0, 0.1f, 1000.0f);
+    shader.setMat4("projection", projection);
+
+    shader.use();
+
     glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void GameScene::registerActions()
+{
+    input.registerKeyboardButton("forward", KeyCode::W);
+    input.registerKeyboardButton("back", KeyCode::S);
+    input.registerKeyboardButton("left", KeyCode::A);
+    input.registerKeyboardButton("right", KeyCode::D);
+
+    input.registerKeyboardButton("exit", KeyCode::Escape);
 }

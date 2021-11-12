@@ -1,8 +1,6 @@
 #include <Engine/Input/InputManager.hpp>
 #include <Utils/Assertions.hpp>
 
-#include <functional>
-
 InputManager* InputManager::self = nullptr;
 
 InputManager::InputManager(Window& window)

@@ -1,8 +1,9 @@
+#pragma once
+
+#include <Game/Systems/PlayerMovementSystem.hpp>
 #include <Engine/Scene.hpp>
-#include <Game/Systems/MeshRenderSystem.hpp>
-
-
 #include <Engine/Graphics/ShaderProgram.hpp>
+
 class GameScene : public Scene
 {
 public:
@@ -11,9 +12,13 @@ public:
 	ShaderProgram shader;
 	unsigned int VBO, VAO;
 
+	Entity* player;
 
 	void update() override;
 
 private:
-	MeshRenderSystem meshRenderSystem;
+	void registerActions();
+
+private:
+	PlayerMovementSystem playerMovementSystem;
 };

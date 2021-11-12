@@ -1,4 +1,4 @@
-#include "Log.hpp"
+#include <Log/Log.hpp>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -43,4 +43,14 @@ void Log::fatal(const char* filename, int line, const char* format, ...)
 	va_end(args);
 	printf("\n");
 	exit(EXIT_FAILURE);
+}
+
+void Log::debug(const char* filename, int line, const char* format, ...)
+{
+	printf("[%s:%d] debug: ", filename, line);
+	va_list args;
+	va_start(args, format);
+	vprintf(format, args);
+	va_end(args);
+	printf("\n");
 }

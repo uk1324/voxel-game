@@ -1,6 +1,11 @@
 #pragma once
 
+#include <Math/GenericVec3.hpp>
+#include <Math/GenericMat4.hpp>
+
 #include <ostream>
+
+// TODO: write tests for length, normalization, and rotationMatrix
 
 template <typename T>
 struct GenericQuaternion
@@ -8,12 +13,22 @@ struct GenericQuaternion
 public:
 	GenericQuaternion();
 	GenericQuaternion(T x, T y, T z, T w);
+	GenericQuaternion(T angle, GenericVec3<T> axis);
 
-	void normalize();
+	T length() const;
+
 	GenericQuaternion normalized() const;
+	void normalize();
 
+	GenericMat4<T> rotationMatrix();
+
+	GenericQuaternion operator* (const T rhs) const;
+	GenericQuaternion& operator*= (const T rhs);
 	GenericQuaternion operator* (const GenericQuaternion& rhs) const;
 	GenericQuaternion& operator*= (const GenericQuaternion& rhs);
+
+public:
+	static const GenericQuaternion identity;
 
 public:
 	T x;
@@ -24,6 +39,9 @@ public:
 
 template<typename T>
 std::ostream& operator<< (std::ostream& os, const GenericQuaternion<T>& quaternion);
+
+template<typename T>
+const GenericQuaternion<T> GenericQuaternion<T>::identity = GenericQuaternion<T>(0.0, 0.0, 0.0, 1.0);
 
 template<typename T>
 GenericQuaternion<T>::GenericQuaternion()
@@ -42,31 +60,107 @@ GenericQuaternion<T>::GenericQuaternion(T x, T y, T z, T w)
 {}
 
 template<typename T>
-void GenericQuaternion<T>::normalize()
+GenericQuaternion<T>::GenericQuaternion(T angle, GenericVec3<T> axis)
+	: x(axis.x)
+	, y(axis.y)
+	, z(axis.z)
+	, w(angle)
 {
+	T c = cos(angle / 2);
+	T s = sin(angle / 2);
+	w = c;
+	x = axis.x * s;
+	y = axis.y * s;
+	z = axis.z * s;
+}
+
+template<typename T>
+T GenericQuaternion<T>::length() const
+{
+	return sqrt((x * x) + (y * y) + (z * z) + (w * w));
 }
 
 template<typename T>
 GenericQuaternion<T> GenericQuaternion<T>::normalized() const
 {
-	return GenericQuaternion();
+	T len = length();
+	if (len != 0)
+	{
+		return *this * (1 / len);
+	}
+	return *this;
+}
+
+template<typename T>
+void GenericQuaternion<T>::normalize()
+{
+	*this = normalized();
+}
+
+template<typename T>
+GenericMat4<T> GenericQuaternion<T>::rotationMatrix()
+{
+	GenericMat4<T> m;
+
+	m(0, 0) = 2 * (x * x + y * y) - 1;
+	m(0, 1) = 2 * (y * z - x * w);
+	m(0, 2) = 2 * (y * w + x * z);
+	m(1, 0) = 2 * (y * z + x * w);
+	m(1, 1) = 2 * (x * x + z * z) - 1;
+	m(1, 2) = 2 * (z * w - x * y);
+	m(2, 0) = 2 * (y * w - x * z);
+	m(2, 1) = 2 * (z * w + x * y);
+	m(2, 2) = 2 * (x * x + w * w) - 1;
+
+	return GenericMat4<T>({
+		1 - 2 * y * y - 2 * z * z, 2 * x * y - 2 * z * w, 2 * x * z + 2 * y * w, 0,
+		2 * x * y + 2 * z * w, 1 - 2 * x * x - 2 * z * z, 2 * y * z - 2 * x * w, 0,
+		2 * x * z - 2 * y * w, 2 * y * z + 2 * x * w, 1 - 2 * x * x - 2 * y * y, 0,
+		0, 0, 0, 1
+	});
+
+	m(3, 3) = 1;
+
+	return m;
+}
+
+template<typename T>
+GenericQuaternion<T> GenericQuaternion<T>::operator* (const T rhs) const
+{
+	return GenericQuaternion<T>(x * rhs, y * rhs, z * rhs, w * rhs);
+}
+
+template<typename T>
+GenericQuaternion<T>& GenericQuaternion<T>::operator*= (const T rhs)
+{
+	x *= rhs;
+	y *= rhs;
+	z *= rhs;
+	w *= rhs;
+	return *this;
 }
 
 template<typename T>
 GenericQuaternion<T> GenericQuaternion<T>::operator* (const GenericQuaternion& rhs) const
 {
-	return GenericQuaternion(
-		w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y,
-		w * rhs.y + y * rhs.w + z * rhs.x - x * rhs.z,
-		w * rhs.z + z * rhs.w + x * rhs.y - y * rhs.x,
-		w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z
-	);
+	// TODO: derive this
+	//return GenericQuaternion(
+	//	 x * rhs.w + y * rhs.z - z * rhs.y + w * rhs.x,
+	//	-x * rhs.z + y * rhs.w + z * rhs.x + w * rhs.y,
+	//	 x * rhs.y - y * rhs.x + z * rhs.w + w * rhs.z,
+	//	-x * rhs.x - y * rhs.y - z * rhs.z + w * rhs.w
+	//);
+	return Quaternion(y * rhs.z - z * rhs.y + x * rhs.w + w * rhs.x,
+		              z * rhs.x - x * rhs.z + y * rhs.w + w * rhs.y,
+		              x * rhs.y - y * rhs.x + z * rhs.w + w * rhs.z,
+		              w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z);
 }
 
 template<typename T>
 GenericQuaternion<T>& GenericQuaternion<T>::operator*=(const GenericQuaternion& rhs)
 {
 	*this = *this * rhs;
+	return *this;
 }
 
 template<typename T>

@@ -3,8 +3,6 @@
 #include <Engine/Ecs/Entity.hpp>
 #include <Utils/UninitializedArray.hpp>
 
-#include <bitset>
-
 class BaseComponentPool;
 template<typename T>
 class ComponentPool;
@@ -40,6 +38,8 @@ private:
 
 	std::array<BaseComponentPool*, Entity::MAX_COMPONENTS> m_componentPools;
 };
+
+#include <Engine/Ecs/ComponentPool.hpp>
 
 template<typename T, typename ...Args>
 T& EntityManager::entityAddComponent(Entity& entity, Args&&... args)

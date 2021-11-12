@@ -8,9 +8,9 @@ Time::Time()
 	, m_currentTick(0)
 {}
 
-double Time::deltaTime()
+float Time::deltaTime()
 {
-	return m_deltaTime;
+	return static_cast<float>(m_deltaTime);
 }
 
 uint64_t Time::currentTick()
@@ -20,6 +20,7 @@ uint64_t Time::currentTick()
 
 void Time::update()
 {
+	// Don't know if I should use the actual delta time or should it be a constant so every program execution is the same.
 	double currentTime = glfwGetTime();
 	m_deltaTime = currentTime - m_lastFrameTime;
 	m_lastFrameTime = currentTime;

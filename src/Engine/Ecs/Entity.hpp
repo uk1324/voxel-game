@@ -15,6 +15,10 @@ class Entity
 public:
 	static constexpr size_t MAX_COMPONENTS = 32;
 
+public:
+	template <typename T>
+	T& getComponent();
+
 private:
 	Entity(size_t id);
 
@@ -33,4 +37,10 @@ size_t getComponentId()
 {
 	static const size_t id = registeredComponentCount++;
 	return id;
+}
+
+template<typename T>
+T& Entity::getComponent()
+{
+	return *reinterpret_cast<T*>(m_components[getComponentId<T>()]);
 }

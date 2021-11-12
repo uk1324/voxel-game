@@ -11,13 +11,13 @@ struct Component
 protected:
 	Component() = default;
 
-public:
-	Component(const Component&) = delete;
-	Component& operator= (const Component&) = delete;
-
 	template <typename T>
 	T& getComponent();
 	Entity& getEntity();
+
+protected:
+	Component(const Component&) = default;
+	Component& operator= (const Component&) = default;
 
 private:
 	Entity* m_entity;

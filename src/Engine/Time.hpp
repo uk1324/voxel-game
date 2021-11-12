@@ -7,7 +7,7 @@ class Time
 public:
 	Time();
 
-	double deltaTime();
+	float deltaTime();
 	uint64_t currentTick();
 
 	void update();

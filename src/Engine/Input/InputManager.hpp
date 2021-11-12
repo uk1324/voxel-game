@@ -29,7 +29,7 @@ public:
 private:
 	// Have to use this because you cannot convert a capturing lambda to a function pointer
 	// and std::function does a virtual call
-	static InputManager* self;
+	static InputManager* self; // Maybe rename this to s_self so I don't have to write InputManager::self.
 	static void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static void mouseMoveCallback(GLFWwindow* window, double mouseX, double mouseY);
 	static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);

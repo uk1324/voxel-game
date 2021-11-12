@@ -3,6 +3,7 @@
 #include <Engine/Graphics/Shader.hpp>
 #include <Math/Vec2.hpp>
 #include <Math/Vec3.hpp>
+#include <Math/Mat4.hpp>
 
 class ShaderProgram
 {
@@ -24,6 +25,7 @@ public:
 
 	void setVec2(std::string_view name, const Vec2& vec);
 	void setVec3(std::string_view name, const Vec3& vec);
+	void setMat4(std::string_view name, const Mat4& mat);
 
 	GLuint handle() const;
 

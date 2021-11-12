@@ -58,6 +58,11 @@ void ShaderProgram::setVec3(std::string_view name, const Vec3& vec)
 	glProgramUniform3fv(m_handle, glGetUniformLocation(m_handle, name.data()), 1, vec.data());
 }
 
+void ShaderProgram::setMat4(std::string_view name, const Mat4& mat)
+{
+	glProgramUniformMatrix4fv(m_handle, glGetUniformLocation(m_handle, name.data()), 1, GL_FALSE, mat.data());
+}
+
 GLuint ShaderProgram::handle() const
 {
 	return m_handle;

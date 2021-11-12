@@ -6,6 +6,7 @@ namespace Log
 	void warning(const char* filename, int line, const char* format, ...);
 	void error(const char* filename, int line, const char* format, ...);
 	void fatal(const char* filename, int line, const char* format, ...);
+	void debug(const char* filename, int line, const char* format, ...);
 }
 
 #define LOG_INFO(format, ...) \
@@ -19,3 +20,6 @@ namespace Log
 
 #define LOG_FATAL(format, ...) \
 	Log::fatal(__FILE__, __LINE__, format, __VA_ARGS__)
+
+#define LOG_DEBUG(format, ...) \
+	Log::debug(__FILE__, __LINE__, format, __VA_ARGS__)

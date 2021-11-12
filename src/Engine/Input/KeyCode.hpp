@@ -6,6 +6,7 @@ enum class KeyCode
 {
 	Space = GLFW_KEY_SPACE,
 	LeftControl = GLFW_KEY_LEFT_CONTROL,
+	Escape = GLFW_KEY_ESCAPE,
 	A = GLFW_KEY_A,
 	B = GLFW_KEY_B,
 	C = GLFW_KEY_C,

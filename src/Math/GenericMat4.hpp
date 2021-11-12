@@ -22,9 +22,11 @@ public:
 	GenericMat4<T> operator* (T scalar) const;
 
 	T* data();
+	const T* data() const;
 
 public:
-	static GenericMat4<T> identity();
+	static GenericMat4<T> identity(); // Maybe make this just a const static value
+	static GenericMat4<T> perspective(T fov, T aspectRatio, T near, T far);
 
 public:
 	static constexpr size_t WIDTH = 4;
@@ -129,6 +131,12 @@ T* GenericMat4<T>::data()
 }
 
 template<typename T>
+const T* GenericMat4<T>::data() const
+{
+	return m_data;
+}
+
+template<typename T>
 GenericMat4<T> GenericMat4<T>::identity()
 {
 	Mat4 mat;
@@ -136,6 +144,20 @@ GenericMat4<T> GenericMat4<T>::identity()
 	mat(1, 1) = 1;
 	mat(2, 2) = 1;
 	mat(3, 3) = 1;
+	return mat;
+}
+
+template<typename T>
+GenericMat4<T> GenericMat4<T>::perspective(T fov, T aspectRatio, T near, T far)
+{
+	T fovInv = 1.0f / tanf(fov * 0.5f / 180.0f * 3.14159f);
+	Mat4 mat;
+	mat(0, 0) = fovInv;
+	mat(1, 1) = aspectRatio * fovInv;
+	mat(2, 2) = far / (far - near);
+	mat(3, 2) = (-far * near) / (far - near);
+	mat(2, 3) = 1.0f;
+
 	return mat;
 }
 
