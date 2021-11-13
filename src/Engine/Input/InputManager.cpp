@@ -27,6 +27,8 @@ void InputManager::update()
 	for (auto& [button, isUp] : m_isButtonUp)
 		isUp = false;
 
+	m_lastMousePos = m_mousePos;
+
 	glfwPollEvents();
 }
 
@@ -85,7 +87,6 @@ void InputManager::keyboardCallback(GLFWwindow* window, int key, int scancode, i
 
 void InputManager::mouseMoveCallback(GLFWwindow* window, double mouseX, double mouseY)
 {
-	InputManager::self->m_lastMousePos = InputManager::self->m_mousePos;
 	InputManager::self->m_mousePos = Vec2(static_cast<float>(mouseX), static_cast<float>(mouseY));
 }
 

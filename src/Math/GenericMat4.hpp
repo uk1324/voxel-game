@@ -5,7 +5,7 @@
 
 #include <ostream>
 
-// Column wise access
+// Column wise matrix
 template<typename T>
 class GenericMat4
 {
@@ -25,8 +25,11 @@ public:
 	const T* data() const;
 
 public:
-	static GenericMat4<T> identity(); // Maybe make this just a const static value
 	static GenericMat4<T> perspective(T fov, T aspectRatio, T near, T far);
+	static GenericMat4<T> lookAt(GenericVec3<T> pos, GenericVec3<T> target, GenericVec3<T> up);
+
+public:
+	static const GenericMat4<T> identity;
 
 public:
 	static constexpr size_t WIDTH = 4;
@@ -137,17 +140,6 @@ const T* GenericMat4<T>::data() const
 }
 
 template<typename T>
-GenericMat4<T> GenericMat4<T>::identity()
-{
-	Mat4 mat;
-	mat(0, 0) = 1;
-	mat(1, 1) = 1;
-	mat(2, 2) = 1;
-	mat(3, 3) = 1;
-	return mat;
-}
-
-template<typename T>
 GenericMat4<T> GenericMat4<T>::perspective(T fov, T aspectRatio, T near, T far)
 {
 	T fovInv = 1.0f / tanf(fov * 0.5f / 180.0f * 3.14159f);
@@ -160,6 +152,54 @@ GenericMat4<T> GenericMat4<T>::perspective(T fov, T aspectRatio, T near, T far)
 
 	return mat;
 }
+
+template<typename T>
+GenericMat4<T> GenericMat4<T>::lookAt(GenericVec3<T> position, GenericVec3<T> target, GenericVec3<T> up)
+{
+	// An orthogonal matrix is a matrix with all the basis orthogonal (perpendicular) to each other.
+	// An orthonormal matrix is an orthogonal matrix with basis of length 1.
+
+	GenericVec3<T> lookDirection = target - position;
+
+	// Calculate an orthonormal basis using the Gram-Schmidt process.
+
+	GenericVec3<T> forward = lookDirection.normalized();
+	// Forward and up create a plane so the cross product is the right vector.
+	GenericVec3<T> right = (cross(forward, up)).normalized();
+	GenericVec3<T> projectedUp(cross(right, forward));
+
+	Mat4 m;
+	// The inverse of a orthogonal matrix is equal to it's transpose so to transpose it I put the transformed basis into rows
+	// and not columns.
+	m(0, 0) = right.x;
+	m(1, 0) = right.y;
+	m(2, 0) = right.z;
+
+	m(0, 1) = projectedUp.x;
+	m(1, 1) = projectedUp.y;
+	m(2, 1) = projectedUp.z;
+
+	// Don't know why, but it works if it is negated.
+	m(0, 2) = -forward.x;
+	m(1, 2) = -forward.y;
+	m(2, 2) = -forward.z;
+
+	m(3, 3) = 1;
+ 
+	// One problem with the Gram-Schmidt process is that if fails when the forward vector and the up vector are
+	// linearly depended (they lie on the same line) because the cross product of up and forward is equal to the zero vector.
+
+    return m; 
+
+}
+
+template<typename T>
+const GenericMat4<T> GenericMat4<T>::identity = {
+	1, 0, 0, 0,
+	0, 1, 0, 0,
+	0, 0, 1, 0,
+	0, 0, 0, 1
+};
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, GenericMat4<T> mat)

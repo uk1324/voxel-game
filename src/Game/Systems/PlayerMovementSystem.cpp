@@ -1,4 +1,5 @@
 #include <Game/Systems/PlayerMovementSystem.hpp>
+#include <Game/Systems/PlayerMovementComponent.hpp>
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>
 #include <Math/Angles.hpp>
@@ -7,28 +8,72 @@
 
 void PlayerMovementSystem::update(Scene& scene, Entity& player)
 {
-	if (scene.input.isButtonHeld("forward"))
+	Vec3& playerPosition = player.getComponent<Position>().value;
+	Quaternion& playerRotation = player.getComponent<Rotation>().value;
+	PlayerMovementComponent& playerMovement = player.getComponent<PlayerMovementComponent>();
+
+	Vec2 offset = scene.input.lastMousePos() - scene.input.mousePos();
+
+	playerMovement.rotationX += -offset.x * rotationSpeed * scene.time.deltaTime();
+	playerMovement.rotationY +=  offset.y * rotationSpeed * scene.time.deltaTime();
+
+	if (playerMovement.rotationX > degToRad(360.0f))
 	{
-		player.getComponent<Position>().value.z += 1.0f * scene.time.deltaTime();
+		playerMovement.rotationX -= degToRad(360.0f);
+	}
+	else if (playerMovement.rotationX < degToRad(-360.0f))
+	{
+		playerMovement.rotationX += degToRad(360.0f);
 	}
 
-	if (scene.input.isButtonHeld("back"))
+	// Limit rotation up and down.
+	// Using 89.99 so the Gram-Schmidt process doesn't fail (read Mat4::lookAt). 
+	if (playerMovement.rotationY > degToRad(89.99f))
 	{
-		player.getComponent<Position>().value.z -= 1.0f * scene.time.deltaTime();
+		playerMovement.rotationY = degToRad(89.99f);
 	}
+	else if (playerMovement.rotationY < -degToRad(89.99f))
+	{
+		playerMovement.rotationY = -degToRad(89.99f);
+	}
+
+	Quaternion rotationX(playerMovement.rotationX, Vec3::up);
+	Quaternion rotationY(playerMovement.rotationY, Vec3::right);
+	playerRotation = rotationX * rotationY;
+
+	Vec3 movementDirection;
 
 	if (scene.input.isButtonHeld("left"))
 	{
-		Quaternion rotation = (Quaternion(degToRad(90.0f) * scene.time.deltaTime(), Vec3(0, 1, 0))).normalized();
-		player.getComponent<Rotation>().value *= rotation;
+		movementDirection += Vec3::left;
 	}
 
 	if (scene.input.isButtonHeld("right"))
 	{
-		Quaternion rotation = (Quaternion(degToRad(-90.0f) * scene.time.deltaTime(), Vec3(0, 1, 0))).normalized();
-		player.getComponent<Rotation>().value *= rotation;
+		movementDirection += Vec3::right;
 	}
 
-	std::cout << player.getComponent<Rotation>().value << '\n';
+	if (scene.input.isButtonHeld("forward"))
+	{
+		movementDirection += Vec3::forward;
+	}
+
+	if (scene.input.isButtonHeld("back"))
+	{
+		movementDirection += Vec3::back;
+	}
+
+	if (scene.input.isButtonHeld("jump"))
+	{
+		movementDirection += Vec3::up;
+	}
+
+	if (scene.input.isButtonHeld("crouch"))
+	{
+		movementDirection += Vec3::down;
+	}
+
+	movementDirection.normalize();
+	playerPosition += (rotationX * movementDirection) * walkSpeed * scene.time.deltaTime();
 
 }

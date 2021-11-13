@@ -9,11 +9,14 @@ Engine::Engine(int updatesPerSecond, int windowWidth, int windowHeight, std::str
 	, m_updatesPerSecond(updatesPerSecond)
 {
 	initGlfw();
-	// Have to create a window before initializing OpenGL.
 
+	// Have to create a window before initializing OpenGL.
 	m_window = Window(windowWidth, windowHeight, windowTitle);
 
 	initOpenGl();
+
+	// TODO: Move this somewhere.
+	glfwSetInputMode(m_window.handle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 Engine::~Engine()

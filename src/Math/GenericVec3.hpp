@@ -9,7 +9,10 @@ public:
 	GenericVec3();
 	GenericVec3(T x, T y, T z);
 
-	float length();
+	float length() const;
+
+	GenericVec3<T> normalized() const;
+	void normalize();
 
 	bool operator== (const GenericVec3& rhs) const;
 	bool operator!= (const GenericVec3& rhs) const;
@@ -21,9 +24,18 @@ public:
 	GenericVec3& operator*=(T rhs);
 	GenericVec3 operator/(T rhs) const;
 	GenericVec3& operator/=(T rhs);
+	GenericVec3 operator-() const;
 
 	T* data();
 	const T* data() const;
+
+public:
+	static const GenericVec3<T> up;
+	static const GenericVec3<T> down;
+	static const GenericVec3<T> left;
+	static const GenericVec3<T> right;
+	static const GenericVec3<T> forward;
+	static const GenericVec3<T> back;
 
 public:
 	T x;
@@ -38,7 +50,6 @@ template<typename T>
 T dot(const GenericVec3<T>& lhs, const GenericVec3<T>& rhs);
 template<typename T>
 GenericVec3<T> cross( const GenericVec3<T>& lhs, const GenericVec3<T>& rhs);
-
 
 template<typename T>
 GenericVec3<T>::GenericVec3()
@@ -55,9 +66,24 @@ GenericVec3<T>::GenericVec3(T x, T y, T z)
 {}
 
 template<typename T>
-float GenericVec3<T>::length()
+float GenericVec3<T>::length() const
 {
 	return sqrt((x * x) + (y * y) + (z * z));
+}
+
+template<typename T>
+GenericVec3<T> GenericVec3<T>::normalized() const
+{
+	T len = length();
+	if (len == 0)
+		return *this;
+	return *this / length();
+}
+
+template<typename T>
+void GenericVec3<T>::normalize()
+{
+	*this = normalized();
 }
 
 template<typename T>
@@ -133,6 +159,12 @@ GenericVec3<T>& GenericVec3<T>::operator/= (T rhs)
 }
 
 template<typename T>
+GenericVec3<T> GenericVec3<T>::operator-() const
+{
+	return GenericVec3<T>(-x, -y, -z);
+}
+
+template<typename T>
 T* GenericVec3<T>::data()
 {
 	return &x;
@@ -143,6 +175,25 @@ const T* GenericVec3<T>::data() const
 {
 	return &x;
 }
+
+// Left handed coorinate system
+template <typename T>
+const GenericVec3<T> GenericVec3<T>::up(0, 1, 0);
+
+template <typename T>
+const GenericVec3<T> GenericVec3<T>::down(0, -1, 0);
+
+template <typename T>
+const GenericVec3<T> GenericVec3<T>::left(-1, 0, 0);
+
+template <typename T>
+const GenericVec3<T> GenericVec3<T>::right(1, 0, 0);
+
+template <typename T>
+const GenericVec3<T> GenericVec3<T>::forward(0, 0, 1);
+
+template <typename T>
+const GenericVec3<T> GenericVec3<T>::back(0, 0, -1);
 
 template <typename T>
 std::ostream& operator<< (std::ostream& os, const GenericVec3<T>& vec)
