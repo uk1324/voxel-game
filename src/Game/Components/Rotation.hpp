@@ -6,8 +6,8 @@
 class Rotation : public Component
 {
 public:
-	Rotation(const Quaternion& val);
+	Rotation(const Quat& val);
 
 public:
-	Quaternion value;
+	Quat value;
 };

@@ -153,7 +153,7 @@ template<typename T>
 GenericQuaternion<T> GenericQuaternion<T>::operator* (const GenericQuaternion& rhs) const
 {
 	// TODO: derive this
-	return Quaternion(y * rhs.z - z * rhs.y + x * rhs.w + w * rhs.x,
+	return Quat(y * rhs.z - z * rhs.y + x * rhs.w + w * rhs.x,
 		              z * rhs.x - x * rhs.z + y * rhs.w + w * rhs.y,
 		              x * rhs.y - y * rhs.x + z * rhs.w + w * rhs.z,
 		              w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z);

@@ -75,7 +75,7 @@ GameScene::GameScene(Engine& engine)
 
     player = &entityManager.addEntity();
     entityManager.entityAddComponent<Position>(*player, Vec3(0, 0, -2));
-    entityManager.entityAddComponent<Rotation>(*player, Quaternion::identity);
+    entityManager.entityAddComponent<Rotation>(*player, Quat::identity);
     entityManager.entityAddComponent<PlayerMovementComponent>(*player);
 
     glGenVertexArrays(1, &VAO);

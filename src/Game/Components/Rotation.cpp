@@ -1,5 +1,5 @@
 #include "Rotation.hpp"
 
-Rotation::Rotation(const Quaternion& val)
+Rotation::Rotation(const Quat& val)
 	: value(val)
 {}

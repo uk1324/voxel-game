@@ -9,7 +9,7 @@
 void PlayerMovementSystem::update(Scene& scene, Entity& player)
 {
 	Vec3& playerPosition = player.getComponent<Position>().value;
-	Quaternion& playerRotation = player.getComponent<Rotation>().value;
+	Quat& playerRotation = player.getComponent<Rotation>().value;
 	PlayerMovementComponent& playerMovement = player.getComponent<PlayerMovementComponent>();
 
 	Vec2 offset = scene.input.lastMousePos() - scene.input.mousePos();
@@ -37,8 +37,8 @@ void PlayerMovementSystem::update(Scene& scene, Entity& player)
 		playerMovement.rotationY = -degToRad(89.99f);
 	}
 
-	Quaternion rotationX(playerMovement.rotationX, Vec3::up);
-	Quaternion rotationY(playerMovement.rotationY, Vec3::right);
+	Quat rotationX(playerMovement.rotationX, Vec3::up);
+	Quat rotationY(playerMovement.rotationY, Vec3::right);
 	playerRotation = rotationX * rotationY;
 
 	Vec3 movementDirection;
