@@ -5,6 +5,10 @@
 
 // TODO: Check if direction are programmed correctly by using a 3D model of axis.
 
+// TODO: Add collider classes
+
+// TODO: Maybe create reusable classes for non copyable resources
+
 #include <Math/Quaternion.hpp>
 #include <Math/Angles.hpp>
 

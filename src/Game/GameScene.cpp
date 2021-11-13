@@ -78,52 +78,73 @@ GameScene::GameScene(Engine& engine)
     entityManager.entityAddComponent<Rotation>(*player, Quat::identity);
     entityManager.entityAddComponent<PlayerMovementComponent>(*player);
 
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
+    Mesh mesh;
+    mesh.vertices = std::vector<Vec3>({
+        Vec3(-0.5f, -0.5f, -0.5f),
+        Vec3(0.5f, -0.5f, -0.5f),
+        Vec3(0.5f, 0.5f, -0.5f)
+    });
 
-    glBindVertexArray(VAO);
+    model = Model(mesh);
+    VAO = model.vao;
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    //glGenVertexArrays(1, &VAO);
+    //glGenBuffers(1, &VBO);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+    //glBindVertexArray(VAO);
 
-    stbi_set_flip_vertically_on_load(true);
+    //glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    // set the texture wrapping/filtering options (on the currently bound texture object)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // load and generate the texture
-    int width, height, nrChannels;
-    unsigned char* data = stbi_load("../../../container.jpg", &width, &height, &nrChannels, 0);
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        //std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
+    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    //glEnableVertexAttribArray(0);
 
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glBindVertexArray(VAO);
+    //glGenVertexArrays(1, &VAO);
+    //glGenBuffers(1, &VBO);
+
+    //glBindVertexArray(VAO);
+
+    //glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    //glEnableVertexAttribArray(0);
+
+    //glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    //glEnableVertexAttribArray(1);
+
+    //stbi_set_flip_vertically_on_load(true);
+
+    //unsigned int texture;
+    //glGenTextures(1, &texture);
+    //glBindTexture(GL_TEXTURE_2D, texture);
+    //// set the texture wrapping/filtering options (on the currently bound texture object)
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //// load and generate the texture
+    //int width, height, nrChannels;
+    //unsigned char* data = stbi_load("../../../container.jpg", &width, &height, &nrChannels, 0);
+    //if (data)
+    //{
+    //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    //    glGenerateMipmap(GL_TEXTURE_2D);
+    //}
+    //else
+    //{
+    //    //std::cout << "Failed to load texture" << std::endl;
+    //}
+    //stbi_image_free(data);
+
+    //glBindTexture(GL_TEXTURE_2D, texture);
+    //glBindVertexArray(VAO);
     //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
-#include <Math/Angles.hpp>
 #include <iostream>
 
 void GameScene::update()
@@ -139,7 +160,6 @@ void GameScene::update()
     playerMovementSystem.update(*this, *player);
 
     Vec3 translation = player->getComponent<Position>().value;
-    //std::cout << translation << '\n';
     translation.y = -translation.y;
     Mat4 model = translate(Mat4::identity, translation);
     shader.setMat4("model", model);
@@ -147,13 +167,13 @@ void GameScene::update()
     Vec3 up(0, 1, 0);
     Vec3 target(0, 0, -1);
     Vec3 lookDir = (player->getComponent<Rotation>().value * target).normalized();
-    //std::cout << lookDir << '\n';
     target = player->getComponent<Position>().value - lookDir;
+    std::cout << player->getComponent<Position>().value << '\n';
 
     Mat4 rotation = Mat4::lookAt(player->getComponent<Position>().value, target, up);
     shader.setMat4("rotation", rotation);
 
-    Mat4 projection = Mat4::perspective(90.0f, 800.0 / 600.0, 0.1f, 1000.0f);
+    Mat4 projection = Mat4::perspective(90.0f, 800.0f / 600.0f, 0.1f, 1000.0f);
     shader.setMat4("projection", projection);
 
     shader.use();

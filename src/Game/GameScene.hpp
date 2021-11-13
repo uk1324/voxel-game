@@ -3,6 +3,8 @@
 #include <Game/Systems/PlayerMovementSystem.hpp>
 #include <Engine/Scene.hpp>
 #include <Engine/Graphics/ShaderProgram.hpp>
+#include <Engine/Graphics/Model.hpp>
+
 
 class GameScene : public Scene
 {
@@ -11,6 +13,7 @@ public:
 
 	ShaderProgram shader;
 	unsigned int VBO, VAO;
+	Model model;
 
 	Entity* player;
 

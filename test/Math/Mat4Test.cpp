@@ -6,7 +6,7 @@
 
 TEST(Mat4Test, Scale)
 {
-	Mat4 m = Mat4::identity();
+	Mat4 m = Mat4::identity;
 	Vec3 v(2, 3, 4);
 	m = scale(m, v);
 	EXPECT_EQ(m(0, 0), v.x);

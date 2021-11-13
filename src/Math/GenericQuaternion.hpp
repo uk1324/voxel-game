@@ -109,28 +109,12 @@ GenericQuaternion<T> GenericQuaternion<T>::conjugate() const
 template<typename T>
 GenericMat4<T> GenericQuaternion<T>::rotationMatrix()
 {
-	GenericMat4<T> m;
-
-	m(0, 0) = 2 * (x * x + y * y) - 1;
-	m(0, 1) = 2 * (y * z - x * w);
-	m(0, 2) = 2 * (y * w + x * z);
-	m(1, 0) = 2 * (y * z + x * w);
-	m(1, 1) = 2 * (x * x + z * z) - 1;
-	m(1, 2) = 2 * (z * w - x * y);
-	m(2, 0) = 2 * (y * w - x * z);
-	m(2, 1) = 2 * (z * w + x * y);
-	m(2, 2) = 2 * (x * x + w * w) - 1;
-
 	return GenericMat4<T>({
 		1 - 2 * y * y - 2 * z * z, 2 * x * y - 2 * z * w, 2 * x * z + 2 * y * w, 0,
 		2 * x * y + 2 * z * w, 1 - 2 * x * x - 2 * z * z, 2 * y * z - 2 * x * w, 0,
 		2 * x * z - 2 * y * w, 2 * y * z + 2 * x * w, 1 - 2 * x * x - 2 * y * y, 0,
 		0, 0, 0, 1
 	});
-
-	m(3, 3) = 1;
-
-	return m;
 }
 
 template<typename T>
