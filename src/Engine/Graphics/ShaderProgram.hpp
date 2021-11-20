@@ -5,6 +5,8 @@
 #include <Math/Vec3.hpp>
 #include <Math/Mat4.hpp>
 
+// TODO: Find a good way to cache uniforms maybe inherit from ShaderProgram and store the uniforms location in the clas
+
 class ShaderProgram
 {
 public:

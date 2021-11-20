@@ -20,11 +20,13 @@ public:
 
 	GenericVec3<T> operator* (const GenericVec3<T>& vec) const;
 	GenericMat4<T> operator* (T scalar) const;
+	GenericMat4<T> operator* (const GenericMat4<T> mat) const;
 
 	T* data();
 	const T* data() const;
 
 public:
+	static GenericMat4<T> translation(const Vec3& translation);
 	static GenericMat4<T> perspective(T fov, T aspectRatio, T near, T far);
 	static GenericMat4<T> lookAt(GenericVec3<T> pos, GenericVec3<T> target, GenericVec3<T> up);
 
@@ -128,6 +130,21 @@ GenericMat4<T> GenericMat4<T>::operator*(T scalar) const
 }
 
 template<typename T>
+GenericMat4<T> GenericMat4<T>::operator* (const GenericMat4<T> mat) const
+{
+	GenericMat4<T> m;
+	for (size_t c = 0; c < WIDTH; c++) {
+		for (size_t r = 0; r < HEIGHT; r++) {
+			m(r, c) = get(r, 0) * mat(0, c)
+					+ get(r, 1) * mat(1, c)
+					+ get(r, 2) * mat(2, c)
+					+ get(r, 3) * mat(3, c);
+		}
+	}
+	return m;
+}
+
+template<typename T>
 T* GenericMat4<T>::data()
 {
 	return m_data;
@@ -140,13 +157,30 @@ const T* GenericMat4<T>::data() const
 }
 
 template<typename T>
+GenericMat4<T> GenericMat4<T>::translation(const Vec3& translation)
+{
+	Mat4 m = m.identity;
+	m(3, 0) = translation.x;
+	m(3, 1) = translation.y;
+	m(3, 2) = translation.z;
+	return m;
+}
+
+template<typename T>
 GenericMat4<T> GenericMat4<T>::perspective(T fov, T aspectRatio, T near, T far)
 {
+	// near and far represent the z position of the clip plane
+
+	// The frustrum is defined by the aspect ratio of the near plane and the fov
+
+	// Maps the points inside the frustrum to the cube from (-1, -1, -1) to (1, 1, 1), because
+	// OpenGL clips all of the triangles outside of the cube.
 	T fovInv = 1.0f / tanf(fov * 0.5f / 180.0f * 3.14159f);
 	Mat4 mat;
 	mat(0, 0) = fovInv;
 	mat(1, 1) = aspectRatio * fovInv;
 	mat(2, 2) = far / (far - near);
+	// 
 	mat(3, 2) = (-far * near) / (far - near);
 	mat(2, 3) = 1.0f;
 
@@ -185,12 +219,12 @@ GenericMat4<T> GenericMat4<T>::lookAt(GenericVec3<T> position, GenericVec3<T> ta
 	m(2, 2) = -forward.z;
 
 	m(3, 3) = 1;
- 
+
 	// One problem with the Gram-Schmidt process is that if fails when the forward vector and the up vector are
 	// linearly depended (they lie on the same line) because the cross product of up and forward is equal to the zero vector.
 
-    return m; 
-
+	position.y = -position.y;
+	return GenericMat4<T>::translation(position) * m;
 }
 
 template<typename T>

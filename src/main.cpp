@@ -9,6 +9,8 @@
 
 // TODO: Maybe create reusable classes for non copyable resources
 
+// Making Position use a Vec4 might allow for simd and won't require any extra space
+
 #include <Math/Quaternion.hpp>
 #include <Math/Angles.hpp>
 

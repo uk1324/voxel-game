@@ -161,17 +161,18 @@ void GameScene::update()
 
     Vec3 translation = player->getComponent<Position>().value;
     translation.y = -translation.y;
-    Mat4 model = translate(Mat4::identity, translation);
-    shader.setMat4("model", model);
+    Mat4 model = translate(Mat4::identity,  translation);
+    //shader.setMat4("model", model);
+    //Mat4 model = Mat4::identity;
+    shader.setMat4("model", Mat4::identity);
 
     Vec3 up(0, 1, 0);
     Vec3 target(0, 0, -1);
     Vec3 lookDir = (player->getComponent<Rotation>().value * target).normalized();
     target = player->getComponent<Position>().value - lookDir;
-    std::cout << player->getComponent<Position>().value << '\n';
 
-    Mat4 rotation = Mat4::lookAt(player->getComponent<Position>().value, target, up);
-    shader.setMat4("rotation", rotation);
+    Mat4 camera = Mat4::lookAt(player->getComponent<Position>().value, target, up);
+    shader.setMat4("camera", camera);
 
     Mat4 projection = Mat4::perspective(90.0f, 800.0f / 600.0f, 0.1f, 1000.0f);
     shader.setMat4("projection", projection);

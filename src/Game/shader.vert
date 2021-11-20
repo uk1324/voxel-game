@@ -19,11 +19,11 @@ layout (location = 0) in vec3 vertex;
 
 uniform mat4 model;
 uniform mat4 projection;
-uniform mat4 rotation;
+uniform mat4 camera;
 
 out vec2 textureCoord;
 
 void main()
 {
-	gl_Position = projection * rotation * model * vec4(vertex, 1.0);
+	gl_Position = projection * camera * model * vec4(vertex, 1.0);
 }
