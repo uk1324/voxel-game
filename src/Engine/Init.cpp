@@ -18,4 +18,5 @@ void initOpenGl()
 	{
 		LOG_FATAL("failed to initialize OpenGL");
 	}
+	//glEnable(GL_DEBUG_OUTPUT);
 }

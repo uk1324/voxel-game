@@ -13,5 +13,5 @@ public:
 
 public:
 	float rotationSpeed = 0.2f;
-	float walkSpeed = 1.0f;
+	float walkSpeed = 4.0f;
 };

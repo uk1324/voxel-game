@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Game/Systems/PlayerMovementSystem.hpp>
+#include <Game/Systems/CameraSystem.hpp>
+#include <Game/Blocks/Chunk.hpp>
 #include <Engine/Scene.hpp>
 #include <Engine/Graphics/ShaderProgram.hpp>
 #include <Engine/Graphics/Model.hpp>
@@ -24,4 +26,6 @@ private:
 
 private:
 	PlayerMovementSystem playerMovementSystem;
+	CameraSystem cameraSystem;
+	Chunk chunk;
 };

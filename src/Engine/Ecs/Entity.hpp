@@ -18,6 +18,8 @@ public:
 public:
 	template <typename T>
 	T& getComponent();
+	template <typename T>
+	const T& getComponent() const;
 
 private:
 	Entity(size_t id);
@@ -41,6 +43,12 @@ size_t getComponentId()
 
 template<typename T>
 T& Entity::getComponent()
+{
+	return *reinterpret_cast<T*>(m_components[getComponentId<T>()]);
+}
+
+template<typename T>
+const T& Entity::getComponent() const
 {
 	return *reinterpret_cast<T*>(m_components[getComponentId<T>()]);
 }

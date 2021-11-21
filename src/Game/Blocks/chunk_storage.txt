@@ -1,0 +1,13 @@
+Chunk are going to be allocted in a pool.
+
+The simplest method for indexing chunks would be throught a map<Vec3I, Chunk*>.
+A faster way would be to store them in a 3D array so it would just require indexing the positions would be calculated pos % renderArea.
+The problem is that this wouldn't work for negative coordinates so I would need to make a special case for them. This would also make bounds checking
+a bit harder.
+
+If I use the map, when meshing a chunk I could cache the 4 chunk around it for faster access. I also would need to find a hash for Vec3I.
+Could just do (z * (WIDTH * HEIGHT) + y * WIDTH + x) % modulo. This should make colision pretty rare.
+
+The meshes should be stored in a separate structure like ChunkMesh. Don't know if the mesh should allocate the maximum possible amount of vertices.
+Don't yet know what would be a good way to manage them well I guess just a map could work or maybe make a structure struct { Chunk*; ChunkMesh* }.
+Don't know if this would make sense I haven't thought about it much.
