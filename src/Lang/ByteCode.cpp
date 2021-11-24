@@ -9,3 +9,8 @@ void Lang::ByteCode::emitByte(uint8_t byte)
 {
 	data.push_back(byte);
 }
+
+void Lang::ByteCode::emitWord(uint16_t word)
+{
+
+}

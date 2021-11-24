@@ -14,10 +14,33 @@
 #include <Math/Quaternion.hpp>
 #include <Math/Angles.hpp>
 
+#include <Lang/Debug/Disassembler.hpp>
+
 #include <iostream>
+
+#include <iomanip>
 
 int main()
 {
+	Lang::ByteCode code;
+	code.emitOp(Lang::Op::Add);
+	code.emitOp(Lang::Op::Add);
+	code.emitOp(Lang::Op::Add);
+	code.emitOp(Lang::Op::Return);
+	code.emitOp(Lang::Op::Return);
+	code.emitOp(Lang::Op::Return);
+	code.emitOp(Lang::Op::Return);
+	code.emitOp(Lang::Op::Return);
+	code.emitOp(Lang::Op::Return);
+	code.emitOp(Lang::Op::Add);
+	code.emitOp(Lang::Op::Add);
+	code.emitOp(Lang::Op::Add);
+	code.emitOp(Lang::Op::Add);
+	code.emitOp(Lang::Op::Add);
+	code.emitOp(Lang::Op::Add);
+	Lang::disassembleByteCode(code);
+
+	return 0;
 	Engine engine(60, 800, 600, "game");
 
 	engine.addScene("game", std::unique_ptr<Scene>(new GameScene(engine)));
