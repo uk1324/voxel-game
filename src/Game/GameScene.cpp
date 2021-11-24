@@ -5,80 +5,143 @@
 #include <Math/Angles.hpp>
 
 #include <Engine/Graphics/ShaderProgram.hpp>
+#include <Engine/Graphics/VertexArray.hpp>
 #include <Game/Components/Position.hpp>
 #include <Game/Systems/PlayerMovementComponent.hpp>
 #include <Game/Components/Rotation.hpp>
+#include <Engine/Graphics/Drawing.hpp>
 
 #include <iostream>
 
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-// Should player be a pointer or a reference?
-
-static void addCubeTop(std::vector<Vec3>& mesh, size_t x, size_t y, size_t z)
+static void addTextureOne(std::vector<Vec2>& tex)
 {
-    mesh.emplace_back(x, y + 1, z);
-    mesh.emplace_back(x + 1, y + 1, z);
-    mesh.emplace_back(x, y + 1, z + 1);
-
-    mesh.emplace_back(x, y + 1, z + 1);
-    mesh.emplace_back(x + 1, y + 1, z);
-    mesh.emplace_back(x + 1, y + 1, z + 1);
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(0.0f, 0.0f);
 }
 
-static void addCubeBottom(std::vector<Vec3>& mesh, size_t x, size_t y, size_t z)
+static void addTextureTwo(std::vector<Vec2>& tex)
+{
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(0.0f, 0.0f);
+}
+
+static void addCubeTop(std::vector<Vec3>& mesh, std::vector<Vec2>& tex, size_t x, size_t y, size_t z)
+{
+    mesh.emplace_back(x, y + 1, z);
+    mesh.emplace_back(x + 1, y + 1, z + 1);
+    mesh.emplace_back(x, y + 1, z + 1);
+
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(1.0f, 1.0f);
+    tex.emplace_back(0.0f, 1.0f);
+
+    mesh.emplace_back(x, y + 1, z);
+    mesh.emplace_back(x + 1, y + 1, z);
+    mesh.emplace_back(x + 1, y + 1, z + 1);
+
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(1.0f, 0.0f);
+    tex.emplace_back(1.0f, 1.0f);
+}
+
+static void addCubeBottom(std::vector<Vec3>& mesh, std::vector<Vec2>& tex, size_t x, size_t y, size_t z)
 {
     mesh.emplace_back(x, y, z);
     mesh.emplace_back(x, y, z + 1);
-    mesh.emplace_back(x + 1, y, z);
+    mesh.emplace_back(x + 1, y, z + 1);
 
-    mesh.emplace_back(x, y, z + 1);
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(0.0f, 1.0f);
+    tex.emplace_back(1.0f, 1.0f);
+
+    mesh.emplace_back(x, y, z);
     mesh.emplace_back(x + 1, y, z + 1);
     mesh.emplace_back(x + 1, y, z);
+
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(1.0f, 1.0f);
+    tex.emplace_back(1.0f, 0.0f);
 }
 
-static void addCubeLeft(std::vector<Vec3>& mesh, size_t x, size_t y, size_t z)
+static void addCubeLeft(std::vector<Vec3>& mesh, std::vector<Vec2>& tex, size_t x, size_t y, size_t z)
 {
     mesh.emplace_back(x, y, z);
     mesh.emplace_back(x, y + 1, z);
     mesh.emplace_back(x, y, z + 1);
+
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(0.0f, 1.0f);
+    tex.emplace_back(1.0f, 0.0f);
 
     mesh.emplace_back(x, y, z + 1);
     mesh.emplace_back(x, y + 1, z);
     mesh.emplace_back(x, y + 1, z + 1);
+
+    tex.emplace_back(1.0f, 0.0f);
+    tex.emplace_back(0.0f, 1.0f);
+    tex.emplace_back(1.0f, 1.0f);
 }
 
-static void addCubeRight(std::vector<Vec3>& mesh, size_t x, size_t y, size_t z)
+static void addCubeRight(std::vector<Vec3>& mesh, std::vector<Vec2>& tex, size_t x, size_t y, size_t z)
 {
     mesh.emplace_back(x + 1, y, z);
     mesh.emplace_back(x + 1, y, z + 1);
     mesh.emplace_back(x + 1, y + 1, z);
 
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(1.0f, 0.0f);
+    tex.emplace_back(0.0f, 1.0f);
+
     mesh.emplace_back(x + 1, y, z + 1);
     mesh.emplace_back(x + 1, y + 1, z + 1);
     mesh.emplace_back(x + 1, y + 1, z);
+
+    tex.emplace_back(1.0f, 0.0f);
+    tex.emplace_back(1.0f, 1.0f);
+    tex.emplace_back(0.0f, 1.0f);
 }
 
-static void addCubeFront(std::vector<Vec3>& mesh, size_t x, size_t y, size_t z)
+static void addCubeFront(std::vector<Vec3>& mesh, std::vector<Vec2>& tex, size_t x, size_t y, size_t z)
 {
     mesh.emplace_back(x, y, z);
     mesh.emplace_back(x + 1, y + 1, z);
     mesh.emplace_back(x, y + 1, z);
 
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(1.0f, 1.0f);
+    tex.emplace_back(0.0f, 1.0f);
+
     mesh.emplace_back(x, y, z);
     mesh.emplace_back(x + 1, y, z);
     mesh.emplace_back(x + 1, y + 1, z);
+
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(1.0f, 0.0f);
+    tex.emplace_back(1.0f, 1.0f);
 }
 
-static void addCubeBack(std::vector<Vec3>& mesh, size_t x, size_t y, size_t z)
+static void addCubeBack(std::vector<Vec3>& mesh, std::vector<Vec2>& tex, size_t x, size_t y, size_t z)
 {
     mesh.emplace_back(x, y, z + 1);
     mesh.emplace_back(x, y + 1, z + 1);
     mesh.emplace_back(x + 1, y + 1, z + 1);
 
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(0.0f, 1.0f);
+    tex.emplace_back(1.0f, 1.0f);
+
     mesh.emplace_back(x, y, z + 1);
     mesh.emplace_back(x + 1, y + 1, z + 1);
     mesh.emplace_back(x + 1, y, z + 1);
+
+    tex.emplace_back(0.0f, 0.0f);
+    tex.emplace_back(1.0f, 1.0f);
+    tex.emplace_back(1.0f, 0.0f);
 }
 
 static bool isInBounds(size_t x, size_t y, size_t z)
@@ -88,7 +151,7 @@ static bool isInBounds(size_t x, size_t y, size_t z)
         && ((z >= 0) && (z < Chunk::DEPTH));
 }
 
-static std::vector<Vec3> meshFromChunk(Chunk& chunk)
+static std::vector<Vec3> meshFromChunk(Chunk& chunk, std::vector<Vec2>& tex)
 {
     std::vector<Vec3> mesh;
 
@@ -102,27 +165,27 @@ static std::vector<Vec3> meshFromChunk(Chunk& chunk)
                 {
                     if (isInBounds(x, y + 1, z) == false || chunk(x, y + 1, z) == BlockType::Air)
                     {
-                        addCubeTop(mesh, x, y, z);
+                        addCubeTop(mesh, tex, x, y, z);
                     }
                     if (isInBounds(x, y - 1, z) == false || chunk(x, y - 1, z) == BlockType::Air)
                     {
-                        addCubeBottom(mesh, x, y, z);
+                        addCubeBottom(mesh, tex, x, y, z);
                     }
                     if (isInBounds(x + 1, y, z) == false || chunk(x + 1, y, z) == BlockType::Air)
                     {
-                        addCubeRight(mesh, x, y, z);
+                        addCubeRight(mesh, tex, x, y, z);
                     }
                     if (isInBounds(x - 1, y, z) == false || chunk(x - 1, y, z) == BlockType::Air)
                     {
-                        addCubeLeft(mesh, x, y, z);
+                        addCubeLeft(mesh, tex, x, y, z);
                     }
                     if (isInBounds(x, y, z + 1) == false || chunk(x, y, z + 1) == BlockType::Air)
                     {
-                        addCubeBack(mesh, x, y, z);
+                        addCubeBack(mesh, tex, x, y, z);
                     }
                     if (isInBounds(x, y, z - 1) == false || chunk(x, y, z - 1) == BlockType::Air)
                     {
-                        addCubeFront(mesh, x, y, z);
+                        addCubeFront(mesh, tex, x, y, z);
                     }
                 }
             }
@@ -145,7 +208,8 @@ GameScene::GameScene(Engine& engine)
         s.link();
         return s;
     }())
-    ,cameraSystem(800, 600, 90, 0.1f, 1000.0f)
+    , texture("../../../dirt.png")
+    , cameraSystem(800, 600, 90, 0.1f, 1000.0f)
 {
     registerActions();
 
@@ -155,90 +219,43 @@ GameScene::GameScene(Engine& engine)
         {
             for (size_t z = 0; z < Chunk::DEPTH; z++)
             {
-                chunk(x, 1, z) = BlockType::Dirt;
+                chunk(x, z, z) = BlockType::Dirt;
             }
         }
     }
-    //chunk(0, 0, 0) = BlockType::Dirt;
-
-    glEnable(GL_DEPTH_TEST);
 
     player = &entityManager.addEntity();
     entityManager.entityAddComponent<Position>(*player, Vec3(0, 0, -2));
     entityManager.entityAddComponent<Rotation>(*player, Quat::identity);
     entityManager.entityAddComponent<PlayerMovementComponent>(*player);
 
-    Mesh mesh;
-    //mesh.vertices = std::vector<Vec3>({
-    //    Vec3(-0.5f, -0.5f, -0.5f),
-    //    Vec3(0.5f, -0.5f, -0.5f),
-    //    Vec3(0.5f, 0.5f, -0.5f)
-    //});
-    mesh.vertices = meshFromChunk(chunk);
-    //std::cout << mesh.vertices.size() << '\n';
-    vertexCount = mesh.vertices.size();
+    std::vector<Vec2> tex;
+    std::vector<Vec3> mesh = meshFromChunk(chunk, tex);
+    std::cout << tex.size() << ' ' << mesh.size() << '\n';
+    vertexCount = mesh.size();
+    
+    vao.bind();
+    
+    meshVbo = VertexBuffer(BufferBindTarget::ArrayBuffer, BufferUsage::StaticDraw, mesh.data(), sizeof(float) * mesh.size() * 3);
+    meshVbo.bind(BufferBindTarget::ArrayBuffer);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
-    model = Model(mesh);
-    VAO = model.vao;
+    texVbo = VertexBuffer(BufferBindTarget::ArrayBuffer, BufferUsage::StaticDraw, tex.data(), sizeof(float) * tex.size() * 2);
+    texVbo.bind(BufferBindTarget::ArrayBuffer);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(0));
+    glEnableVertexAttribArray(1);
 
+    texture.bind();
 
-    //glGenVertexArrays(1, &VAO);
-    //glGenBuffers(1, &VBO);
+    glEnable(GL_DEPTH_TEST);
 
-    //glBindVertexArray(VAO);
-
-    //glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    //glEnableVertexAttribArray(0);
-
-    //glGenVertexArrays(1, &VAO);
-    //glGenBuffers(1, &VBO);
-
-    //glBindVertexArray(VAO);
-
-    //glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    //glEnableVertexAttribArray(0);
-
-    //glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    //glEnableVertexAttribArray(1);
-
-    //stbi_set_flip_vertically_on_load(true);
-
-    //unsigned int texture;
-    //glGenTextures(1, &texture);
-    //glBindTexture(GL_TEXTURE_2D, texture);
-    //// set the texture wrapping/filtering options (on the currently bound texture object)
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //// load and generate the texture
-    //int width, height, nrChannels;
-    //unsigned char* data = stbi_load("../../../container.jpg", &width, &height, &nrChannels, 0);
-    //if (data)
-    //{
-    //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    //    glGenerateMipmap(GL_TEXTURE_2D);
-    //}
-    //else
-    //{
-    //    //std::cout << "Failed to load texture" << std::endl;
-    //}
-    //stbi_image_free(data);
-
-    //glBindTexture(GL_TEXTURE_2D, texture);
-    //glBindVertexArray(VAO);
-    //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
+
+    setClearColor(0, 0, 0, 1.0f);
 }
 
 #include <iostream>
@@ -250,20 +267,18 @@ void GameScene::update()
         engine.stop();
     }
 
-    glClearColor(0, 0, 0, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    clearBuffer(ClearModeBit::ColorBuffer | ClearModeBit::DepthBuffer);
 
     playerMovementSystem.update(*this, *player);
     cameraSystem.update(*player);
-
 
     shader.setMat4("model", Mat4::identity);
     shader.setMat4("camera", cameraSystem.view());
     shader.setMat4("projection", cameraSystem.projection());
     shader.use();
 
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+    vao.bind();
+    drawTriangles(vertexCount);
 }
 
 void GameScene::registerActions()

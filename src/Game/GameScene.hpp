@@ -6,6 +6,8 @@
 #include <Engine/Scene.hpp>
 #include <Engine/Graphics/ShaderProgram.hpp>
 #include <Engine/Graphics/Model.hpp>
+#include <Engine/Graphics/VertexArray.hpp>
+#include <Engine/Graphics/Texture.hpp>
 
 
 class GameScene : public Scene
@@ -16,6 +18,11 @@ public:
 	ShaderProgram shader;
 	unsigned int VBO, VAO;
 	Model model;
+	VertexArray vao;
+	VertexBuffer meshVbo;
+	VertexBuffer texVbo;
+
+	Texture texture;
 
 	Entity* player;
 

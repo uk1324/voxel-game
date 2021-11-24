@@ -1,15 +1,10 @@
 #version 430 core
 
-//in vec2 textureCoord;
-//
-//uniform sampler2D sprite;
-//
-//void main()
-//{
-//	gl_FragColor = texture(sprite, textureCoord);
-//}
+uniform sampler2D sprite;
+
+in vec2 texCoord;
 
 void main()
 {
-	gl_FragColor = vec4(0.0, 1.0, 0, 1);
+	gl_FragColor = texture(sprite, texCoord);
 }
