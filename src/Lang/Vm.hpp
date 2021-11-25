@@ -5,7 +5,7 @@
 class Vm
 {
 public:
-	void exe
+	//void execute(const ByteCode& code);
 
 private:
 };
