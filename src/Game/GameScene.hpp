@@ -8,6 +8,7 @@
 #include <Engine/Graphics/Model.hpp>
 #include <Engine/Graphics/VertexArray.hpp>
 #include <Engine/Graphics/Texture.hpp>
+#include <Engine/Graphics/TextureArray.hpp>
 
 
 class GameScene : public Scene
@@ -21,8 +22,11 @@ public:
 	VertexArray vao;
 	VertexBuffer meshVbo;
 	VertexBuffer texVbo;
+	VertexBuffer indexVbo;
+	VertexBuffer normalVbo;
 
-	Texture texture;
+	//Texture texture;
+	TextureArray textureArray;
 
 	Entity* player;
 

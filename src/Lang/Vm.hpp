@@ -5,7 +5,8 @@
 class Vm
 {
 public:
-	void execute()
+	//void execute()
+
 
 private:
 };

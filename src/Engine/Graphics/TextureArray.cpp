@@ -4,22 +4,47 @@
 
 #include <memory>
 
+#include <iostream>
+
 TextureArray::TextureArray(size_t width, size_t height, std::vector<std::string_view> textures)
 {
-	glGenTextures(1, &m_handle);
-	bind();
-	std::unique_ptr<uint32_t[]> data(new uint32_t[width * height]);
+	std::unique_ptr<uint32_t[]> data(new uint32_t[textures.size() * (width * height)]);
 
 	for (size_t i = 0; i < textures.size(); i++)
 	{
 		int imageWidth, imageHeight, channelCount;
 		static constexpr int RGBA_CHANNEL_COUNT = 4;
-		stbi_load(textures[i].data(), &imageWidth, &imageHeight, &channelCount, RGBA_CHANNEL_COUNT);
+		uint32_t* imageData = reinterpret_cast<uint32_t*>(
+			stbi_load(textures[i].data(), &imageWidth, &imageHeight, &channelCount, RGBA_CHANNEL_COUNT)
+		);
+
 		if ((imageWidth != width) || (imageHeight != height))
 		{
-			LOG_FATAL("array texture width doesn't match (width: %d, height: %d)", imageWidth, imageHeight);
+			LOG_FATAL("array texture width doesn't match size (width: %d, height: %d)", imageWidth, imageHeight);
 		}
+		/*uint32_t* imageOffset = data.get() + (i * (width * height));*/
+		uint32_t* imageOffset = data.get() + (i * (width * height));
+		for (size_t i = 0; i < (width * height); i++)
+		{
+			imageOffset[i] = imageData[i];
+		}
+		stbi_image_free(imageData);
 	}
+
+	static constexpr GLsizei MIPMAP_LEVEL = 0;
+	glGenTextures(1, &m_handle);
+	bind();
+	std::cout << glGetError() << '\n';
+
+	glTexImage3D(TARGET, MIPMAP_LEVEL, GL_RGBA, width, height, textures.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, data.get());
+
+	std::cout << glGetError() << '\n';
+	//glTexStorage3D(TARGET, MIPMAP_LEVEL, GL_RGBA8, width, height, textures.size());
+
+	glTexParameteri(TARGET, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(TARGET, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(TARGET, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(TARGET, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 TextureArray::~TextureArray()
