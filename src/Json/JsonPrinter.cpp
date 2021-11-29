@@ -91,11 +91,30 @@ static void prettyPrintImplementation(std::ostream& os, const Json::Value& value
 				for (auto it = value.array().cbegin(); it != value.array().cend() - 1; it++)
 				{
 					printIndentation(os, depth);
-					prettyPrintImplementation(os, *it, depth);
+
+					// This if is here because you want to print objects and arrays as properites like
+					// "abc": {
+					// ...
+					// }
+					// But in arrays like
+					// [
+					//		{
+					//		...
+					//		}
+					// ]
+					if (it->isArray() || it->isObject())
+						prettyPrintImplementation(os, *it, depth + 1);
+					else
+						prettyPrintImplementation(os, *it, depth);
 					os << ",\n";
 				}
 				printIndentation(os, depth);
-				prettyPrintImplementation(os, *(value.array().cend() - 1), depth);
+
+				if ((value.array().cend() - 1)->isArray() || (value.array().cend() - 1)->isObject())
+					prettyPrintImplementation(os, *(value.array().cend() - 1), depth + 1);
+				else
+					prettyPrintImplementation(os, *(value.array().cend() - 1), depth);
+
 				os << "\n";
 
 				printIndentation(os, depth - 1);

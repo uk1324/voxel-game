@@ -1,0 +1,23 @@
+Should I save the start and end of an expression or statement for error information?
+Could do it by saving the positions in parser functions.
+
+Don't know what to do to all the unititialized member warnings. The classes set the value on each execute so it doesn't matter.
+
+Could put all the stmts and exprs in one file.
+
+Could just store a start and end index in Token instead of std::string_view.
+Could also do the same for Expr and Stmt for easy error information.
+
+Maybe make just one AstVisitor class.
+
+Don't know if I should use std::make_unique it makes it hard to find errors because of variadic templates.
+
+Returning by value uses the move constructor.
+
+Is there even a point for the Eof token. It might be useful for error handling idk.
+
+Should I make the AstJsonifier names consistent with the class property names. idk?
+
+Should parse the numbers and store the in Expr. This would also require making a separate class for IntConstant and FloatConstant.
+
+Could make a class ErrorPrinter that would have FileInfo and the source .

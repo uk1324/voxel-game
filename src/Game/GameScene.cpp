@@ -268,7 +268,7 @@ GameScene::GameScene(Engine& engine)
         {
             for (size_t z = 0; z < Chunk::DEPTH; z++)
             {
-                chunk(x, z, z) = static_cast<BlockType>(rand() % 3);
+                chunk(x, z, z) = static_cast<BlockType>((rand() % 3) + 1);
             }
         }
     }

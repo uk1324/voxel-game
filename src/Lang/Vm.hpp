@@ -1,12 +1,17 @@
 #pragma once
 
 #include <Lang/ByteCode.hpp>
+#include <Lang/Program.hpp>
 
-class Vm
+namespace Lang
 {
-public:
-	//void execute()
+	class Vm
+	{
+	public:
+		void run(const Program& program);
 
 
-private:
-};
+	private:
+		size_t m_instructionPointer;
+	};
+}

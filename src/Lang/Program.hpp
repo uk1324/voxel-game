@@ -1,8 +1,15 @@
 #pragma once
 
 #include <Lang/ByteCode.hpp>
+#include <Lang/Value.hpp>
 
-class Program
+namespace Lang
 {
-	// stores main bytecode and constant table
-};
+	struct Program
+	{
+		ByteCode code;
+		std::vector<Value> constants;
+
+		// stores main bytecode and constant table
+	};
+}
