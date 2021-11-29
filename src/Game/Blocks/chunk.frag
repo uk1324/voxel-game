@@ -1,14 +1,17 @@
 #version 430 core
 
-layout (location = 0) in vec3 vertex;
+uniform sampler2DArray blockTextureArray;
 
-// TODO: use uniform buffer objects to share uniforms between shaders
-
-// uniform mat4 model;
-// uniform mat4 projection;
-// uniform mat4 camera;
+in vec2 texCoord;
+in flat uint texIndex;
+//in vec3 normal;
 
 void main()
 {
-	
+	vec3 dirLight = normalize(vec3(0, 1, 1));
+
+	//gl_FragColor = texture(sprite, texCoord);
+	vec4 tex = texture(blockTextureArray, vec3(texCoord, texIndex));
+	gl_FragColor = tex;
+	//gl_FragColor = tex * 0.2 + tex * clamp(dot(dirLight, normal), 0, 1);
 }

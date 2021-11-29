@@ -24,6 +24,7 @@ public:
 	VertexBuffer texVbo;
 	VertexBuffer indexVbo;
 	VertexBuffer normalVbo;
+	VertexBuffer vbo;
 
 	//Texture texture;
 	TextureArray textureArray;

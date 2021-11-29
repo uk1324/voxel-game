@@ -24,6 +24,8 @@ namespace Lang
 		std::unique_ptr<Expr> expr();
 		
 		std::unique_ptr<Expr> factor();
+		// Rename to primary
+		// expected primary expression
 		std::unique_ptr<Expr> literal();
 
 		void error(std::string_view message);

@@ -34,11 +34,9 @@ TextureArray::TextureArray(size_t width, size_t height, std::vector<std::string_
 	static constexpr GLsizei MIPMAP_LEVEL = 0;
 	glGenTextures(1, &m_handle);
 	bind();
-	std::cout << glGetError() << '\n';
 
 	glTexImage3D(TARGET, MIPMAP_LEVEL, GL_RGBA, width, height, textures.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, data.get());
 
-	std::cout << glGetError() << '\n';
 	//glTexStorage3D(TARGET, MIPMAP_LEVEL, GL_RGBA8, width, height, textures.size());
 
 	glTexParameteri(TARGET, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

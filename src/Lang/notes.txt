@@ -21,3 +21,5 @@ Should I make the AstJsonifier names consistent with the class property names. i
 Should parse the numbers and store the in Expr. This would also require making a separate class for IntConstant and FloatConstant.
 
 Could make a class ErrorPrinter that would have FileInfo and the source .
+
+There should only be one NumberExpr the types should be figured out at compile time

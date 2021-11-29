@@ -10,6 +10,7 @@
 #include <Game/Systems/PlayerMovementComponent.hpp>
 #include <Game/Components/Rotation.hpp>
 #include <Engine/Graphics/Drawing.hpp>
+#include <Math/Box.hpp>
 
 #include <iostream>
 
@@ -58,7 +59,25 @@ static void addTextureTwo(std::vector<Vec2>& tex)
     tex.emplace_back(0.0f, 0.0f);
 }
 
-static void addCubeTop(Block block, std::vector<Vec3>& mesh, std::vector<Vec2>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals, size_t x, size_t y, size_t z)
+static void addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex)
+{
+    GLuint vertex;
+
+    static constexpr int Y_OFFSET = 5;
+    static constexpr int Z_OFFSET = Y_OFFSET + 5;
+    static constexpr int TEXTURE_INDEX_OFFSET = Z_OFFSET + 5;
+    static constexpr int TEXTURE_POS_INDEX_OFFSET = TEXTURE_INDEX_OFFSET + 10;
+
+    vertex = x;
+    vertex |= (y << Y_OFFSET);
+    vertex |= (z << Z_OFFSET);
+    vertex |= ((static_cast<GLuint>(textureIndex.type) - 1) << TEXTURE_INDEX_OFFSET);
+    vertex |= (texturePosIndex << TEXTURE_POS_INDEX_OFFSET);
+
+    vertices.push_back(vertex);
+}
+
+static void addCubeTop(Block block, std::vector<Vec3>& mesh, std::vector<GLuint>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
     addIndex(index, block);
 
@@ -68,20 +87,34 @@ static void addCubeTop(Block block, std::vector<Vec3>& mesh, std::vector<Vec2>& 
     mesh.emplace_back(x + 1, y + 1, z + 1);
     mesh.emplace_back(x, y + 1, z + 1);
 
-    tex.emplace_back(0.0f, 0.0f);
-    tex.emplace_back(1.0f, 1.0f);
-    tex.emplace_back(0.0f, 1.0f);
+    //tex.emplace_back(0.0f, 0.0f);
+    //tex.emplace_back(1.0f, 1.0f);
+    //tex.emplace_back(0.0f, 1.0f);
+    tex.push_back(0);
+    tex.push_back(3);
+    tex.push_back(2);
+
+    addVertex(vertices, x, y + 1, z, block, 0);
+    addVertex(vertices, x + 1, y + 1, z + 1, block, 3);
+    addVertex(vertices, x, y + 1, z + 1, block, 2);
 
     mesh.emplace_back(x, y + 1, z);
     mesh.emplace_back(x + 1, y + 1, z);
     mesh.emplace_back(x + 1, y + 1, z + 1);
 
-    tex.emplace_back(0.0f, 0.0f);
-    tex.emplace_back(1.0f, 0.0f);
-    tex.emplace_back(1.0f, 1.0f);
+    //tex.emplace_back(0.0f, 0.0f);
+    //tex.emplace_back(1.0f, 0.0f);
+    //tex.emplace_back(1.0f, 1.0f);
+    tex.push_back(0);
+    tex.push_back(1);
+    tex.push_back(3);
+
+    addVertex(vertices, x, y + 1, z, block, 0);
+    addVertex(vertices, x + 1, y + 1, z, block, 1);
+    addVertex(vertices, x + 1, y + 1, z + 1, block, 3);
 }
 
-static void addCubeBottom(Block block, std::vector<Vec3>& mesh, std::vector<Vec2>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals, size_t x, size_t y, size_t z)
+static void addCubeBottom(Block block, std::vector<Vec3>& mesh, std::vector<GLuint>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
     addIndex(index, block);
     addNormals(normals, Bottom);
@@ -90,20 +123,34 @@ static void addCubeBottom(Block block, std::vector<Vec3>& mesh, std::vector<Vec2
     mesh.emplace_back(x, y, z + 1);
     mesh.emplace_back(x + 1, y, z + 1);
 
-    tex.emplace_back(0.0f, 0.0f);
-    tex.emplace_back(0.0f, 1.0f);
-    tex.emplace_back(1.0f, 1.0f);
+    // tex.emplace_back(0.0f, 0.0f);
+    // tex.emplace_back(0.0f, 1.0f);
+    // tex.emplace_back(1.0f, 1.0f);
+    tex.push_back(0);
+    tex.push_back(2);
+    tex.push_back(3);
+
+    addVertex(vertices, x, y, z, block, 0);
+    addVertex(vertices, x, y, z + 1, block, 2);
+    addVertex(vertices, x + 1, y, z + 1, block, 3);
 
     mesh.emplace_back(x, y, z);
     mesh.emplace_back(x + 1, y, z + 1);
     mesh.emplace_back(x + 1, y, z);
 
-    tex.emplace_back(0.0f, 0.0f);
-    tex.emplace_back(1.0f, 1.0f);
-    tex.emplace_back(1.0f, 0.0f);
+    //tex.emplace_back(0.0f, 0.0f);
+    //tex.emplace_back(1.0f, 1.0f);
+    //tex.emplace_back(1.0f, 0.0f);
+    tex.push_back(0);
+    tex.push_back(3);
+    tex.push_back(1);
+
+    addVertex(vertices, x, y, z, block, 0);
+    addVertex(vertices, x + 1, y, z + 1, block, 3);
+    addVertex(vertices, x + 1, y, z, block, 1);
 }
 
-static void addCubeLeft(Block block, std::vector<Vec3>& mesh, std::vector<Vec2>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals, size_t x, size_t y, size_t z)
+static void addCubeLeft(Block block, std::vector<Vec3>& mesh, std::vector<GLuint>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
     addIndex(index, block);
     addNormals(normals, Left);
@@ -112,20 +159,34 @@ static void addCubeLeft(Block block, std::vector<Vec3>& mesh, std::vector<Vec2>&
     mesh.emplace_back(x, y + 1, z);
     mesh.emplace_back(x, y, z + 1);
 
-    tex.emplace_back(0.0f, 0.0f);
-    tex.emplace_back(0.0f, 1.0f);
-    tex.emplace_back(1.0f, 0.0f);
+    //tex.emplace_back(0.0f, 0.0f);
+    //tex.emplace_back(0.0f, 1.0f);
+    //tex.emplace_back(1.0f, 0.0f);
+    tex.push_back(0);
+    tex.push_back(2);
+    tex.push_back(1);
+
+    addVertex(vertices, x, y, z, block, 0);
+    addVertex(vertices, x, y + 1, z, block, 2);
+    addVertex(vertices, x, y, z + 1, block, 1);
 
     mesh.emplace_back(x, y, z + 1);
     mesh.emplace_back(x, y + 1, z);
     mesh.emplace_back(x, y + 1, z + 1);
 
-    tex.emplace_back(1.0f, 0.0f);
-    tex.emplace_back(0.0f, 1.0f);
-    tex.emplace_back(1.0f, 1.0f);
+    //tex.emplace_back(1.0f, 0.0f);
+    //tex.emplace_back(0.0f, 1.0f);
+    //tex.emplace_back(1.0f, 1.0f);
+    tex.push_back(1);
+    tex.push_back(2);
+    tex.push_back(3);
+
+    addVertex(vertices, x, y, z + 1, block, 1);
+    addVertex(vertices, x, y + 1, z, block, 2);
+    addVertex(vertices, x, y + 1, z + 1, block, 3);
 }
 
-static void addCubeRight(Block block, std::vector<Vec3>& mesh, std::vector<Vec2>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals, size_t x, size_t y, size_t z)
+static void addCubeRight(Block block, std::vector<Vec3>& mesh, std::vector<GLuint>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
     addIndex(index, block);
     addNormals(normals, Right);
@@ -134,20 +195,34 @@ static void addCubeRight(Block block, std::vector<Vec3>& mesh, std::vector<Vec2>
     mesh.emplace_back(x + 1, y, z + 1);
     mesh.emplace_back(x + 1, y + 1, z);
 
-    tex.emplace_back(0.0f, 0.0f);
-    tex.emplace_back(1.0f, 0.0f);
-    tex.emplace_back(0.0f, 1.0f);
+    //tex.emplace_back(0.0f, 0.0f);
+    //tex.emplace_back(1.0f, 0.0f);
+    //tex.emplace_back(0.0f, 1.0f);
+    tex.push_back(0);
+    tex.push_back(1);
+    tex.push_back(2);
+
+    addVertex(vertices, x + 1, y, z, block, 0);
+    addVertex(vertices, x + 1, y, z + 1, block, 1);
+    addVertex(vertices, x + 1, y + 1, z, block, 2);
 
     mesh.emplace_back(x + 1, y, z + 1);
     mesh.emplace_back(x + 1, y + 1, z + 1);
     mesh.emplace_back(x + 1, y + 1, z);
 
-    tex.emplace_back(1.0f, 0.0f);
-    tex.emplace_back(1.0f, 1.0f);
-    tex.emplace_back(0.0f, 1.0f);
+    //tex.emplace_back(1.0f, 0.0f);
+    //tex.emplace_back(1.0f, 1.0f);
+    //tex.emplace_back(0.0f, 1.0f);
+    tex.push_back(1);
+    tex.push_back(3);
+    tex.push_back(2);
+
+    addVertex(vertices, x + 1, y, z + 1, block, 1);
+    addVertex(vertices, x + 1, y + 1, z + 1, block, 3);
+    addVertex(vertices, x + 1, y + 1, z, block, 2);
 }
 
-static void addCubeFront(Block block, std::vector<Vec3>& mesh, std::vector<Vec2>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals, size_t x, size_t y, size_t z)
+static void addCubeFront(Block block, std::vector<Vec3>& mesh, std::vector<GLuint>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
     addIndex(index, block);
     addNormals(normals, Front);
@@ -156,20 +231,34 @@ static void addCubeFront(Block block, std::vector<Vec3>& mesh, std::vector<Vec2>
     mesh.emplace_back(x + 1, y + 1, z);
     mesh.emplace_back(x, y + 1, z);
 
-    tex.emplace_back(0.0f, 0.0f);
-    tex.emplace_back(1.0f, 1.0f);
-    tex.emplace_back(0.0f, 1.0f);
+    //tex.emplace_back(0.0f, 0.0f);
+    //tex.emplace_back(1.0f, 1.0f);
+    //tex.emplace_back(0.0f, 1.0f);
+    tex.push_back(0);
+    tex.push_back(3);
+    tex.push_back(2);
+
+    addVertex(vertices, x, y, z, block, 0);
+    addVertex(vertices, x + 1, y + 1, z, block, 3);
+    addVertex(vertices, x, y + 1, z, block, 2);
 
     mesh.emplace_back(x, y, z);
     mesh.emplace_back(x + 1, y, z);
     mesh.emplace_back(x + 1, y + 1, z);
 
-    tex.emplace_back(0.0f, 0.0f);
-    tex.emplace_back(1.0f, 0.0f);
-    tex.emplace_back(1.0f, 1.0f);
+    //tex.emplace_back(0.0f, 0.0f);
+    //tex.emplace_back(1.0f, 0.0f);
+    //tex.emplace_back(1.0f, 1.0f);
+    tex.push_back(0);
+    tex.push_back(1);
+    tex.push_back(3);
+
+    addVertex(vertices, x, y, z, block, 0);
+    addVertex(vertices, x + 1, y, z, block, 1);
+    addVertex(vertices, x + 1, y + 1, z, block, 3);
 }
 
-static void addCubeBack(Block block, std::vector<Vec3>& mesh, std::vector<Vec2>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals, size_t x, size_t y, size_t z)
+static void addCubeBack(Block block, std::vector<Vec3>& mesh, std::vector<GLuint>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
     addIndex(index, block);
     addNormals(normals, Back);
@@ -178,17 +267,31 @@ static void addCubeBack(Block block, std::vector<Vec3>& mesh, std::vector<Vec2>&
     mesh.emplace_back(x, y + 1, z + 1);
     mesh.emplace_back(x + 1, y + 1, z + 1);
 
-    tex.emplace_back(0.0f, 0.0f);
-    tex.emplace_back(0.0f, 1.0f);
-    tex.emplace_back(1.0f, 1.0f);
+    //tex.emplace_back(0.0f, 0.0f);
+    //tex.emplace_back(0.0f, 1.0f);
+    //tex.emplace_back(1.0f, 1.0f);
+    tex.push_back(0);
+    tex.push_back(2);
+    tex.push_back(3);
+
+    addVertex(vertices, x, y, z + 1, block, 0);
+    addVertex(vertices, x, y + 1, z + 1, block, 2);
+    addVertex(vertices, x + 1, y + 1, z + 1, block, 3);
 
     mesh.emplace_back(x, y, z + 1);
     mesh.emplace_back(x + 1, y + 1, z + 1);
     mesh.emplace_back(x + 1, y, z + 1);
 
-    tex.emplace_back(0.0f, 0.0f);
-    tex.emplace_back(1.0f, 1.0f);
-    tex.emplace_back(1.0f, 0.0f);
+    //tex.emplace_back(0.0f, 0.0f);
+    //tex.emplace_back(1.0f, 1.0f);
+    //tex.emplace_back(1.0f, 0.0f);
+    tex.push_back(0);
+    tex.push_back(3);
+    tex.push_back(1);
+
+    addVertex(vertices, x, y, z + 1, block, 0);
+    addVertex(vertices, x + 1, y + 1, z + 1, block, 3);
+    addVertex(vertices, x + 1, y, z + 1, block, 1);
 }
 
 static bool isInBounds(size_t x, size_t y, size_t z)
@@ -198,7 +301,7 @@ static bool isInBounds(size_t x, size_t y, size_t z)
         && ((z >= 0) && (z < Chunk::DEPTH));
 }
 
-static std::vector<Vec3> meshFromChunk(Chunk& chunk, std::vector<Vec2>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals)
+static std::vector<Vec3> meshFromChunk(Chunk& chunk, std::vector<GLuint>& tex, std::vector<GLuint>& index, std::vector<GLuint>& normals, std::vector<GLuint>& vertices)
 {
     std::vector<Vec3> mesh;
 
@@ -213,27 +316,27 @@ static std::vector<Vec3> meshFromChunk(Chunk& chunk, std::vector<Vec2>& tex, std
                     Block block = chunk(x, y, z);
                     if (isInBounds(x, y + 1, z) == false || chunk(x, y + 1, z) == BlockType::Air)
                     {
-                        addCubeTop(block, mesh, tex, index, normals, x, y, z);
+                        addCubeTop(block, mesh, tex, index, normals, vertices, x, y, z);
                     }
                     if (isInBounds(x, y - 1, z) == false || chunk(x, y - 1, z) == BlockType::Air)
                     {
-                        addCubeBottom(block, mesh, tex, index, normals, x, y, z);
+                        addCubeBottom(block, mesh, tex, index, normals, vertices, x, y, z);
                     }
                     if (isInBounds(x + 1, y, z) == false || chunk(x + 1, y, z) == BlockType::Air)
                     {
-                        addCubeRight(block, mesh, tex, index, normals, x, y, z);
+                        addCubeRight(block, mesh, tex, index, normals, vertices, x, y, z);
                     }
                     if (isInBounds(x - 1, y, z) == false || chunk(x - 1, y, z) == BlockType::Air)
                     {
-                        addCubeLeft(block, mesh, tex, index, normals, x, y, z);
+                        addCubeLeft(block, mesh, tex, index, normals, vertices, x, y, z);
                     }
                     if (isInBounds(x, y, z + 1) == false || chunk(x, y, z + 1) == BlockType::Air)
                     {
-                        addCubeBack(block, mesh, tex, index, normals, x, y, z);
+                        addCubeBack(block, mesh, tex, index, normals, vertices, x, y, z);
                     }
                     if (isInBounds(x, y, z - 1) == false || chunk(x, y, z - 1) == BlockType::Air)
                     {
-                        addCubeFront(block, mesh, tex, index, normals, x, y, z);
+                        addCubeFront(block, mesh, tex, index, normals, vertices, x, y, z);
                     }
                 }
             }
@@ -248,8 +351,8 @@ size_t vertexCount;
 GameScene::GameScene(Engine& engine)
 	: Scene(engine)
     , shader([]{
-        Shader vertexShader("../../../src/Game/shader.vert", ShaderType::Vertex);
-        Shader fragmentShader("../../../src/Game/shader.frag", ShaderType::Fragment);
+        Shader vertexShader("../../../src/Game/Blocks/chunk.vert", ShaderType::Vertex);
+        Shader fragmentShader("../../../src/Game/Blocks/chunk.frag", ShaderType::Fragment);
         ShaderProgram s;
         s.addShader(vertexShader);
         s.addShader(fragmentShader);
@@ -278,12 +381,14 @@ GameScene::GameScene(Engine& engine)
     entityManager.entityAddComponent<Rotation>(*player, Quat::identity);
     entityManager.entityAddComponent<PlayerMovementComponent>(*player);
 
-    std::vector<Vec2> tex;
+    std::vector<GLuint> tex;
     std::vector<GLuint> index;
     std::vector<GLuint> normals;
-    std::vector<Vec3> mesh = meshFromChunk(chunk, tex, index, normals);
-    std::cout << tex.size() << ' ' << mesh.size() << ' ' << index.size() << '\n';
-    vertexCount = mesh.size();
+    std::vector<GLuint> vertices;
+    std::vector<Vec3> mesh = meshFromChunk(chunk, tex, index, normals, vertices);
+    std::cout << "vbo sizes: " << vertices.size() << ' ' << tex.size() << ' ' << mesh.size() << ' ' << index.size() << '\n';
+    //vertexCount = mesh.size();
+    vertexCount = vertices.size();
     
     vao.bind();
     
@@ -292,9 +397,9 @@ GameScene::GameScene(Engine& engine)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    texVbo = VertexBuffer(BufferBindTarget::ArrayBuffer, BufferUsage::StaticDraw, tex.data(), sizeof(float) * tex.size() * 2);
+    texVbo = VertexBuffer(BufferBindTarget::ArrayBuffer, BufferUsage::StaticDraw, tex.data(), sizeof(GLuint) * tex.size());
     texVbo.bind(BufferBindTarget::ArrayBuffer);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(0));
+    glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(GLuint), (void*)(0));
     glEnableVertexAttribArray(1);
 
     indexVbo = VertexBuffer(BufferBindTarget::ArrayBuffer, BufferUsage::StaticDraw, index.data(), sizeof(GLuint) * index.size());
@@ -307,11 +412,16 @@ GameScene::GameScene(Engine& engine)
     glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, sizeof(GLuint), (void*)(0));
     glEnableVertexAttribArray(3);
 
-    std::cout << glGetError() << '\n';
+    vbo = VertexBuffer(BufferBindTarget::ArrayBuffer, BufferUsage::StaticDraw, vertices.data(), sizeof(GLuint) * vertices.size());
+    vbo.bind(BufferBindTarget::ArrayBuffer);
+    glVertexAttribIPointer(4, 1, GL_UNSIGNED_INT, sizeof(GLuint), (void*)(0));
+    glEnableVertexAttribArray(4);
 
     //texture.bind();
     textureArray.bind();
     shader.setInt("blockTextureArray", 0);
+
+    glfwSetWindowPos(engine.window().handle(), 600, 400);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -331,6 +441,14 @@ void GameScene::update()
     {
         engine.stop();
     }
+
+    Box box(Vec3(-1, 0, -1), Vec3(1, 1, 1));
+    const Vec3& playerPos = player->getComponent<Position>().value;
+    if (box.contains(playerPos))
+    {
+        std::cout << "collision ";
+    }
+    std::cout << playerPos << "\n";
 
     clearBuffer(ClearModeBit::ColorBuffer | ClearModeBit::DepthBuffer);
 
