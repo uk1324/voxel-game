@@ -18,6 +18,11 @@ uint64_t Time::currentTick()
 	return m_currentTick;
 }
 
+double Time::timestamp()
+{
+	return glfwGetTime();
+}
+
 void Time::update()
 {
 	// Don't know if I should use the actual delta time or should it be a constant so every program execution is the same.

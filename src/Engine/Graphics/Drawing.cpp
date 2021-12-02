@@ -19,3 +19,8 @@ void drawTriangles(size_t vertexCount)
 {
 	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
 }
+
+void drawLines(size_t pointCount)
+{
+	glDrawArrays(GL_LINES, 0, pointCount);
+}

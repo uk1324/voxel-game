@@ -27,6 +27,7 @@ public:
 
 	void setVec2(std::string_view name, const Vec2& vec);
 	void setVec3(std::string_view name, const Vec3& vec);
+	void setVec3I(std::string_view name, const Vec3I& vec);
 	void setMat4(std::string_view name, const Mat4& mat);
 	void setInt(std::string_view name, int value);
 

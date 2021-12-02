@@ -1,5 +1,7 @@
 #include <Engine/Graphics/VertexArray.hpp>
 
+#include <stddef.h>
+
 VertexArray::VertexArray()
 {
 	glGenVertexArrays(1, &m_handle);
@@ -7,7 +9,20 @@ VertexArray::VertexArray()
 
 VertexArray::~VertexArray()
 {
-	glDeleteBuffers(1, &m_handle);
+	glDeleteVertexArrays(1, &m_handle);
+}
+
+VertexArray::VertexArray(VertexArray&& other) noexcept
+	: m_handle(other.m_handle)
+{
+	other.m_handle = NULL;
+}
+
+VertexArray& VertexArray::operator=(VertexArray&& other) noexcept
+{
+	m_handle = other.m_handle;
+	other.m_handle = NULL;
+	return *this;
 }
 
 GLuint VertexArray::handle() const

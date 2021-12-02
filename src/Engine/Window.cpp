@@ -37,7 +37,10 @@ Window& Window::operator=(Window&& window) noexcept
 	return *this;
 }
 
-
+void Window::getWindowSize(int& width, int& height)
+{
+	glfwGetWindowSize(m_handle, &width, &height);
+}
 
 void Window::update()
 {

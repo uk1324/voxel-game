@@ -18,6 +18,8 @@ public:
 	Window& operator= (const Window&) = delete;
 	Window& operator= (Window&& window) noexcept;
 
+	void getWindowSize(int& width, int& height);
+
 	void update();
 	void close();
 

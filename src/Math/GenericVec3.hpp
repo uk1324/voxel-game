@@ -9,7 +9,10 @@ public:
 	GenericVec3();
 	GenericVec3(T x, T y, T z);
 
+	// TODO: Add distance function
+
 	float length() const;
+	float lengthSquared() const;
 
 	GenericVec3<T> normalized() const;
 	void normalize();
@@ -69,6 +72,12 @@ template<typename T>
 float GenericVec3<T>::length() const
 {
 	return sqrt((x * x) + (y * y) + (z * z));
+}
+
+template<typename T>
+float GenericVec3<T>::lengthSquared() const
+{
+	return (x * x) + (y * y) + (z * z);
 }
 
 template<typename T>

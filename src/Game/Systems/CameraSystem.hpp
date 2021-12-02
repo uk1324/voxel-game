@@ -8,7 +8,7 @@ class CameraSystem
 {
 public:
 	CameraSystem(float screenWidth, float screenHeight, float fov, float nearPlaneZ, float farPlaneZ);
-	void update(const Entity& player);
+	void update(const Entity& player, float screenWidth, float screenHeight);
 
 	const Mat4 projection();
 	const Mat4& view();

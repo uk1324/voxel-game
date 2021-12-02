@@ -1,4 +1,3 @@
-#include "ShaderProgram.hpp"
 #include <Engine/Graphics/ShaderProgram.hpp>
 #include <Log/Log.hpp>
 
@@ -57,6 +56,11 @@ void ShaderProgram::setVec2(std::string_view name, const Vec2& vec)
 void ShaderProgram::setVec3(std::string_view name, const Vec3& vec)
 {
 	glProgramUniform3fv(m_handle, glGetUniformLocation(m_handle, name.data()), 1, vec.data());
+}
+
+void ShaderProgram::setVec3I(std::string_view name, const Vec3I& vec)
+{
+	glProgramUniform3iv(m_handle, glGetUniformLocation(m_handle, name.data()), 1, vec.data());
 }
 
 void ShaderProgram::setMat4(std::string_view name, const Mat4& mat)

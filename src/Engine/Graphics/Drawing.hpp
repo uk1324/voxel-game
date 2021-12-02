@@ -16,3 +16,4 @@ void setClearColor(float r, float g, float b, float a);
 void clearBuffer(ClearModeBit mode);
 
 void drawTriangles(size_t vertexCount);
+void drawLines(size_t pointCount);

@@ -1,10 +1,6 @@
 #version 430 core
 
-layout (location = 0) in vec3 vertex;
-layout (location = 1) in uint textureCoord;
-layout (location = 2) in uint textureIndex;
-layout (location = 3) in uint normalIndex;
-layout (location = 4) in uint vert;
+layout (location = 0) in uint vert;
 
 uniform mat4 model;
 uniform mat4 projection;
@@ -42,6 +38,10 @@ vec2 texCoords[4] = {
 #define TEXTURE_INDEX_MASK ~((~0) << (TEXTURE_INDEX_OFFSET + 5))
 #define TEXTURE_POS_INDEX_MASK ~((~0) << (TEXTURE_POS_INDEX_OFFSET + 5))
 
+#define CHUNK_SIZE 16
+
+uniform ivec3 chunkPos;
+
 void main()
 {
 	vec3 vertexPosition = vec3(
@@ -49,6 +49,8 @@ void main()
 		(vert & Y_MASK) >> Y_OFFSET,
 		(vert & Z_MASK) >> Z_OFFSET
 	);
+
+	vertexPosition += chunkPos * CHUNK_SIZE;
 
 	texIndex = (vert & TEXTURE_INDEX_MASK) >> TEXTURE_INDEX_OFFSET;
 

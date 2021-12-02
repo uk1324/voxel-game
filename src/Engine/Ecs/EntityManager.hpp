@@ -10,7 +10,7 @@ class ComponentPool;
 class EntityManager
 {
 public:
-	static constexpr size_t MAX_ENTITES = 1024;
+	static constexpr size_t MAX_ENTITES = 10;
 
 public:
 	EntityManager();

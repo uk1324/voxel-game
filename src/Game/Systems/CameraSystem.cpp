@@ -11,8 +11,11 @@ CameraSystem::CameraSystem(float screenWidth, float screenHeight, float fov, flo
 {}
 
 // Don't know if it is a good idea but the view matrix is generated in update.
-void CameraSystem::update(const Entity& player)
+void CameraSystem::update(const Entity& player, float screenWidth, float screenHeight)
 {
+	this->screenWidth = screenWidth;
+	this->screenHeight = screenHeight;
+
 	const Vec3& playerPos = player.getComponent<Position>().value;
 	const Quat& playerRotation = player.getComponent<Rotation>().value;
 

@@ -2,14 +2,12 @@
 
 #include <Game/Systems/PlayerMovementSystem.hpp>
 #include <Game/Systems/CameraSystem.hpp>
+#include <Game/Blocks/ChunkSystem.hpp>
 #include <Game/Blocks/Chunk.hpp>
 #include <Engine/Scene.hpp>
 #include <Engine/Graphics/ShaderProgram.hpp>
-#include <Engine/Graphics/Model.hpp>
 #include <Engine/Graphics/VertexArray.hpp>
-#include <Engine/Graphics/Texture.hpp>
 #include <Engine/Graphics/TextureArray.hpp>
-
 
 class GameScene : public Scene
 {
@@ -17,17 +15,13 @@ public:
 	GameScene(Engine& engine);
 
 	ShaderProgram shader;
-	unsigned int VBO, VAO;
-	Model model;
 	VertexArray vao;
-	VertexBuffer meshVbo;
-	VertexBuffer texVbo;
-	VertexBuffer indexVbo;
-	VertexBuffer normalVbo;
 	VertexBuffer vbo;
+	Chunk chunk;
 
-	//Texture texture;
 	TextureArray textureArray;
+
+	std::unordered_map<Vec3I, ChunkStruct> chunkMesh;
 
 	Entity* player;
 
@@ -39,5 +33,5 @@ private:
 private:
 	PlayerMovementSystem playerMovementSystem;
 	CameraSystem cameraSystem;
-	Chunk chunk;
+	ChunkSystem chunkSystem;
 };

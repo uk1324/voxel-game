@@ -9,17 +9,21 @@
 
 // Making Position use a Vec4 might allow for simd and won't require any extra space
 
+// TODO: Make Vec4 and alias it to Color
+
+// TODO: Add a way to make screenshots
+
 #include <Lang/Parsing/Parser.hpp>
 #include <Lang/Parsing/Scanner.hpp>
 #include <Lang/Compiling/Compiler.hpp>
 #include <Utils/FileIo.hpp>
 #include <Lang/Debug/AstJsonifier.hpp>
 
-#include <iostream>
+#include <iostream>    
 
 int main()
 {
-	// Add collider classes before the mesh compression to check if the positions actually match the real positions.
+	// Add assetPath function to load assets using asset path
 
 	//Lang::Scanner scanner;
 	//auto tokens = scanner.parse("1 + 2 + 3; 4 + 5;");

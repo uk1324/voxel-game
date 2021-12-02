@@ -15,6 +15,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #   add_compile_options(-Wall -Wextra -Wpedantic)
 # endif()
 
+# could use git submodule to for dependencies.
 include_directories(
 	src
 	dependencies/glad/include
