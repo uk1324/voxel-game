@@ -15,10 +15,10 @@ public:
 	Block set(size_t x, size_t y, size_t z, Block value);
 
 public:
-	static constexpr size_t WIDTH = 16;
-	static constexpr size_t HEIGHT = 16;
-	static constexpr size_t DEPTH = 16;
+	static constexpr size_t SIZE = 16;
+	static constexpr size_t SIZE_SQUARED = SIZE * SIZE;
+	static constexpr size_t SIZE_CUBED = SIZE * SIZE * SIZE;
 
 private:
-	Block m_data[WIDTH * HEIGHT * DEPTH];
+	Block m_data[SIZE_CUBED];
 };

@@ -1,12 +1,6 @@
 #include <Engine/Engine.hpp>
 #include <Game/GameScene.hpp>
 
-// TODO: Move window creation and initialization out of engine class
-
-// TODO: Check if direction are programmed correctly by using a 3D model of axis.
-
-// TODO: Add collider classes
-
 // Making Position use a Vec4 might allow for simd and won't require any extra space
 
 // TODO: Make Vec4 and alias it to Color
@@ -34,9 +28,10 @@ int main()
 	//std::cout << json.jsonify(ast);
 
 	//return 0;
-	Engine engine(60, 800, 600, "game");
+	Window window = Engine::init(800, 600, "game");
 
-	engine.addScene("game", std::unique_ptr<Scene>(new GameScene(engine)));
+	Engine engine(60, window);
+	engine.run(std::make_unique<GameScene>(engine));
 
-	engine.run("game");	
+	Engine::terminate();
 }

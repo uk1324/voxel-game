@@ -1,7 +1,8 @@
 #include <Game/Blocks/ChunkSystem.hpp>
 
 ChunkSystem::ChunkSystem()
-	: lastPos(Vec3I(1261, 0, 0))
+// lastPos is infinity so all the chunks get generated at the start
+	: lastPos(Vec3I(std::numeric_limits<float>::infinity(), 0, 0))
 	, noise()
 {
 	static constexpr int CHUNKS_IN_RENDER_DISTANCE = VERTICAL_RENDER_DISTANCE * HORIZONTAL_RENDER_DISTANCE * HORIZONTAL_RENDER_DISTANCE;
@@ -12,10 +13,6 @@ ChunkSystem::ChunkSystem()
 	}
 
 }
-
-#include <iostream>
-#include <Engine/Time.hpp>
-#include <Utils/Assertions.hpp>
 
 static void addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex)
 {
@@ -103,9 +100,9 @@ static void addCubeBack(Block block, std::vector<GLuint>& vertices, size_t x, si
 
 static bool isInBounds(size_t x, size_t y, size_t z)
 {
-	return ((x >= 0) && (x < Chunk::WIDTH))
-		&& ((y >= 0) && (y < Chunk::HEIGHT))
-		&& ((z >= 0) && (z < Chunk::DEPTH));
+	return ((x >= 0) && (x < Chunk::SIZE))
+		&& ((y >= 0) && (y < Chunk::SIZE))
+		&& ((z >= 0) && (z < Chunk::SIZE));
 }
 
 static std::vector<GLuint>& meshFromChunk(Chunk& chunk)
@@ -114,11 +111,11 @@ static std::vector<GLuint>& meshFromChunk(Chunk& chunk)
 	vertices.clear();
 	//vertices.reserve(16 * 16 * 16 * 6 * 3);
 
-	for (size_t z = 0; z < Chunk::WIDTH; z++)
+	for (size_t z = 0; z < Chunk::SIZE; z++)
 	{
-		for (size_t y = 0; y < Chunk::HEIGHT; y++)
+		for (size_t y = 0; y < Chunk::SIZE; y++)
 		{
-			for (size_t x = 0; x < Chunk::DEPTH; x++)
+			for (size_t x = 0; x < Chunk::SIZE; x++)
 			{
 				if (chunk(x, y, z).type != BlockType::Air)
 				{
@@ -161,44 +158,20 @@ void ChunkSystem::update(const Vec3& p)
 	{
 		const Vec3I& chunkPos = chunksToGenerate.back();
 		initializeChunk(chunks[chunkPos], chunkPos);
-		chunkToMesh.push_back(chunkPos);
+		meshChunk(chunkPos);
 		chunksToGenerate.pop_back();
-		std::cout << chunksToGenerate.size() << ' ' << chunkToMesh.size() << ' ' << "initalized\n";
 	}
 
-	if (chunkToMesh.size() != 0)
-	{
-		const Vec3I& pos = chunkToMesh.back();
-
-		ASSERT(chunkMesh.find(pos) == chunkMesh.end());
-		chunkMesh[pos].~ChunkStruct();
-		chunkMesh[pos] = ChunkStruct();
-		ChunkStruct& chunk = chunkMesh[pos];
-
-		std::vector<GLuint>& vertices = meshFromChunk(*chunks[pos]);
-
-		chunk.vertexCount = vertices.size();
-		chunk.vao.bind();
-		chunk.vbo = VertexBuffer(BufferBindTarget::ArrayBuffer, BufferUsage::StaticDraw, vertices.data(), sizeof(GLuint) * vertices.size());
-		chunk.vbo.bind(BufferBindTarget::ArrayBuffer);
-		glVertexAttribIPointer(0, 1, GL_UNSIGNED_INT, sizeof(GLuint), (void*)(0));
-		glEnableVertexAttribArray(0);
-
-		chunkToMesh.pop_back();
-	}
-
-	Vec3I position(p.x / Chunk::WIDTH, p.y / Chunk::HEIGHT, p.z / Chunk::DEPTH);
+	Vec3I position(p.x / Chunk::SIZE, p.y / Chunk::SIZE, p.z / Chunk::SIZE);
 	if (position == lastPos)
 	{
 		lastPos = position;
 		deletedChunks.clear();
-		dirtyChunks.clear();
 		return; 
 	}
 	lastPos = position;
 
 	deletedChunks.clear();
-	auto start = Time::timestamp();
 	for (const auto& [pos, chunk] : chunks)
 	{
 		if (pos.x < position.x - HORIZONTAL_RENDER_DISTANCE || pos.x > position.x + HORIZONTAL_RENDER_DISTANCE
@@ -219,8 +192,6 @@ void ChunkSystem::update(const Vec3& p)
 			}
 		}
 	}
-	auto end = Time::timestamp();
-	std::cout << "deleteTime: " << end - start << ' ';
 
 	for (const auto& chunkPos : deletedChunks)
 	{
@@ -228,7 +199,6 @@ void ChunkSystem::update(const Vec3& p)
 		chunks.erase(chunkPos);
 	}
 
-	dirtyChunks.clear();
 	for (int y = position.y - VERTICAL_RENDER_DISTANCE; y <= position.y + VERTICAL_RENDER_DISTANCE; y++)
 	{
 		for (int z = position.z - HORIZONTAL_RENDER_DISTANCE; z <= position.z + HORIZONTAL_RENDER_DISTANCE; z++)
@@ -250,46 +220,41 @@ void ChunkSystem::update(const Vec3& p)
 						chunk = freeChunks.back();
 						freeChunks.pop_back();
 					}
-					ASSERT(chunk != nullptr);
 					chunks[Vec3I(x, y, z)] = chunk;
-					dirtyChunks.push_back(Vec3I(x, y, z));
 					chunksToGenerate.push_back(Vec3I(x, y, z));
-					//initializeChunk(chunk, Vec3I(x, y, z));
 				}
 			}
 		}
 	}
-	std::sort(chunksToGenerate.begin(), chunksToGenerate.end(),
-		[&position](const Vec3I& a, const Vec3I& b) -> bool {
-			return ((a.x - position.x) * (a.x - position.x) + (a.y - position.y) * (a.y - position.y) + (a.z - position.z) * (a.z - position.z))
-				> ((b.x - position.x) * (b.x - position.x) + (b.y - position.y) * (b.y - position.y) + (b.z - position.z) * (b.z - position.z));
-		}
-	);
 
-	std::cout << "deleted: " << deletedChunks.size() << " created: " << dirtyChunks.size() << " poolSize: " << chunkPool.size() << '\n';
+	std::sort(chunksToGenerate.begin(), chunksToGenerate.end(),
+		[&position](const Vec3I& a, const Vec3I& b) {
+			return (a - position).length() > (b - position).length();
+		}
+	); 
 }
 
 void ChunkSystem::initializeChunk(Chunk* chunk, const Vec3I& pos)
 {
-	for (size_t z = 0; z < Chunk::WIDTH; z++)
+	for (size_t z = 0; z < Chunk::SIZE; z++)
 	{ 
-		for (size_t x = 0; x < Chunk::DEPTH; x++)
+		for (size_t x = 0; x < Chunk::SIZE; x++)
 		{
 			double value = noise.accumulatedOctaveNoise2D_0_1((x - pos.x * 16.0) / 256.0, (z - pos.z * 16.0) / 256.0, 8) * 50;
 			//double value = 0.2;
 			double input = (rand() % 256) / 256.0;
-			for (size_t y = 0; y < Chunk::HEIGHT; y++)
+			for (size_t y = 0; y < Chunk::SIZE; y++)
 			{
 				//double value = noise.accumulatedOctaveNoise3D_0_1((x - pos.x * 16.0) / 20.0, (z - pos.z * 16.0) / 20.0, (y - pos.y * 16.0) / 20.0, 8);
 				//if (value > 0.4)
 				//{
 				//	chunk->operator()(x, y, z) = BlockType::Grass2;
 				//}
-				if ((y + pos.y * Chunk::HEIGHT) < value)
+				if ((y + pos.y * Chunk::SIZE) < value)
 				{
 					//chunk->operator()(x, y, z) = static_cast<BlockType>((rand() % 3) + 1);
 					/*chunk->operator()(x, y, z) = static_cast<BlockType>((y % 3) + 1);*/
-					int realY = y + pos.y * Chunk::HEIGHT;
+					int realY = y + pos.y * Chunk::SIZE;
 					if (realY > 30)
 					{
 						chunk->operator()(x, y, z) = BlockType::Grass2;
@@ -317,4 +282,19 @@ void ChunkSystem::initializeChunk(Chunk* chunk, const Vec3I& pos)
 			}
 		}
 	}
+}
+
+void ChunkSystem::meshChunk(const Vec3I& pos)
+{
+	chunkMesh[pos] = ChunkStruct();
+	ChunkStruct& chunk = chunkMesh[pos];
+
+	std::vector<GLuint>& vertices = meshFromChunk(*chunks[pos]);
+
+	chunk.vertexCount = vertices.size();
+	chunk.vao.bind();
+	chunk.vbo = VertexBuffer(BufferBindTarget::ArrayBuffer, BufferUsage::StaticDraw, vertices.data(), sizeof(GLuint) * vertices.size());
+	chunk.vbo.bind(BufferBindTarget::ArrayBuffer);
+	glVertexAttribIPointer(0, 1, GL_UNSIGNED_INT, sizeof(GLuint), (void*)(0));
+	glEnableVertexAttribArray(0);
 }

@@ -1,4 +1,5 @@
 #include <Engine/Window.hpp>
+#include <Engine/Engine.hpp>
 #include <Log/Log.hpp>
 
 Window::Window()
@@ -13,10 +14,9 @@ Window::Window(Window&& window) noexcept
 
 Window::Window(int width, int height, std::string_view title)
 {
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, Engine::OPENGL_VERSION_MAJOR);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, Engine::OPENGL_VERSION_MINOR);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
 	m_handle = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
 	if (m_handle == nullptr)
 	{
@@ -50,6 +50,16 @@ void Window::update()
 void Window::close()
 {
 	glfwSetWindowShouldClose(m_handle, true);
+}
+
+void Window::hideCursor()
+{
+	glfwSetInputMode(m_handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+}
+
+void Window::showCursor()
+{
+	glfwSetInputMode(m_handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 bool Window::shouldClose()

@@ -18,7 +18,7 @@ uint64_t Time::currentTick()
 	return m_currentTick;
 }
 
-double Time::timestamp()
+double Time::currentTime()
 {
 	return glfwGetTime();
 }

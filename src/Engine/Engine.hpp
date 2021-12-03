@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Engine/Scene.hpp>
-#include <Engine/Ecs/EntityManager.hpp>
 #include <Engine/Window.hpp>
 #include <Engine/Time.hpp>
 
@@ -9,31 +8,39 @@
 #include <unordered_map>
 #include <memory>
 
-// TODO: Dont store the map of scenes change scenes by passing a pointer to the scene
 class Engine
 {
-
 public:
-	Engine(int updatesPerSecond, int windowWidth, int windowHeight, std::string_view windowTitle);
-	~Engine();
+	Engine(int updatesPerSecond, Window& window);
 
-	void run(std::string_view startingScene);
+	void run(std::unique_ptr<Scene>&& startingScene);
 	void update();
 	void stop();
 
-	void addScene(std::string_view name, std::unique_ptr<Scene>&& scene);
-	void changeScene(std::string_view name);
+	void changeScene(std::unique_ptr<Scene>&& scene);
 
 	Time& time();
 	Window& window();
 
+public:
+	static Window init(int windowWidth, int windowHeight, std::string_view windowTitle);
+	static void terminate();
+
 private:
-	Window m_window;
+	static void initGlfw();
+	static void initOpenGl();
 
-	bool m_isRunning;
+public:
+	static constexpr int OPENGL_VERSION_MAJOR = 4;
+	static constexpr int OPENGL_VERSION_MINOR = 3;
 
-	Scene* m_currentScene;
-	std::unordered_map<std::string_view, std::unique_ptr<Scene>> m_scenes;
+private:
+	static bool s_isInitialized;
+
+private:
+	Window& m_window;
+
+	std::unique_ptr<Scene> m_currentScene;
 
 	Time m_time;
 	int m_updatesPerSecond;

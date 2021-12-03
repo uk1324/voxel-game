@@ -23,6 +23,9 @@ public:
 	void update();
 	void close();
 
+	void hideCursor();
+	void showCursor();
+
 	bool shouldClose();
 
 	GLFWwindow* handle();

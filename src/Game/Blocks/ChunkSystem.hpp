@@ -38,6 +38,8 @@ public:
 
 private:
 	void initializeChunk(Chunk* chunk, const Vec3I& pos);
+	
+	void meshChunk(const Vec3I& pos);
 
 public:
 	static constexpr int VERTICAL_RENDER_DISTANCE = 5;
@@ -62,6 +64,5 @@ public:
 	std::vector<std::unique_ptr<Chunk>> chunkPool;
 	std::vector<Chunk*> freeChunks;
 	std::unordered_map<Vec3I, Chunk*> chunks;
-	std::vector<Vec3I> dirtyChunks;
 	std::vector<Vec3I> deletedChunks;
 };

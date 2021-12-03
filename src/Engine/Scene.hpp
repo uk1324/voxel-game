@@ -17,8 +17,6 @@ public:
 	
 	virtual void update() = 0;
 
-	void changeScene(std::string_view name);
-
 public:
 	Engine& engine;
 	EntityManager entityManager;

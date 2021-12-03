@@ -1,47 +1,22 @@
-#include "Engine.hpp"
 #include <Engine/Engine.hpp>
-#include <Engine/Init.hpp>
 #include <Engine/Window.hpp>
 #include <Utils/Assertions.hpp>
+#include <Log/Log.hpp>
+#include <Engine/Graphics/GraphicsPrimitives.hpp>
 
-Engine::Engine(int updatesPerSecond, int windowWidth, int windowHeight, std::string_view windowTitle)
+Engine::Engine(int updatesPerSecond, Window& window)
 	: m_currentScene(nullptr)
 	, m_updatesPerSecond(updatesPerSecond)
+	, m_window(window)
+{}
+
+void Engine::run(std::unique_ptr<Scene>&& startingScene)
 {
-	initGlfw();
-
-	// Have to create a window before initializing OpenGL.
-	m_window = Window(windowWidth, windowHeight, windowTitle);
-
-	initOpenGl();
-
-	// TODO: Move this somewhere.
-	glfwSetInputMode(m_window.handle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-}
-
-Engine::~Engine()
-{
-	glfwTerminate();
-}
-
-#include <iostream>
-#include <chrono>
-static auto start_time = std::chrono::high_resolution_clock::now();
-
-static double getTime()
-{
-	auto current_time = std::chrono::high_resolution_clock::now();
-
-	return std::chrono::duration_cast<std::chrono::nanoseconds>(current_time - start_time).count() / 1000000000.0;
-}
-
-void Engine::run(std::string_view startingScene)
-{
-	changeScene(startingScene);
+	changeScene(std::move(startingScene));
 
 	constexpr double FRAME_TIME_CAP = 2.0;
 
-	double lastFrameStartTime = glfwGetTime();
+	double lastFrameStartTime = Time::currentTime();
 	double frameStartTime;
 	double frameTime;
 
@@ -50,7 +25,7 @@ void Engine::run(std::string_view startingScene)
 
 	while (m_window.shouldClose() == false)
 	{
-		frameStartTime = glfwGetTime();
+		frameStartTime = Time::currentTime();
 		frameTime = frameStartTime - lastFrameStartTime;
 		lastFrameStartTime = frameStartTime;
 
@@ -81,17 +56,55 @@ void Engine::stop()
 	m_window.close();
 }
 
-void Engine::addScene(std::string_view name, std::unique_ptr<Scene>&& scene)
+void Engine::changeScene(std::unique_ptr<Scene>&& scene)
 {
-	m_scenes[name] = std::move(scene);
+	m_currentScene = std::move(scene);
 }
 
-void Engine::changeScene(std::string_view name)
+Window Engine::init(int windowWidth, int windowHeight, std::string_view windowTitle)
 {
-	ASSERT(m_scenes.count(name) != 0);
+	// Before you can create a window you have to initialize GLFW and before you can initialize OpenGL you have to create a window.
+	if (s_isInitialized == false)
+	{
+		initGlfw();
+	}
 
-	m_currentScene = m_scenes[name].get();
+	Window window = Window(windowWidth, windowHeight, windowTitle);
+
+	if (s_isInitialized == false)
+	{
+		initOpenGl();
+
+		GraphicsPrimitives::init();
+
+		s_isInitialized = true;
+	}
+
+	return window;
 }
+
+void Engine::terminate()
+{
+	glfwTerminate();
+}
+
+void Engine::initGlfw()
+{
+	if (glfwInit() == GLFW_FALSE)
+	{
+		LOG_FATAL("failed to initialize GLFW");
+	}
+}
+
+void Engine::initOpenGl()
+{
+	if (gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) == false)
+	{
+		LOG_FATAL("failed to initialize OpenGL");
+	}
+}
+
+bool Engine::s_isInitialized = false;
 
 Time& Engine::time()
 {

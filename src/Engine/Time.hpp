@@ -10,7 +10,7 @@ public:
 	float deltaTime();
 	uint64_t currentTick();
 
-	static double timestamp();
+	static double currentTime();
 
 	void update();
 

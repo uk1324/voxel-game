@@ -6,8 +6,3 @@ Scene::Scene(Engine& engine)
 	, input(engine.window())
 	, time(engine.time())
 {}
-
-void Scene::changeScene(std::string_view name)
-{
-	engine.changeScene(name);
-}

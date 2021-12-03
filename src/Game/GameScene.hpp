@@ -8,20 +8,20 @@
 #include <Engine/Graphics/ShaderProgram.hpp>
 #include <Engine/Graphics/VertexArray.hpp>
 #include <Engine/Graphics/TextureArray.hpp>
+#include <Engine/Graphics/CubeMap.hpp>
 
 class GameScene : public Scene
 {
 public:
 	GameScene(Engine& engine);
 
+	CubeMap skybox;
+
+	ShaderProgram skyboxShader;
+
 	ShaderProgram shader;
-	VertexArray vao;
-	VertexBuffer vbo;
-	Chunk chunk;
 
 	TextureArray textureArray;
-
-	std::unordered_map<Vec3I, ChunkStruct> chunkMesh;
 
 	Entity* player;
 
