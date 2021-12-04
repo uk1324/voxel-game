@@ -17,8 +17,8 @@ TestScene::TestScene(Engine& engine)
     : Scene(engine)
     , cameraSystem(90.0f, 0.1f, 1000.0f)
 {
-    Gfx::Shader vertex("../../../src/TestScene/shader.vert", Gfx::ShaderType::Vertex);
-    Gfx::Shader fragment("../../../src/TestScene/shader.frag", Gfx::ShaderType::Fragment);
+    Gfx::Shader vertex("src/TestScene/shader.vert", Gfx::ShaderType::Vertex);
+    Gfx::Shader fragment("src/TestScene/shader.frag", Gfx::ShaderType::Fragment);
     shader.addShader(vertex);
     shader.addShader(fragment);
     shader.link();
