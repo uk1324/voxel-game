@@ -1,26 +1,28 @@
-#include "Drawing.hpp"
+#include <Engine/Graphics/Drawing.hpp>
 
-ClearModeBit operator|(ClearModeBit a, ClearModeBit b)
-{
-	return static_cast<ClearModeBit>(static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
-}
+using namespace Gfx;
 
-void setClearColor(float r, float g, float b, float a)
+void Gfx::setClearColor(float r, float g, float b, float a)
 {
 	glClearColor(r, g, b, a);
 }
 
-void clearBuffer(ClearModeBit mode)
+void Gfx::clearBuffer(ClearModeBit mode)
 {
 	glClear(static_cast<GLbitfield>(mode));
 }
 
-void drawTriangles(size_t vertexCount)
+void Gfx::drawTriangles(int32_t offset, uint32_t vertexCount)
 {
-	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+	glDrawArrays(GL_TRIANGLES, offset, vertexCount);
 }
 
-void drawLines(size_t pointCount)
+void Gfx::drawLines(int32_t offset, uint32_t pointCount)
 {
-	glDrawArrays(GL_LINES, 0, pointCount);
+	glDrawArrays(GL_LINES, offset, pointCount);
+}
+
+ClearModeBit operator|(ClearModeBit a, ClearModeBit b)
+{
+	return static_cast<ClearModeBit>(static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
 }

@@ -1,24 +1,55 @@
 #pragma once
 
 #include <Engine/Graphics/VertexBuffer.hpp>
+#include <glad/glad.h>
 
-class VertexArray
+namespace Gfx
 {
-public:
-	VertexArray();
-	~VertexArray();
+	enum class ShaderDataType : uint32_t
+	{
+		Byte = GL_BYTE,
+		UnsignedByte = GL_UNSIGNED_BYTE,
+		Short = GL_SHORT,
+		UnsignedShort = GL_UNSIGNED_SHORT,
+		Int = GL_INT,
+		UnsignedInt = GL_UNSIGNED_INT,
+		Float = GL_FLOAT,
+	};
 
-	VertexArray(const VertexArray&) = delete;
-	VertexArray& operator= (const VertexArray&) = delete;
+	struct BufferLayout
+	{
+	public:
+		BufferLayout(ShaderDataType dataType, uint32_t dataTypeCountPerVertex, intptr_t offset, size_t stride, bool isNormalized);
 
-	VertexArray(VertexArray&& other) noexcept;
-	VertexArray& operator= (VertexArray&& other) noexcept;
+	public:
+		ShaderDataType dataType;
+		uint32_t dataTypeCountPerVertex;
+		bool isNormalized;
+		size_t stride;
+		intptr_t offset;
+	};
 
-	GLuint handle() const;
+	class VertexArray
+	{
+	public:
+		VertexArray();
+		~VertexArray();
 
-	void setAttribute();
-	void bind() const;
+		VertexArray(const VertexArray&) = delete;
+		VertexArray& operator= (const VertexArray&) = delete;
 
-private:
-	GLuint m_handle;
-};
+		VertexArray(VertexArray&& other) noexcept;
+		VertexArray& operator= (VertexArray&& other) noexcept;
+
+		uint32_t handle() const;
+
+		// Sets the atribute at index to the currently bound VertexBuffer with specified layout.
+		// The VertexArray must be bound before calling.
+		void setAttribute(uint32_t index, const BufferLayout& layout);
+
+		void bind() const;
+
+	private:
+		uint32_t m_handle;
+	};
+}

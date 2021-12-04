@@ -4,17 +4,20 @@
 
 #include <memory>
 
-class GraphicsPrimitives
+namespace Gfx
 {
-public:
-	// Should be called after OpenGL is initialized.
-	static void init();
+	class Primitives
+	{
+	public:
+		// Should be called after OpenGL is initialized.
+		static void init();
 
-public:
-	// Have to use a pointer because OpenGL is not initialized yet.
-	static std::unique_ptr<VertexArray> cubeTrianglesVao;
+	public:
+		// Have to use a pointer because OpenGL is not initialized yet.
+		static std::unique_ptr<VertexArray> cubeTrianglesVao;
 
-private:
-	static VertexBuffer cubeTrianglesVbo;
-	static bool s_isInitialized;
-};
+	private:
+		static std::unique_ptr<VertexBuffer> cubeTrianglesVbo;
+		static bool s_isInitialized;
+	};
+}

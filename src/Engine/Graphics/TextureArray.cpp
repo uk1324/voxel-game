@@ -4,7 +4,7 @@
 
 #include <memory>
 
-#include <iostream>
+using namespace Gfx;
 
 TextureArray::TextureArray(size_t width, size_t height, std::vector<std::string_view> textures)
 {

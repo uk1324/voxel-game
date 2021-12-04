@@ -1,6 +1,8 @@
 #include <Engine/Graphics/ShaderProgram.hpp>
 #include <Log/Log.hpp>
 
+using namespace Gfx;
+
 ShaderProgram::ShaderProgram()
 	: m_handle(glCreateProgram())
 {
@@ -19,6 +21,7 @@ ShaderProgram::ShaderProgram(ShaderProgram&& other) noexcept
 
 ShaderProgram& ShaderProgram::operator==(ShaderProgram&& other) noexcept
 {
+	glDeleteProgram(m_handle);
 	m_handle = other.m_handle;
 	other.m_handle = NULL;
 	return *this;
@@ -76,4 +79,17 @@ void ShaderProgram::setInt(std::string_view name, int value)
 GLuint ShaderProgram::handle() const
 {
 	return m_handle;
+}
+
+int ShaderProgram::getUniformLocation(std::string_view name)
+{
+	// Can't assume that the string_view data won't get destroyed.
+	std::string uniformName = std::string(name);
+	auto location = m_cachedUniformLocations.find(uniformName);
+	if (location == m_cachedUniformLocations.end())
+	{
+		int location = glGetUniformLocation(m_handle, uniformName.c_str());
+		m_cachedUniformLocations[std::move(uniformName)] = location;
+	}
+	return location->second;
 }

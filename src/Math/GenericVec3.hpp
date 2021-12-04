@@ -9,8 +9,6 @@ public:
 	GenericVec3();
 	GenericVec3(T x, T y, T z);
 
-	// TODO: Add distance function
-
 	float length() const;
 	float lengthSquared() const;
 
@@ -31,6 +29,10 @@ public:
 
 	T* data();
 	const T* data() const;
+
+public:
+	static float distance(const GenericVec3<T>& a, const GenericVec3<T>& b);
+	static float distanceSquared(const GenericVec3<T>& a, const GenericVec3<T>& b);
 
 public:
 	static const GenericVec3<T> up;
@@ -183,6 +185,18 @@ template<typename T>
 const T* GenericVec3<T>::data() const
 {
 	return &x;
+}
+
+template<typename T>
+float GenericVec3<T>::distance(const GenericVec3<T>& a, const GenericVec3<T>& b)
+{
+	return (a - b).length();
+}
+
+template<typename T>
+float GenericVec3<T>::distanceSquared(const GenericVec3<T>& a, const GenericVec3<T>& b)
+{
+	return (a - b).lengthSquared();
 }
 
 // Left handed coorinate system

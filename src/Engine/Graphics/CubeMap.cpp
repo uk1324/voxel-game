@@ -2,6 +2,8 @@
 #include <Log/Log.hpp>
 #include <stb_image.h>
 
+using namespace Gfx;
+
 CubeMap::CubeMap()
 	: m_handle(NULL)
 {}

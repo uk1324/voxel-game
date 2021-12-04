@@ -37,9 +37,11 @@ Window& Window::operator=(Window&& window) noexcept
 	return *this;
 }
 
-void Window::getWindowSize(int& width, int& height)
+Vec2I Window::getWindowSize()
 {
-	glfwGetWindowSize(m_handle, &width, &height);
+	Vec2I size;
+	glfwGetFramebufferSize(m_handle, &size.x, &size.y);
+	return size;
 }
 
 void Window::update()

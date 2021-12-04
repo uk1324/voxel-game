@@ -7,25 +7,28 @@
 
 // A texture array requires all textures to be the same size.
 
-class TextureArray
+namespace Gfx
 {
-public:
-	TextureArray(size_t width, size_t height, std::vector<std::string_view> textures);
-	~TextureArray();
+	class TextureArray
+	{
+	public:
+		TextureArray(size_t width, size_t height, std::vector<std::string_view> textures);
+		~TextureArray();
 
-	TextureArray(const TextureArray&) = delete;
-	TextureArray& operator= (const TextureArray&) = delete;
+		TextureArray(const TextureArray&) = delete;
+		TextureArray& operator= (const TextureArray&) = delete;
 
-	TextureArray(TextureArray&& other) noexcept;
-	TextureArray& operator= (TextureArray&& other) noexcept;
+		TextureArray(TextureArray&& other) noexcept;
+		TextureArray& operator= (TextureArray&& other) noexcept;
 
-	GLuint handle() const;
+		GLuint handle() const;
 
-	void bind() const;
+		void bind() const;
 
-private:
-	static constexpr GLenum TARGET = GL_TEXTURE_2D_ARRAY;
+	private:
+		static constexpr GLenum TARGET = GL_TEXTURE_2D_ARRAY;
 
-private:
-	GLuint m_handle;
-};
+	private:
+		GLuint m_handle;
+	};
+}

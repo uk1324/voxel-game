@@ -30,6 +30,9 @@ private:
 	static void initGlfw();
 	static void initOpenGl();
 
+	static void glfwErrorCallback(int errorCode, const char* errorMessage);
+	static void APIENTRY openGlErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
+
 public:
 	static constexpr int OPENGL_VERSION_MAJOR = 4;
 	static constexpr int OPENGL_VERSION_MINOR = 3;

@@ -1,42 +1,33 @@
 #pragma once
 
-#include <glad/glad.h>
+#include <stdint.h>
 
-enum class BufferBindTarget
+namespace Gfx
 {
-	ArrayBuffer = GL_ARRAY_BUFFER
-};
+	class VertexBuffer
+	{
+	public:
+		VertexBuffer();
+		// Dynamic draw
+		explicit VertexBuffer(size_t dataSize);
+		// Static draw
+		VertexBuffer(void* data, size_t dataSize);
+		~VertexBuffer();
 
-enum class BufferUsage
-{
-	StaticDraw = GL_STATIC_DRAW,
-	DynamicDraw = GL_DYNAMIC_DRAW
-};
+		VertexBuffer(const VertexBuffer&) = delete;
+		VertexBuffer& operator= (const VertexBuffer&) = delete;
 
-enum class BufferDataType
-{
-	Float = GL_FLOAT,
-	UnsignedInt = GL_UNSIGNED_INT,
-	Int = GL_INT
-};
+		VertexBuffer(VertexBuffer&& other) noexcept;
+		VertexBuffer& operator= (VertexBuffer&& other) noexcept;
 
-class VertexBuffer
-{
-public:
-	VertexBuffer();
-	VertexBuffer(BufferBindTarget target, BufferUsage usage, void* data, GLsizeiptr dataSize);
-	~VertexBuffer();
+		// The VertexBuffer must be bound before calling.
+		void setData(intptr_t offset, void* data, size_t dataSize);
 
-	VertexBuffer(const VertexBuffer&) = delete;
-	VertexBuffer& operator= (const VertexBuffer&) = delete;
+		void bind() const;
 
-	VertexBuffer(VertexBuffer&& other) noexcept;
-	VertexBuffer& operator= (VertexBuffer&& other) noexcept;
+		const uint32_t handle() const;
 
-	void bind(BufferBindTarget target) const;
-
-	const GLuint handle() const;
-
-private:
-	GLuint m_handle;
-};
+	private:
+		uint32_t m_handle;
+	};
+}

@@ -1,3 +1,6 @@
+#ifdef _MSC_VER
+    #pragma warning(push, 0)  
+#endif
 /* stb_image - v2.27 - public domain image loader - http://nothings.org/stb
                                   no warranty implied; use at your own risk
 
@@ -8005,3 +8008,6 @@ ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ------------------------------------------------------------------------------
 */
+#ifdef _MSC_VER
+    #pragma warning(pop)  
+#endif

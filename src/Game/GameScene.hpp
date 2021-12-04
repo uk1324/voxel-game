@@ -15,13 +15,13 @@ class GameScene : public Scene
 public:
 	GameScene(Engine& engine);
 
-	CubeMap skybox;
+	Gfx::CubeMap skybox;
 
-	ShaderProgram skyboxShader;
+	Gfx::ShaderProgram skyboxShader;
 
-	ShaderProgram shader;
+	Gfx::ShaderProgram shader;
 
-	TextureArray textureArray;
+	Gfx::TextureArray textureArray;
 
 	Entity* player;
 

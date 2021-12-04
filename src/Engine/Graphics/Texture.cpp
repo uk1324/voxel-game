@@ -2,6 +2,8 @@
 #include <Log/Log.hpp>
 #include <stb_image.h>
 
+using namespace Gfx;
+
 Texture::Texture(std::string_view path)
 {
 	int width, height, channelCount;
@@ -41,6 +43,7 @@ Texture::Texture(Texture&& other) noexcept
 
 Texture& Texture::operator=(Texture&& other) noexcept
 {
+	glDeleteTextures(1, &m_handle);
 	m_handle = other.m_handle;
 	other.m_handle = NULL;
 	return *this;

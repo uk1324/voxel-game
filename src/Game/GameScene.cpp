@@ -12,14 +12,12 @@
 
 #include <iostream>
 
-size_t vertexCount;
-
 GameScene::GameScene(Engine& engine)
 	: Scene(engine)
     , shader([]{
-        Shader vertexShader("../../../src/Game/Blocks/chunk.vert", ShaderType::Vertex);
-        Shader fragmentShader("../../../src/Game/Blocks/chunk.frag", ShaderType::Fragment);
-        ShaderProgram s;
+        Gfx::Shader vertexShader("../../../src/Game/Blocks/chunk.vert", Gfx::ShaderType::Vertex);
+        Gfx::Shader fragmentShader("../../../src/Game/Blocks/chunk.frag", Gfx::ShaderType::Fragment);
+        Gfx::ShaderProgram s;
         s.addShader(vertexShader);
         s.addShader(fragmentShader);
         s.link();
@@ -27,11 +25,11 @@ GameScene::GameScene(Engine& engine)
     }())
     // , texture("../../../assets/textures/blocks/stone.png")
     , textureArray(16, 16, { "../../../assets/textures/blocks/dirt.png", "../../../assets/textures/blocks/stone.png", "../../../assets/textures/blocks/cobblestone.png", "../../../assets/textures/blocks/grass.png", "../../../assets/textures/blocks/grass2.png" })
-    , cameraSystem(800, 600, 90, 0.1f, 1000.0f)
+    , cameraSystem(90, 0.1f, 1000.0f)
     , skyboxShader([] {
-    Shader vertexShader("../../../src/Game/cubemap.vert", ShaderType::Vertex);
-    Shader fragmentShader("../../../src/Game/cubemap.frag", ShaderType::Fragment);
-    ShaderProgram s;
+    Gfx::Shader vertexShader("../../../src/Game/cubemap.vert", Gfx::ShaderType::Vertex);
+    Gfx::Shader fragmentShader("../../../src/Game/cubemap.frag", Gfx::ShaderType::Fragment);
+    Gfx::ShaderProgram s;
     s.addShader(vertexShader);
     s.addShader(fragmentShader);
     s.link();
@@ -60,7 +58,7 @@ GameScene::GameScene(Engine& engine)
     glFrontFace(GL_CCW);
 
 
-    setClearColor(0.52, 0.80, 0.92, 1.0f);
+    Gfx::setClearColor(0.52, 0.80, 0.92, 1.0f);
 }
 
 #include <iostream>
@@ -73,14 +71,14 @@ void GameScene::update()
         engine.stop();
     }
 
-    clearBuffer(ClearModeBit::ColorBuffer | ClearModeBit::DepthBuffer);
+    Gfx::clearBuffer(Gfx::ClearModeBit::ColorBuffer | Gfx::ClearModeBit::DepthBuffer);
 
     playerMovementSystem.update(*this, *player);
 
-    int width, height;
-    engine.window().getWindowSize(width, height);
-    glViewport(0, 0, width, height);
-    cameraSystem.update(*player, width, height);
+    
+    Vec2I windowSize = engine.window().getWindowSize();
+    glViewport(0, 0, windowSize.x, windowSize.y);
+    cameraSystem.update(*player, windowSize.x, windowSize.y);
     chunkSystem.update(player->getComponent<Position>().value);
 
     shader.setMat4("model", Mat4::identity);
@@ -98,7 +96,7 @@ void GameScene::update()
         pos.x = -pos.x;
         pos.z = -pos.z;
         shader.setVec3I("chunkPos", pos);
-        drawTriangles(chunk.second.vertexCount);
+        Gfx::drawTriangles(0, chunk.second.vertexCount);
     }
 
     glDepthFunc(GL_LEQUAL);
@@ -109,18 +107,20 @@ void GameScene::update()
 
     skybox.bind();
     //skyboxVao.bind();
-    GraphicsPrimitives::cubeTrianglesVao->bind();
+    Gfx::Primitives::cubeTrianglesVao->bind();
 
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
     skyboxShader.setMat4("projection", cameraSystem.projection());
-    auto view = cameraSystem.view();
-    view(3, 0) = 0;
-    view(3, 1) = 0;
-    view(3, 2) = 0;
+    Mat4 view = cameraSystem.view();
+    view.removeTransform();
     skyboxShader.setMat4("view", view);
 
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glFrontFace(GL_CW);
+
+    Gfx::drawTriangles(0, 36);
+
+    glFrontFace(GL_CCW);
 
     glDepthMask(GL_TRUE);
     //glEnable(GL_CULL_FACE);

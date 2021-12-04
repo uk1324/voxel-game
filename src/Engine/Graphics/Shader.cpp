@@ -2,6 +2,8 @@
 #include <Utils/FileIo.hpp>
 #include <Log/Log.hpp>
 
+using namespace Gfx;
+
 Shader::Shader(std::string_view path, ShaderType type)
 {
 	m_handle = glCreateShader(static_cast<GLenum>(type));
@@ -29,6 +31,7 @@ Shader::Shader(Shader&& other) noexcept
 
 Shader& Shader::operator=(Shader&& other) noexcept
 {
+	glDeleteShader(m_handle);
 	m_handle = other.m_handle;
 	other.m_handle = NULL;
 	return *this;

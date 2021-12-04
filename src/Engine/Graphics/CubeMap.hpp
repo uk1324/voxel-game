@@ -5,15 +5,18 @@
 #include <array>
 #include <string_view>
 
-class CubeMap
+namespace Gfx
 {
-public:
-	CubeMap();
-	CubeMap(std::array<std::string_view, 6> texturePaths);
-	~CubeMap();
+	class CubeMap
+	{
+	public:
+		CubeMap();
+		CubeMap(std::array<std::string_view, 6> texturePaths);
+		~CubeMap();
 
-	void bind();
+		void bind();
 
-private:
-	GLuint m_handle;
-};
+	private:
+		GLuint m_handle;
+	};
+}

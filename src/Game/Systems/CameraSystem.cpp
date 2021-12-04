@@ -2,10 +2,8 @@
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>
 
-CameraSystem::CameraSystem(float screenWidth, float screenHeight, float fov, float nearPlaneZ, float farPlaneZ)
-	: screenWidth(screenWidth)
-	, screenHeight(screenHeight)
-	, fov(fov)
+CameraSystem::CameraSystem(float fov, float nearPlaneZ, float farPlaneZ)
+	: fov(fov)
 	, nearPlaneZ(nearPlaneZ)
 	, farPlaneZ(farPlaneZ)
 {}

@@ -59,4 +59,5 @@ TEST(Vec3Test, DotProduct)
 TEST(Vec3Test, CrossProduct)
 {
 	EXPECT_EQ(cross(Vec3(2, 0, 0), Vec3(0, 3, 0)), Vec3(0, 0, 6));
+	EXPECT_EQ(cross(Vec3(0, 3, 0), Vec3(2, 0, 0)), Vec3(0, 0, -6));
 }

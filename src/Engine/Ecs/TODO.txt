@@ -1,0 +1,2 @@
+Make this more configurable at runtime.
+Component types should be registed at runtime per instance of enitityManager.

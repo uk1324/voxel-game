@@ -1,5 +1,7 @@
 #include <Game/Blocks/ChunkSystem.hpp>
 
+#include <glad/glad.h>
+
 ChunkSystem::ChunkSystem()
 // lastPos is infinity so all the chunks get generated at the start
 	: lastPos(Vec3I(std::numeric_limits<float>::infinity(), 0, 0))
@@ -229,7 +231,7 @@ void ChunkSystem::update(const Vec3& p)
 
 	std::sort(chunksToGenerate.begin(), chunksToGenerate.end(),
 		[&position](const Vec3I& a, const Vec3I& b) {
-			return (a - position).length() > (b - position).length();
+			return Vec3I::distanceSquared(a, position) > Vec3I::distanceSquared(b, position);
 		}
 	); 
 }
@@ -293,8 +295,8 @@ void ChunkSystem::meshChunk(const Vec3I& pos)
 
 	chunk.vertexCount = vertices.size();
 	chunk.vao.bind();
-	chunk.vbo = VertexBuffer(BufferBindTarget::ArrayBuffer, BufferUsage::StaticDraw, vertices.data(), sizeof(GLuint) * vertices.size());
-	chunk.vbo.bind(BufferBindTarget::ArrayBuffer);
+	chunk.vbo = Gfx::VertexBuffer(vertices.data(), sizeof(GLuint) * vertices.size());
+	chunk.vbo.bind();
 	glVertexAttribIPointer(0, 1, GL_UNSIGNED_INT, sizeof(GLuint), (void*)(0));
 	glEnableVertexAttribArray(0);
 }

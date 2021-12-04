@@ -1,5 +1,6 @@
 #include <Engine/Engine.hpp>
 #include <Game/GameScene.hpp>
+#include <TestScene/TestScene.hpp>
 
 // Making Position use a Vec4 might allow for simd and won't require any extra space
 
@@ -14,6 +15,12 @@
 #include <Lang/Debug/AstJsonifier.hpp>
 
 #include <iostream>    
+
+// Maybe remove default constructor of VertexBuffer idk.
+
+// Maybe make a class OpenGL objects that is non copyable and has move constructor and assignment operator.
+
+// TODO: Color class
 
 int main()
 {
@@ -31,7 +38,8 @@ int main()
 	Window window = Engine::init(800, 600, "game");
 
 	Engine engine(60, window);
-	engine.run(std::make_unique<GameScene>(engine));
+	/*engine.run(std::make_unique<GameScene>(engine));*/
+	engine.run(std::make_unique<TestScene>(engine));
 
 	Engine::terminate();
 }

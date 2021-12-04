@@ -1,16 +1,25 @@
 #include <Engine/Graphics/VertexBuffer.hpp>
 
-#include <stddef.h>
+#include <glad/glad.h>
+
+using namespace Gfx;
 
 VertexBuffer::VertexBuffer()
 	: m_handle(NULL)
 {}
 
-VertexBuffer::VertexBuffer(BufferBindTarget target, BufferUsage usage, void* data, GLsizeiptr dataSize)
+VertexBuffer::VertexBuffer(size_t dataSize)
 {
 	glGenBuffers(1, &m_handle);
-	bind(target);
-	glBufferData(static_cast<GLenum>(target), dataSize, data, static_cast<GLenum>(usage));
+	bind();
+	glBufferData(GL_ARRAY_BUFFER, dataSize, nullptr, GL_DYNAMIC_DRAW);
+}
+
+VertexBuffer::VertexBuffer(void* data, size_t dataSize)
+{
+	glGenBuffers(1, &m_handle);
+	bind();
+	glBufferData(GL_ARRAY_BUFFER, dataSize, data, GL_STATIC_DRAW);
 }
 
 VertexBuffer::~VertexBuffer()
@@ -26,14 +35,20 @@ VertexBuffer::VertexBuffer(VertexBuffer&& other) noexcept
 
 VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other) noexcept
 {
+	glDeleteBuffers(1, &m_handle);
 	m_handle = other.m_handle;
 	other.m_handle = NULL;
 	return *this;
 }
 
-void VertexBuffer::bind(BufferBindTarget target) const
+void VertexBuffer::setData(intptr_t offset, void* data, size_t dataSize)
 {
-	glBindBuffer(static_cast<GLenum>(target), m_handle);
+	glBufferSubData(GL_ARRAY_BUFFER, offset, dataSize, data);
+}
+
+void VertexBuffer::bind() const
+{
+	glBindBuffer(GL_ARRAY_BUFFER, m_handle);
 }
 
 const GLuint VertexBuffer::handle() const

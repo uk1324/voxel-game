@@ -22,6 +22,8 @@ public:
 	GenericMat4<T> operator* (T scalar) const;
 	GenericMat4<T> operator* (const GenericMat4<T> mat) const;
 
+	void removeTransform();
+
 	T* data();
 	const T* data() const;
 
@@ -142,6 +144,14 @@ GenericMat4<T> GenericMat4<T>::operator* (const GenericMat4<T> mat) const
 		}
 	}
 	return m;
+}
+
+template<typename T>
+void GenericMat4<T>::removeTransform()
+{
+	set(3, 0, 0);
+	set(3, 1, 0);
+	set(3, 2, 0);
 }
 
 template<typename T>

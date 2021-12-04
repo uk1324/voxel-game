@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Engine/Ecs/Entity.hpp>
 #include <Math/Mat4.hpp>
 
@@ -7,7 +9,7 @@
 class CameraSystem
 {
 public:
-	CameraSystem(float screenWidth, float screenHeight, float fov, float nearPlaneZ, float farPlaneZ);
+	CameraSystem(float fov, float nearPlaneZ, float farPlaneZ);
 	void update(const Entity& player, float screenWidth, float screenHeight);
 
 	const Mat4 projection();

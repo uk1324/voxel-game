@@ -11,8 +11,8 @@
 
 struct ChunkStruct
 {
-	VertexArray vao;
-	VertexBuffer vbo;
+	Gfx::VertexArray vao;
+	Gfx::VertexBuffer vbo;
 	size_t vertexCount;
 };
 

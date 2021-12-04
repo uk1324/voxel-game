@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Math/Vec2.hpp>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -8,8 +9,6 @@
 class Window
 {
 public:
-	// The default and move constructor and move assignment operator only exists because you have to
-	// call GLFWinit before constructing a window so it can't be created in the initializer list.
 	Window();
 	Window(Window&& window) noexcept;
 	Window(int width, int height, std::string_view title);
@@ -18,7 +17,7 @@ public:
 	Window& operator= (const Window&) = delete;
 	Window& operator= (Window&& window) noexcept;
 
-	void getWindowSize(int& width, int& height);
+	Vec2I getWindowSize();
 
 	void update();
 	void close();

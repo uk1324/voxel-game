@@ -1,6 +1,6 @@
 add_executable(
 	voxel-game-test
- "Json/JsonPrinterTest.cpp" "Math/Vec2Test.cpp" "Math/Vec3Test.cpp" "Math/Mat4Test.cpp" "Lang/Parsing/ScannerTest.cpp")
+ "Json/JsonPrinterTest.cpp" "Math/Vec2Test.cpp" "Math/Vec3Test.cpp" "Math/Mat4Test.cpp" "Lang/Parsing/ScannerTest.cpp" "Engine/Ecs/EcsTest.cpp")
 
 enable_testing()
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
