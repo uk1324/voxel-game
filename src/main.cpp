@@ -2,6 +2,8 @@
 
 #include <Engine/Ecs/EntityManager.hpp>
 
+#include <Utils/SmartPointers.hpp>
+
 int main()
 {
 	EntityManager manager;

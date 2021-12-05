@@ -19,3 +19,10 @@ to also be templated and I would need to write auto instead of entity. Systems o
 Nothing can be copied becuase that would break the references between entity and component.
 
 This implementation is stupid, because I didn't take into account that enitity positions change when deleted which invalidates the pointers.
+
+New version
+Entity to the users is just be a uint64_t the data for an entity is stored in EntityData and can be accessed through EntityManager.
+The max entity count and max components per entity are specified in the constructor for EntityManager.
+The entity id is an index into an array of entites so the pointer remains the same. The unused entity ids are stored in a stack
+which probably should be faster than a queue. TODO: Test this.
+
