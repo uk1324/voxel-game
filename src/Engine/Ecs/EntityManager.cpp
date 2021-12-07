@@ -1,63 +1,58 @@
 #include <Engine/Ecs/EntityManager.hpp>
-#include <Engine/Ecs/ComponentPool.hpp>
-#include <Engine/Ecs/Component.hpp>
+#include <Utils/Assertions.hpp>
 #include <Log/Log.hpp>
 
-EntityManager::EntityManager()
-	: m_entityCount(0)
-	, m_createdEntityCount(0)
-	, m_componentPools({ nullptr })
-{}
-
-EntityManager::~EntityManager()
+EntityManager::EntityManager(size_t maxEntites)
+	: m_maxEntites(maxEntites)
+	, m_registeredComponents(0)
 {
-	for (size_t i = 0; i < Entity::MAX_COMPONENTS; i++)
+	m_freeEntityIds.reserve(maxEntites);
+	for (Entity i = maxEntites - 1; i > 0; i--)
 	{
-		if (m_componentPools[i] != nullptr)
+		m_freeEntityIds.push_back(i);
+	}
+	m_freeEntityIds.push_back(0);
+}
+
+Entity EntityManager::createEntity()
+{
+	if (m_freeEntityIds.size() == 0)
+	{
+		LOG_FATAL("maximum entity count exceeded");
+	}
+	else
+	{
+		Entity entity = m_freeEntityIds.back();
+		m_freeEntityIds.pop_back();
+		for (size_t i = 0; i < m_entityComponent.size(); i++)
 		{
-			delete m_componentPools[i];
+			m_entityComponent[i][entity] = nullptr;
 		}
+		return entity;
 	}
 }
 
-Entity& EntityManager::addEntity()
+void EntityManager::destroyEntity(Entity entity)
 {
-	if (m_entityCount >= MAX_ENTITES)
-		LOG_FATAL("max entity count exceeded");
-
-	Entity* entity = new (&m_entites[m_entityCount]) Entity(m_createdEntityCount);
-	m_entityCount++;
-	m_createdEntityCount++;
-	return *entity;
+	m_destroyedEntites.push_back(entity);
+	m_freeEntityIds.push_back(entity);
 }
 
-void EntityManager::removeDeadEntities()
+size_t EntityManager::registeredTypeCount = 0;
+
+void EntityManager::removeDestroyedEntites()
 {
-	for (size_t i = 0; i < m_entityCount;)
+	for (size_t i = 0; i < m_componentTypeIdToComponentId.size(); i++)
 	{
-		if (m_entites[i].isAlive == false)
+		BaseComponentPool* pool = m_componentPools[i].get();
+		for (Entity entity : m_destroyedEntites)
 		{
-			for (size_t j = 0; j < Entity::MAX_COMPONENTS; j++)
+			Component* component = m_entityComponent[i][entity];
+			if (component != nullptr)
 			{
-				if (m_entites[i].m_components[j] != nullptr)
-				{
-					m_componentPools[j]->removeComponent(m_entites[i].m_components[j]);
-				}
+				pool->remove(component);
 			}
-			m_entites[i].~Entity();
-			new (&m_entites[i]) Entity(std::move(m_entites[m_entityCount - 1]));
-			for (size_t k = 0; k < Entity::MAX_COMPONENTS; k++)
-			{
-				if (m_entites[i].m_components[k] != nullptr)
-				{
-					m_entites[i].m_components[k]->m_entity = &m_entites[i];
-				}
-			}
-			m_entityCount--;
-		}
-		else
-		{
-			i++;
 		}
 	}
+	m_destroyedEntites.clear();
 }

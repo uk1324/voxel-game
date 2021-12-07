@@ -2,13 +2,65 @@
 
 #include <Engine/Ecs/EntityManager.hpp>
 
-#include <Utils/SmartPointers.hpp>
+struct C
+{
+public:
+	C()
+		: value(0)
+	{
+		std::cout << "deafult constructor at " << this << "\n";
+	}
+
+	C(int value)
+		: value(value)
+	{
+		std::cout << "constructor at " << this << "\n";
+	}
+
+	C(const C& o)
+		: value(o.value)
+	{
+		std::cout << "copy from " << &o << " to " << this << "\n";
+	}
+
+	C(C&& o) noexcept
+		: value(o.value)
+	{
+		std::cout << "move from " << &o << " to " << this << "\n";
+	}
+
+	~C()
+	{
+		std::cout << "destructor at " << this << " has value " << value << "\n";
+	}
+
+public:
+	int value;
+};
 
 int main()
 {
-	EntityManager manager;
+	EntityManager manager(10);
+	manager.registerComponent<int>();
+	manager.registerComponent<C>();
+	manager.registerComponent<float>();
 
-	std::cout << "hello";
+	std::cout << "----------------\n";
+
+	Entity e1 = manager.createEntity();
+	//Entity e2 = manager.createEntity();
+	C& a = manager.entityAddComponent(e1, C(6));
+	a.value = 3;
+	//manager.entityAddComponentForward<C>(e1, 5);
+	//manager.entityAddComponent(e2, C(3));
+
+	manager.destroyEntity(e1);
+
+	manager.removeDestroyedEntites();
+
+	std::cout << manager.entityGetComponent<C>(e1).value << '\n';
+
+	std::cout << "----------------\n";
 }
 
 //#include <Engine/Engine.hpp>

@@ -1,43 +1,50 @@
 #pragma once
 
-#include <Engine/Ecs/EntityManager.hpp>
+#include <Utils/SmartPointers.hpp>
 
-#include <new>
+using Entity = uint64_t;
+
+class Component;
 
 class BaseComponentPool
 {
 public:
 	virtual ~BaseComponentPool() {};
-	virtual void removeComponent(Component* component) = 0;
+	virtual void remove(Component* component) = 0;
 };
 
 template<typename T>
-class ComponentPool : BaseComponentPool
+class ComponentPool : public BaseComponentPool
 {
 public:
-	ComponentPool();
+	ComponentPool(size_t maxComponents);
 	~ComponentPool() override;
+	
 	ComponentPool(const ComponentPool&) = delete;
 	ComponentPool& operator= (const ComponentPool&) = delete;
 
-	template <typename ...Args>
-	T* addComponent(Args&&... args);
-	void removeComponent(T* component);
-	void removeComponent(Component* component) override;
+	Entity componentGetEntity(Component& component);
 
-	T* begin();
-	T* end();
-	const T* cbegin() const;
-	const T* cend() const;
+	T* add(Entity entity, T&& component);
+	template<typename ...Args>
+	T* emplace(Entity entity, Args&&... args);
+	void remove(T* component);
+	void remove(Component* component) override;
 
 private:
-	UninitializedArray<T, EntityManager::MAX_ENTITES> m_data;
+	// Can't use OwnPtr because it calls the deafult constructor.
+	T* m_components;
+	OwnPtr<Entity[]> m_componentEntity;
 	size_t m_size;
 };
 
-template <typename T>
-ComponentPool<T>::ComponentPool()
-	: m_size(0)
+#include <Engine/Ecs/EntityManager.hpp>
+
+template<typename T>
+ComponentPool<T>::ComponentPool(size_t maxComponents)
+	: m_components(reinterpret_cast<T*>(::operator new(sizeof(T)* maxComponents)))
+	, m_componentEntity(makeUnique<Entity[]>(maxComponents))
+	, m_size(0)
 {}
 
 template<typename T>
@@ -45,58 +52,56 @@ ComponentPool<T>::~ComponentPool()
 {
 	for (size_t i = 0; i < m_size; i++)
 	{
-		m_data[i].~T();
+		m_components[i].~T();
 	}
+	::operator delete(m_components);
+}
+
+template<typename T>
+Entity ComponentPool<T>::componentGetEntity(Component& component)
+{
+	size_t componentIndex = component - m_components;
+	return m_componentEntity[componentIndex];
+}
+
+template<typename T>
+T* ComponentPool<T>::add(Entity entity, T&& component)
+{
+	T* location = &m_components[m_size];
+	new (location) T(std::forward<T>(component));
+	m_componentEntity[m_size] = entity;
+	m_size++;
+	return location;
 }
 
 template<typename T>
 template<typename ...Args>
-T* ComponentPool<T>::addComponent(Args && ...args)
+T* ComponentPool<T>::emplace(Entity entity, Args&&... args)
 {
-	T* component = &m_data[m_size];
-	new (&m_data[m_size]) T(std::forward<Args>(args)...);
+	T* location = &m_components[m_size];
+	new (location) T(std::forward<Args>(args)...);
+	m_componentEntity[m_size] = entity;
 	m_size++;
-	return component;
+	return location;
 }
 
+
 template<typename T>
-void ComponentPool<T>::removeComponent(T* component)
+void ComponentPool<T>::remove(T* component)
 {
 	component->~T();
-	if (component != &m_data[m_size - 1])
+	size_t componentIndex = component - m_components;
+	T* lastComponent = &m_components[m_size - 1];
+	if (component != lastComponent)
 	{
-		new (component) T(std::move(m_data[m_size - 1]));
-		component->m_entity->m_components[getComponentId<T>()] = component;
+		new (component) T(*lastComponent);
+		m_componentEntity[componentIndex] = m_componentEntity[m_size - 1];
 	}
 	m_size--;
 }
 
 template<typename T>
-void ComponentPool<T>::removeComponent(Component* component)
+void ComponentPool<T>::remove(Component* component)
 {
-	removeComponent(reinterpret_cast<T*>(component));
-}
-
-template<typename T>
-T* ComponentPool<T>::begin()
-{
-	return m_data.data();
-}
-
-template<typename T>
-T* ComponentPool<T>::end()
-{
-	return m_data.data() + m_size;
-}
-
-template<typename T>
-const T* ComponentPool<T>::cbegin() const
-{
-	return m_data();
-}
-
-template<typename T>
-const T* ComponentPool<T>::cend() const
-{
-	return m_data() + m_size;
+	remove(reinterpret_cast<T*>(component));
 }
