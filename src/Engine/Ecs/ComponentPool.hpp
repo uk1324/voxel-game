@@ -30,6 +30,10 @@ class ComponentPool : public BaseComponentPool
 public:
 	ComponentIterator<T> begin();
 	ComponentIterator<T> end();
+	ConstComponentIterator<T> begin() const;
+	ConstComponentIterator<T> end() const;
+	ConstComponentIterator<T> cbegin() const;
+	ConstComponentIterator<T> cend() const;
 
 private:
 	ComponentPool(EntityManager* manager, size_t maxComponents);
@@ -134,6 +138,30 @@ ComponentIterator<T> ComponentPool<T>::begin()
 
 template<typename T>
 ComponentIterator<T> ComponentPool<T>::end()
+{
+	return ComponentIterator<T>(m_components + m_size, m_componentEntity.get() + m_size);
+}
+
+template<typename T>
+ConstComponentIterator<T> ComponentPool<T>::begin() const
+{
+	return ConstComponentIterator<T>(m_components, m_componentEntity.get());
+}
+
+template<typename T>
+ConstComponentIterator<T> ComponentPool<T>::end() const
+{
+	return ConstComponentIterator<T>(m_components + m_size, m_componentEntity.get() + m_size);
+}
+
+template<typename T>
+ConstComponentIterator<T> ComponentPool<T>::cbegin() const
+{
+	return ComponentIterator<T>(m_components, m_componentEntity.get());
+}
+
+template<typename T>
+ConstComponentIterator<T> ComponentPool<T>::cend() const
 {
 	return ComponentIterator<T>(m_components + m_size, m_componentEntity.get() + m_size);
 }

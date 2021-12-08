@@ -31,7 +31,9 @@ public:
 	void entityRemoveComponent(Entity entity);
 
 	template<typename T>
-	ComponentPool<T>& getComponentPool();
+	ComponentPool<T>& getComponents();
+	template<typename T>
+	const ComponentPool<T>& getComponents() const;
 
 	void update();
 
@@ -148,7 +150,13 @@ void EntityManager::entityRemoveComponent(Entity entity)
 }
 
 template<typename T>
-ComponentPool<T>& EntityManager::getComponentPool()
+ComponentPool<T>& EntityManager::getComponents()
+{
+	return *reinterpret_cast<ComponentPool<T>*>(m_componentPools[getComponentIndex<T>()].get());
+}
+
+template<typename T>
+const ComponentPool<T>& EntityManager::getComponents() const
 {
 	return *reinterpret_cast<ComponentPool<T>*>(m_componentPools[getComponentIndex<T>()].get());
 }

@@ -104,38 +104,21 @@
 
 // Maybe make a class OpenGL objects that is non copyable and has move constructor and assignment operator.
 
-// TODO: Color class
-
-#include <ObjParser/ObjParser.hpp>
-
-#include <filesystem>
-
 int main()
 {
-
-
-	//std::string source = stringFromFile("../../../assets/models/cube/cube.obj");
-	//std::string source = stringFromFile("assets/models/cube/cube.obj");
-	//std::cout << source << '\n';
-	//Obj::parse(source);
-
-	//return 0;
-
 	// Add assetPath function to load assets using asset path
 
 	//Lang::Scanner scanner;
 	//auto tokens = scanner.parse("1 + 2 + 3; 4 + 5;");
 	//Lang::Parser parser;
 	//auto ast = parser.parse(tokens);
-
 	//Lang::AstJsonifier json;
 	//std::cout << json.jsonify(ast);
 
 	//return 0;
-	Window window = Engine::init(800, 600, "game");
 
+	Window window = Engine::init(800, 600, "game");
 	Engine engine(60, window);
 	engine.run(std::make_unique<TestScene>(engine));
-
 	Engine::terminate();
 }

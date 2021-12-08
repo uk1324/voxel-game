@@ -32,8 +32,7 @@ GameScene::GameScene(Engine& engine)
     s.link();
     return s;
         }())
-        // Make the constructor take 6 arugments instead of std::array
-    , skybox({ "assets/textures/skybox/right.png", "assets/textures/skybox/left.png", "assets/textures/skybox/top.png", "assets/textures/skybox/bottom.png", "assets/textures/skybox/front.png", "assets/textures/skybox/back.png" })
+    , skybox( Gfx::CubeMapTexturePaths { "assets/textures/skybox/right.png", "assets/textures/skybox/left.png", "assets/textures/skybox/top.png", "assets/textures/skybox/bottom.png", "assets/textures/skybox/front.png", "assets/textures/skybox/back.png" })
 {
     registerActions();
 
@@ -59,7 +58,7 @@ GameScene::GameScene(Engine& engine)
     glFrontFace(GL_CCW);
 
 
-    Gfx::setClearColor(0.52f, 0.80f, 0.92f, 1.0f);
+    Gfx::setClearColor(Color(0.52f, 0.80f, 0.92f, 1.0f));
 }
 
 #include <iostream>
@@ -114,7 +113,7 @@ void GameScene::update()
     skyboxShader.setInt("skybox", 0);
     skyboxShader.setMat4("projection", cameraSystem.projection());
     Mat4 view = cameraSystem.view();
-    view.removeTransform();
+    view.removeTranslation();
     skyboxShader.setMat4("view", view);
 
     glFrontFace(GL_CW);

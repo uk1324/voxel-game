@@ -1,30 +1,55 @@
 #include <gtest/gtest.h>
 
 #include <Engine/Ecs/EntityManager.hpp>
-#include <Engine/Ecs/Component.hpp>
-
-class MyComponent : public Component
-{
-public:
-	MyComponent(int value)
-		: value(value)
-	{}
-
-public:
-	int value;
-};
 
 class EcsTest : public ::testing::Test
 {
+protected:
+	EcsTest()
+		: manager(10)
+	{}
+
 protected:
 	EntityManager manager;
 };
 
 TEST_F(EcsTest, AddingComponents)
 {
-	Entity& entity = manager.addEntity();
-	manager.entityAddComponent<MyComponent>(entity, 2);
-	MyComponent& component = entity.getComponent<MyComponent>();
-	EXPECT_EQ(component.value, 2);
+	manager.registerComponent<int>();
+	Entity entity = manager.createEntity();
+	manager.entityAddComponent<int>(entity, 2);
+	EXPECT_EQ(manager.entityGetComponent<int>(entity), 2);
+}
+
+TEST_F(EcsTest, RemovingComponents)
+{
+	manager.registerComponent<int>();
+	manager.registerComponent<float>();
+	Entity entity = manager.createEntity();
+	manager.entityAddComponent<int>(entity, 5);
+	manager.entityAddComponent<float>(entity, 1.5f);
+	manager.entityRemoveComponent<int>(entity);
+	manager.update();
+	EXPECT_EQ(manager.entityGetComponent<float>(entity), 1.5f);
+}
+
+TEST_F(EcsTest, IteratingComponents)
+{
+	std::vector<int> values = { 1, 2, 3, 4, 5 };
+	static constexpr int SUM = 15;
+
+	manager.registerComponent<int>();
+	for (int value : values)
+	{
+		Entity entity = manager.createEntity();
+		manager.entityEmplaceComponent<int>(entity, value);
+	}
+
+	int sum = 0;
+	for (const auto& [entity, component]: manager.getComponents<int>())
+	{
+		sum += component;
+	}
+	EXPECT_EQ(sum, SUM);
 }
 

@@ -24,6 +24,25 @@ private:
 };
 
 template<typename T>
+struct ConstComponentIterator
+{
+public:
+    ConstComponentIterator(const T* component, const Entity* entity);
+
+    ConstComponentIterator& operator++();
+    ConstComponentIterator operator++(int);
+    ConstComponentIterator& operator--();
+    ConstComponentIterator operator--(int);
+    std::pair<const Entity&, const T&> operator*() const;
+    bool operator ==(const ConstComponentIterator& other) const;
+    bool operator !=(const ConstComponentIterator& other) const;
+
+private:
+    const T* m_component;
+    const Entity* m_entity;
+};
+
+template<typename T>
 ComponentIterator<T>::ComponentIterator(T* component, Entity* entity)
     : m_component(component)
     , m_entity(entity)
@@ -75,6 +94,62 @@ bool ComponentIterator<T>::operator==(const ComponentIterator& other) const
 
 template<typename T>
 bool ComponentIterator<T>::operator!=(const ComponentIterator& other) const
+{
+    return m_component != other.m_component;
+}
+
+template<typename T>
+ConstComponentIterator<T>::ConstComponentIterator(const T* component, const Entity* entity)
+    : m_component(component)
+    , m_entity(entity)
+{}
+
+template<typename T>
+ConstComponentIterator<T>& ConstComponentIterator<T>::operator++()
+{
+    ++m_component;
+    ++m_entity;
+    return *this;
+}
+
+template<typename T>
+ConstComponentIterator<T> ConstComponentIterator<T>::operator++(int)
+{
+    ConstComponentIterator<T> copy = *this;
+    ++(*this);
+    return copy;
+}
+
+template<typename T>
+ConstComponentIterator<T>& ConstComponentIterator<T>::operator--()
+{
+    --m_component;
+    --m_entity;
+    return *this;
+}
+
+template<typename T>
+ConstComponentIterator<T> ConstComponentIterator<T>::operator--(int)
+{
+    ConstComponentIterator<T> copy = *this;
+    --(*this);
+    return copy;
+}
+
+template<typename T>
+std::pair<const Entity&, const T&> ConstComponentIterator<T>::operator*() const
+{
+    return std::pair<const Entity&, const T&>(*m_entity, *m_component);
+}
+
+template<typename T>
+bool ConstComponentIterator<T>::operator==(const ConstComponentIterator& other) const
+{
+    return m_component == other.m_component;
+}
+
+template<typename T>
+bool ConstComponentIterator<T>::operator!=(const ConstComponentIterator& other) const
 {
     return m_component != other.m_component;
 }

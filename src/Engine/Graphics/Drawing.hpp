@@ -1,8 +1,9 @@
 #pragma once
 
+#include <Math/Color.hpp>
 #include <glad/glad.h>
-
 #include <stdint.h>
+
 
 namespace Gfx
 {
@@ -12,7 +13,7 @@ namespace Gfx
 		DepthBuffer = GL_DEPTH_BUFFER_BIT
 	};
 
-	void setClearColor(float r, float g, float b, float a);
+	void setClearColor(const Color& color);
 	void clearBuffer(ClearModeBit mode);
 
 	// Draws triangles of vertices offest to offset + vertexCount of the currently bound VertexArray.

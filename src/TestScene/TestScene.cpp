@@ -1,34 +1,34 @@
-#include "TestScene.hpp"
-#include "TestScene.hpp"
-#include "TestScene.hpp"
 #include <TestScene/TestScene.hpp>
 #include <Engine/Engine.hpp>
-
 #include <Engine/Graphics/GraphicsPrimitives.hpp>
 #include <Engine/Graphics/Drawing.hpp>
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>
 #include <Game/Systems/PlayerMovementComponent.hpp>
 
-
 TestScene::TestScene(Engine& engine)
     : Scene(engine, 100)
     , cameraSystem(90.0f, 0.1f, 1000.0f)
 {
-    Gfx::Shader vertex("src/TestScene/shader.vert", Gfx::ShaderType::Vertex);
-    Gfx::Shader fragment("src/TestScene/shader.frag", Gfx::ShaderType::Fragment);
-    shader.addShader(vertex);
-    shader.addShader(fragment);
-    shader.link();
-
     registerInputActions();
     registerComponents();
     createPlayer();
     setupGraphics();
 
-    GLuint fbo;
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    auto random = []()
+    {
+        return (((rand() % 1000) / 1000.0f));
+    };
+
+    for (int i = 0; i < 10; i++)
+    {
+        Entity entity = entityManager.createEntity();
+        Vec3 position(random() * 15, random() * 15, random() * 15);
+        entityManager.entityEmplaceComponent<Position>(entity, position);
+        Quat rotation(random(), Vec3(random(), random(), random()).normalized());
+        entityManager.entityEmplaceComponent<Rotation>(entity, rotation);
+        entityManager.entityEmplaceComponent<RenderingComponent>(entity);
+    }
 }
 
 void TestScene::update()
@@ -41,12 +41,7 @@ void TestScene::update()
     playerMovementSystem.update(*this, player);
     updateCamera();
 
-    Gfx::clearBuffer(Gfx::ClearModeBit::ColorBuffer | Gfx::ClearModeBit::DepthBuffer);
-    Gfx::Primitives::cubeTrianglesVao->bind();
-    shader.setMat4("projection", cameraSystem.projection());
-    shader.setMat4("view", cameraSystem.view());
-    shader.use();
-    Gfx::drawTriangles(0, 36);
+    renderingSystem.update(entityManager, cameraSystem.view(), cameraSystem.projection());
 }
 
 void TestScene::registerInputActions()
@@ -67,6 +62,7 @@ void TestScene::registerComponents()
     entityManager.registerComponent<Position>();
     entityManager.registerComponent<Rotation>();
     entityManager.registerComponent<PlayerMovementComponent>();
+    entityManager.registerComponent<RenderingComponent>();
 }
 
 void TestScene::createPlayer()
@@ -85,12 +81,13 @@ void TestScene::setupGraphics()
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
     engine.window().hideCursor();
-    Gfx::setClearColor(0.52f, 0.80f, 0.92f, 1.0f);
+    /*Gfx::setClearColor(Color(0.52f, 0.80f, 0.92f, 1.0f));*/
+    Gfx::setClearColor(Color(0, 0, 0, 1.0f));
 }
 
 void TestScene::updateCamera()
 {
     Vec2I windowSize = engine.window().getWindowSize();
     glViewport(0, 0, windowSize.x, windowSize.y);
-    cameraSystem.update(entityManager, player, windowSize.x, windowSize.y);
+    cameraSystem.update(entityManager, player, static_cast<float>(windowSize.x), static_cast<float>(windowSize.y));
 }
