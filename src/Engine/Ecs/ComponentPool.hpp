@@ -5,8 +5,15 @@
 
 class EntityManager;
 
+// Just used as void* for different types of components.
 class Component;
 
+// This only exists because I can't convert a type id back to a type.
+// Could remove this by creating a templated function.
+// componentPoolRemoveComponent(void* componentPool, Component* component)
+// Then when the types are registerd store the pointers to these functions. 
+// This would remove the virtual call, but it would be basically creating my own vtable.
+// Though it might be faster in some cases due to data locality.
 class BaseComponentPool
 {
 public:

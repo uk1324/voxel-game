@@ -1,9 +1,8 @@
 #pragma once
 
-#include <Engine/Ecs/Component.hpp>
 #include <Math/Vec3.hpp>
 
-struct Position : public Component
+struct Position
 {
 public:
 	Position(Vec3 val);

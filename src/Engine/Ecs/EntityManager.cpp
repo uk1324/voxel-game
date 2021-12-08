@@ -18,6 +18,8 @@ Entity EntityManager::createEntity()
 {
 	if (m_freeEntityIds.size() == 0)
 	{
+		// I could resize the vector because entity ids are stable but I would also 
+		// need to update all the pointers.
 		LOG_FATAL("maximum entity count exceeded");
 	}
 	else
@@ -40,15 +42,11 @@ void EntityManager::destroyEntity(Entity entity)
 
 size_t EntityManager::registeredTypeCount = 0;
 
-#include <iostream>
-
 void EntityManager::update()
 {
 	// This has to be in this order so if a component if removed from an entity and then the entity is destroyed
 	// the component doesn't get destroyed twice.
-	std::cout << "removing components\n";
 	removeDestrotedComponents();
-	std::cout << "removing entites\n";
 	removeDestroyedEntites();
 }
 
@@ -73,6 +71,8 @@ void EntityManager::removeDestrotedComponents()
 {
 	for (auto& [componentReferenceLocation, pool] : m_componentsToRemove)
 	{
+		// False warning this doesn't dereference a nullptr unless you remove
+		// a component that an entity doesn't have.
 		pool->remove(*componentReferenceLocation);
 		componentReferenceLocation = nullptr;
 	}

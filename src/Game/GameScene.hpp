@@ -23,7 +23,7 @@ public:
 
 	Gfx::TextureArray textureArray;
 
-	Entity* player;
+	Entity player;
 
 	void update() override;
 

@@ -9,13 +9,13 @@ CameraSystem::CameraSystem(float fov, float nearPlaneZ, float farPlaneZ)
 {}
 
 // Don't know if it is a good idea but the view matrix is generated in update.
-void CameraSystem::update(const Entity& player, float screenWidth, float screenHeight)
+void CameraSystem::update(const EntityManager& entityManager, const Entity& player, float screenWidth, float screenHeight)
 {
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
 
-	const Vec3& playerPos = player.getComponent<Position>().value;
-	const Quat& playerRotation = player.getComponent<Rotation>().value;
+	const Vec3& playerPos = entityManager.entityGetComponent<Position>(player).value;
+	const Quat& playerRotation = entityManager.entityGetComponent<Rotation>(player).value;
 
 	Vec3 direction = (playerRotation * Vec3::forward).normalized();
 	Vec3 target = playerPos + direction;

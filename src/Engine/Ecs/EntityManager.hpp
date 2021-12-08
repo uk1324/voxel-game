@@ -26,6 +26,8 @@ public:
 	template<typename T>
 	T& entityGetComponent(Entity entity);
 	template<typename T>
+	const T& entityGetComponent(Entity entity) const;
+	template<typename T>
 	void entityRemoveComponent(Entity entity);
 
 	template<typename T>
@@ -38,7 +40,7 @@ private:
 	void removeDestrotedComponents();
 
 	template<typename T>
-	size_t getComponentIndex();
+	size_t getComponentIndex() const;
 	template<typename T>
 	void entityUpdateComponentReference(Entity entity, Component* component);
 
@@ -53,18 +55,28 @@ private:
 
 	size_t m_registeredComponents;
 
+	// Type ids may not be created sequentially. For example when two different EntityManagers are
+	// created and the use the same type. Type id is used as an index to convert it to a component id
+	// which can be used to index other arrays. Making the other arrays packed also allows
+	// iterating them linearly so for example removing all components from an entity is easier.
 	std::vector<size_t> m_componentTypeIdToComponentId;
+
 	std::vector<OwnPtr<BaseComponentPool>> m_componentPools;
+	// Entity is an index into the array of arrays of components.
 	std::vector<OwnPtr<Component* []>> m_entityComponent;
 
 	std::vector<Entity> m_freeEntityIds;
 
+	// Don't know if this is a good way to prevent iterator invalidation.
+	// Maybe iterating backwards would also work.
 	std::vector<Entity> m_destroyedEntites;
 
 	struct ComponentToRemove 
 	{
 	public:
+		// Have to store a reference so when I delete it I can set it to nullptr.
 		Component** compoentReferenceLocation;
+		// Can't convert the component ids back to types so I have to store the pool.
 		BaseComponentPool* pool;
 	};
 
@@ -119,6 +131,12 @@ T& EntityManager::entityGetComponent(Entity entity)
 }
 
 template<typename T>
+const T& EntityManager::entityGetComponent(Entity entity) const
+{
+	return *reinterpret_cast<T*>(m_entityComponent[getComponentIndex<T>()][entity]);
+}
+
+template<typename T>
 void EntityManager::entityRemoveComponent(Entity entity)
 {
 	ComponentToRemove toRemove;
@@ -136,7 +154,7 @@ ComponentPool<T>& EntityManager::getComponentPool()
 }
 
 template<typename T>
-size_t EntityManager::getComponentIndex()
+size_t EntityManager::getComponentIndex() const
 {
 	return m_componentTypeIdToComponentId[getTypeId<T>()];
 }

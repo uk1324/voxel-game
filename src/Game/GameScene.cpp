@@ -7,16 +7,13 @@
 #include <Game/Components/Rotation.hpp>
 #include <Engine/Graphics/Drawing.hpp>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include <iostream>
 
 GameScene::GameScene(Engine& engine)
-	: Scene(engine)
+	: Scene(engine, 100)
     , shader([]{
-        Gfx::Shader vertexShader("../../../src/Game/Blocks/chunk.vert", Gfx::ShaderType::Vertex);
-        Gfx::Shader fragmentShader("../../../src/Game/Blocks/chunk.frag", Gfx::ShaderType::Fragment);
+        Gfx::Shader vertexShader("src/Game/Blocks/chunk.vert", Gfx::ShaderType::Vertex);
+        Gfx::Shader fragmentShader("src/Game/Blocks/chunk.frag", Gfx::ShaderType::Fragment);
         Gfx::ShaderProgram s;
         s.addShader(vertexShader);
         s.addShader(fragmentShader);
@@ -24,11 +21,11 @@ GameScene::GameScene(Engine& engine)
         return s;
     }())
     // , texture("../../../assets/textures/blocks/stone.png")
-    , textureArray(16, 16, { "../../../assets/textures/blocks/dirt.png", "../../../assets/textures/blocks/stone.png", "../../../assets/textures/blocks/cobblestone.png", "../../../assets/textures/blocks/grass.png", "../../../assets/textures/blocks/grass2.png" })
+    , textureArray(16, 16, { "assets/textures/blocks/dirt.png", "assets/textures/blocks/stone.png", "assets/textures/blocks/cobblestone.png", "assets/textures/blocks/grass.png", "assets/textures/blocks/grass2.png" })
     , cameraSystem(90, 0.1f, 1000.0f)
     , skyboxShader([] {
-    Gfx::Shader vertexShader("../../../src/Game/cubemap.vert", Gfx::ShaderType::Vertex);
-    Gfx::Shader fragmentShader("../../../src/Game/cubemap.frag", Gfx::ShaderType::Fragment);
+    Gfx::Shader vertexShader("src/Game/cubemap.vert", Gfx::ShaderType::Vertex);
+    Gfx::Shader fragmentShader("src/Game/cubemap.frag", Gfx::ShaderType::Fragment);
     Gfx::ShaderProgram s;
     s.addShader(vertexShader);
     s.addShader(fragmentShader);
@@ -36,14 +33,18 @@ GameScene::GameScene(Engine& engine)
     return s;
         }())
         // Make the constructor take 6 arugments instead of std::array
-    , skybox({ "../../../assets/textures/skybox/right.png", "../../../assets/textures/skybox/left.png", "../../../assets/textures/skybox/top.png", "../../../assets/textures/skybox/bottom.png", "../../../assets/textures/skybox/front.png", "../../../assets/textures/skybox/back.png" })
+    , skybox({ "assets/textures/skybox/right.png", "assets/textures/skybox/left.png", "assets/textures/skybox/top.png", "assets/textures/skybox/bottom.png", "assets/textures/skybox/front.png", "assets/textures/skybox/back.png" })
 {
     registerActions();
 
-    player = &entityManager.addEntity();
-    entityManager.entityAddComponent<Position>(*player, Vec3(0, 40, -2));
-    entityManager.entityAddComponent<Rotation>(*player, Quat::identity);
-    entityManager.entityAddComponent<PlayerMovementComponent>(*player);
+    entityManager.registerComponent<Position>();
+    entityManager.registerComponent<Rotation>();
+    entityManager.registerComponent<PlayerMovementComponent>();
+
+    player = entityManager.createEntity();
+    entityManager.entityEmplaceComponent<Position>(player, Vec3(0, 40, -2));
+    entityManager.entityEmplaceComponent<Rotation>(player, Quat::identity);
+    entityManager.entityEmplaceComponent<PlayerMovementComponent>(player);
 
     textureArray.bind();
     shader.setInt("blockTextureArray", 0);
@@ -58,7 +59,7 @@ GameScene::GameScene(Engine& engine)
     glFrontFace(GL_CCW);
 
 
-    Gfx::setClearColor(0.52, 0.80, 0.92, 1.0f);
+    Gfx::setClearColor(0.52f, 0.80f, 0.92f, 1.0f);
 }
 
 #include <iostream>
@@ -73,13 +74,13 @@ void GameScene::update()
 
     Gfx::clearBuffer(Gfx::ClearModeBit::ColorBuffer | Gfx::ClearModeBit::DepthBuffer);
 
-    playerMovementSystem.update(*this, *player);
+    playerMovementSystem.update(*this, player);
 
     
     Vec2I windowSize = engine.window().getWindowSize();
     glViewport(0, 0, windowSize.x, windowSize.y);
-    cameraSystem.update(*player, windowSize.x, windowSize.y);
-    chunkSystem.update(player->getComponent<Position>().value);
+    cameraSystem.update(entityManager, player, static_cast<float>(windowSize.x), static_cast<float>(windowSize.y));
+    chunkSystem.update(entityManager.entityGetComponent<Position>(player).value);
 
     shader.setMat4("model", Mat4::identity);
     shader.setMat4("camera", cameraSystem.view());

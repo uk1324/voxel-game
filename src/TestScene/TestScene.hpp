@@ -9,7 +9,7 @@ class TestScene : public Scene
 public:
 	TestScene(Engine& engine);
 
-	Entity* player;
+	Entity player;
 
 	Gfx::ShaderProgram shader;
 
@@ -17,6 +17,7 @@ public:
 
 private:
 	void registerInputActions();
+	void registerComponents();
 	void createPlayer();
 	void setupGraphics();
 	

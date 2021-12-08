@@ -51,6 +51,7 @@ void Engine::update()
 	m_currentScene->input.update();
 	m_currentScene->update();
 	m_window.update();
+	m_currentScene->entityManager.update();
 }
 
 void Engine::stop()
