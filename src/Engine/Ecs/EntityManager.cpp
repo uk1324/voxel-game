@@ -40,6 +40,18 @@ void EntityManager::destroyEntity(Entity entity)
 
 size_t EntityManager::registeredTypeCount = 0;
 
+#include <iostream>
+
+void EntityManager::update()
+{
+	// This has to be in this order so if a component if removed from an entity and then the entity is destroyed
+	// the component doesn't get destroyed twice.
+	std::cout << "removing components\n";
+	removeDestrotedComponents();
+	std::cout << "removing entites\n";
+	removeDestroyedEntites();
+}
+
 void EntityManager::removeDestroyedEntites()
 {
 	for (size_t i = 0; i < m_componentTypeIdToComponentId.size(); i++)
@@ -55,4 +67,14 @@ void EntityManager::removeDestroyedEntites()
 		}
 	}
 	m_destroyedEntites.clear();
+}
+
+void EntityManager::removeDestrotedComponents()
+{
+	for (auto& [componentReferenceLocation, pool] : m_componentsToRemove)
+	{
+		pool->remove(*componentReferenceLocation);
+		componentReferenceLocation = nullptr;
+	}
+	m_componentsToRemove.clear();
 }

@@ -1,11 +1,15 @@
 #pragma once
 
 #include <Engine/Ecs/ComponentPool.hpp>
+#include <Utils/Assertions.hpp>
 
 #include <vector>
 
 class EntityManager
 {
+	template <typename T>
+	friend class ComponentPool;
+
 public:
 	EntityManager(size_t maxEntites);
 
@@ -23,12 +27,20 @@ public:
 	T& entityGetComponent(Entity entity);
 	template<typename T>
 	void entityRemoveComponent(Entity entity);
-		
-	void removeDestroyedEntites();
+
+	template<typename T>
+	ComponentPool<T>& getComponentPool();
+
+	void update();
 
 private:
+	void removeDestroyedEntites();
+	void removeDestrotedComponents();
+
 	template<typename T>
 	size_t getComponentIndex();
+	template<typename T>
+	void entityUpdateComponentReference(Entity entity, Component* component);
 
 private:
 	static size_t registeredTypeCount;
@@ -43,11 +55,20 @@ private:
 
 	std::vector<size_t> m_componentTypeIdToComponentId;
 	std::vector<OwnPtr<BaseComponentPool>> m_componentPools;
-	std::vector<OwnPtr<Component*[]>> m_entityComponent;
+	std::vector<OwnPtr<Component* []>> m_entityComponent;
 
 	std::vector<Entity> m_freeEntityIds;
 
 	std::vector<Entity> m_destroyedEntites;
+
+	struct ComponentToRemove 
+	{
+	public:
+		Component** compoentReferenceLocation;
+		BaseComponentPool* pool;
+	};
+
+	std::vector<ComponentToRemove> m_componentsToRemove;
 };
 
 template<typename T>
@@ -62,7 +83,7 @@ void EntityManager::registerComponent()
 	m_componentPools.resize(m_registeredComponents);
 	m_entityComponent.resize(m_registeredComponents);
 	size_t componentIndex = getComponentIndex<T>();
-	m_componentPools[componentIndex].reset(new ComponentPool<T>(m_maxEntites));
+	m_componentPools[componentIndex].reset(new ComponentPool<T>(this, m_maxEntites));
 	m_entityComponent[componentIndex].reset(new Component*[m_maxEntites]);
 
 	for (size_t i = size; i < typeId; i++)
@@ -100,17 +121,30 @@ T& EntityManager::entityGetComponent(Entity entity)
 template<typename T>
 void EntityManager::entityRemoveComponent(Entity entity)
 {
-	size_t componentIndex = m_componentTypeIdToComponentId[typeId];
-	ComponentPool<T>* pool = reinterpret_cast<ComponentPool<T>*>(m_componentPools[componentIndex].get());
-	T*& component = reinterpret_cast<T*>(m_entityComponent[componentIndex][entity]);
-	pool->remove(component);
-	component = nullptr;
+	ComponentToRemove toRemove;
+	size_t componentIndex = getComponentIndex<T>();
+	toRemove.pool = m_componentPools[componentIndex].get();
+	toRemove.compoentReferenceLocation = &m_entityComponent[componentIndex][entity];
+	ASSERT(toRemove.compoentReferenceLocation != nullptr);
+	m_componentsToRemove.push_back(toRemove);
+}
+
+template<typename T>
+ComponentPool<T>& EntityManager::getComponentPool()
+{
+	return *reinterpret_cast<ComponentPool<T>*>(m_componentPools[getComponentIndex<T>()].get());
 }
 
 template<typename T>
 size_t EntityManager::getComponentIndex()
 {
 	return m_componentTypeIdToComponentId[getTypeId<T>()];
+}
+
+template<typename T>
+void EntityManager::entityUpdateComponentReference(Entity entity, Component* component)
+{
+	m_entityComponent[getComponentIndex<T>()][entity] = component;
 }
 
 template<typename T>

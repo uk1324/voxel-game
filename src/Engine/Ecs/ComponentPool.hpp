@@ -1,8 +1,9 @@
 #pragma once
 
 #include <Utils/SmartPointers.hpp>
+#include <Engine/Ecs/ComponentIterator.hpp>
 
-using Entity = uint64_t;
+class EntityManager;
 
 class Component;
 
@@ -13,11 +14,18 @@ public:
 	virtual void remove(Component* component) = 0;
 };
 
+
 template<typename T>
 class ComponentPool : public BaseComponentPool
 {
+	friend class EntityManager;
+
 public:
-	ComponentPool(size_t maxComponents);
+	ComponentIterator<T> begin();
+	ComponentIterator<T> end();
+
+private:
+	ComponentPool(EntityManager* manager, size_t maxComponents);
 	~ComponentPool() override;
 	
 	ComponentPool(const ComponentPool&) = delete;
@@ -36,13 +44,16 @@ private:
 	T* m_components;
 	OwnPtr<Entity[]> m_componentEntity;
 	size_t m_size;
+
+	EntityManager* m_manager;
 };
 
 #include <Engine/Ecs/EntityManager.hpp>
 
 template<typename T>
-ComponentPool<T>::ComponentPool(size_t maxComponents)
-	: m_components(reinterpret_cast<T*>(::operator new(sizeof(T)* maxComponents)))
+ComponentPool<T>::ComponentPool(EntityManager* manager, size_t maxComponents)
+	: m_manager(manager)
+	, m_components(reinterpret_cast<T*>(::operator new(sizeof(T)* maxComponents)))
 	, m_componentEntity(makeUnique<Entity[]>(maxComponents))
 	, m_size(0)
 {}
@@ -95,7 +106,9 @@ void ComponentPool<T>::remove(T* component)
 	if (component != lastComponent)
 	{
 		new (component) T(*lastComponent);
-		m_componentEntity[componentIndex] = m_componentEntity[m_size - 1];
+		Entity entity = m_componentEntity[m_size - 1];
+		m_componentEntity[componentIndex] = entity;
+		m_manager->entityUpdateComponentReference<T>(entity, reinterpret_cast<Component*>(component));
 	}
 	m_size--;
 }
@@ -104,4 +117,16 @@ template<typename T>
 void ComponentPool<T>::remove(Component* component)
 {
 	remove(reinterpret_cast<T*>(component));
+}
+
+template<typename T>
+ComponentIterator<T> ComponentPool<T>::begin()
+{
+	return ComponentIterator<T>(m_components, m_componentEntity.get());
+}
+
+template<typename T>
+ComponentIterator<T> ComponentPool<T>::end()
+{
+	return ComponentIterator<T>(m_components + m_size, m_componentEntity.get() + m_size);
 }

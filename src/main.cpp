@@ -38,6 +38,8 @@ public:
 	int value;
 };
 
+// Compo
+
 int main()
 {
 	EntityManager manager(10);
@@ -47,18 +49,35 @@ int main()
 
 	std::cout << "----------------\n";
 
-	Entity e1 = manager.createEntity();
-	//Entity e2 = manager.createEntity();
-	C& a = manager.entityAddComponent(e1, C(6));
-	a.value = 3;
-	//manager.entityAddComponentForward<C>(e1, 5);
-	//manager.entityAddComponent(e2, C(3));
+	//Entity e1 = manager.createEntity();
+	////Entity e2 = manager.createEntity();
+	//manager.entityEmplaceComponent<C>(e1, 5);
+	////manager.entityAddComponentForward<C>(e1, 5);
+	////manager.entityAddComponent(e2, C(3));
+	//manager.entityRemoveComponent<C>(e1);
+	////manager.destroyEntity(e1);
 
-	manager.destroyEntity(e1);
+	//// Has to be in this order
+	//manager.update();
 
-	manager.removeDestroyedEntites();
+	//manager.entityEmplaceComponent<C>(e1, 6);
+	//manager.destroyEntity(e1);
 
-	std::cout << manager.entityGetComponent<C>(e1).value << '\n';
+	//manager.update();
+
+	for (int i = 0; i < 10; i++)
+	{
+		Entity e = manager.createEntity();
+		manager.entityEmplaceComponent<C>(e, i + 1);
+	}
+
+	for (auto [entity, component] : manager.getComponentPool<C>())
+	{
+		std::cout << entity << " " << component.value << '\n';
+	}
+
+
+	//std::cout << manager.entityGetComponent<C>(e1).value << '\n';
 
 	std::cout << "----------------\n";
 }
