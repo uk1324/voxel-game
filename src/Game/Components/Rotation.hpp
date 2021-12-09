@@ -1,9 +1,8 @@
 #pragma once
 
-#include <Engine/Ecs/Component.hpp>
 #include <Math/Quaternion.hpp>
 
-class Rotation : public Component
+class Rotation
 {
 public:
 	Rotation(const Quat& val);

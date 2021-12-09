@@ -8,8 +8,17 @@ CubeMap::CubeMap()
 	: m_handle(NULL)
 {}
 
-CubeMap::CubeMap(std::array<std::string_view, 6> texturePaths)
+CubeMap::CubeMap(const CubeMapTexturePaths& texture)
 {
+	std::array<std::string_view, 6> texturePaths = {
+		texture.right,
+		texture.left,
+		texture.top,
+		texture.bottom,
+		texture.front,
+		texture.back 
+	};
+
 	glGenTextures(1, &m_handle);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, m_handle);
 

@@ -8,9 +8,10 @@ Scanner::Scanner()
 	, m_tokenStartIndex(0)
 {}
 
-std::vector<Token> Scanner::parse(std::string_view source)
+std::vector<Token> Scanner::parse(SourceInfo& sourceInfoToComplete)
 {
-	m_source = source;
+	m_sourceInfo = &sourceInfoToComplete;
+	m_sourceInfo->lineStartOffsets.push_back(0);
 	m_currentCharIndex = 0;
 	m_tokenStartIndex = 0;
 	m_tokens.clear();
@@ -20,7 +21,7 @@ std::vector<Token> Scanner::parse(std::string_view source)
 		m_tokens.push_back(token());
 	}
 
-	m_tokens.push_back(Token(TokenType::Eof, ""));
+	m_tokens.push_back(Token(TokenType::Eof, "", m_currentCharIndex, m_currentCharIndex));
 
 	return m_tokens;
 }
@@ -55,7 +56,11 @@ Token Scanner::number()
 
 Token Scanner::makeToken(TokenType type)
 {
-	Token token(type, m_source.substr(m_tokenStartIndex, m_currentCharIndex - m_tokenStartIndex));
+	Token token(type, 
+		m_sourceInfo->source.substr(m_tokenStartIndex, m_currentCharIndex - m_tokenStartIndex),
+		m_tokenStartIndex, m_currentCharIndex
+	);
+
 	m_tokenStartIndex = m_currentCharIndex;
 	return token;
 }
@@ -70,10 +75,14 @@ void Scanner::skipWhitespace()
 		{
 			case ' ':
 			case '\t':
-			case '\n':
 			case '\r':
 			case '\f':
 				advance();
+				break;
+
+			case '\n':
+				advance();
+				advanceLine();
 				break;
 
 			default:
@@ -85,14 +94,14 @@ void Scanner::skipWhitespace()
 
 char Scanner::peek()
 {
-	return m_source[m_currentCharIndex];
+	return m_sourceInfo->source[m_currentCharIndex];
 }
 
 bool Scanner::isAtEnd()
 {
 	// Shouldn't advance past equality. Probably could remove this.
-	ASSERT(m_currentCharIndex <= m_source.size());
-	return m_currentCharIndex >= m_source.size();
+	ASSERT(m_currentCharIndex <= m_sourceInfo->source.size());
+	return m_currentCharIndex >= m_sourceInfo->source.size();
 }
 
 // TODO: Support UTF-8
@@ -100,6 +109,11 @@ void Scanner::advance()
 {
 	if (isAtEnd() == false)
 		m_currentCharIndex++;
+}
+
+void Scanner::advanceLine()
+{
+	m_sourceInfo->lineStartOffsets.push_back(m_currentCharIndex);
 }
 
 bool Scanner::isDigit(char c)

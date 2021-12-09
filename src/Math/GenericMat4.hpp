@@ -22,7 +22,9 @@ public:
 	GenericMat4<T> operator* (T scalar) const;
 	GenericMat4<T> operator* (const GenericMat4<T> mat) const;
 
-	void removeTransform();
+	void removeTranslation();
+	void setTranslation(const Vec3& translation);
+	void scale(const Vec3& scale);
 
 	T* data();
 	const T* data() const;
@@ -45,13 +47,6 @@ private:
 
 template<typename T>
 std::ostream& operator<< (std::ostream& os, GenericMat4<T> mat);
-
-// Translates the matrix by adding vec to the w vector.
-template<typename T>
-GenericMat4<T> translate(const GenericMat4<T>& mat, const GenericVec3<T>& vec);
-// Scales the basis vectors by components of vec.
-template<typename T>
-GenericMat4<T> scale(const GenericMat4<T>& mat, const GenericVec3<T>& vec);
 
 template<typename T>
 GenericMat4<T>::GenericMat4()
@@ -147,11 +142,38 @@ GenericMat4<T> GenericMat4<T>::operator* (const GenericMat4<T> mat) const
 }
 
 template<typename T>
-void GenericMat4<T>::removeTransform()
+void GenericMat4<T>::removeTranslation()
 {
 	set(3, 0, 0);
 	set(3, 1, 0);
 	set(3, 2, 0);
+}
+
+template<typename T>
+void GenericMat4<T>::setTranslation(const Vec3& translation)
+{
+	set(3, 0, translation.x);
+	set(3, 1, translation.y);
+	set(3, 2, translation.z);
+}
+
+template<typename T>
+void GenericMat4<T>::scale(const Vec3& scale)
+{
+	operator()(0, 0) *= scale.x;
+	operator()(1, 0) *= scale.x;
+	operator()(2, 0) *= scale.x;
+	operator()(3, 0) *= scale.x;
+	
+	operator()(0, 1) *= scale.y;
+	operator()(1, 1) *= scale.y;
+	operator()(2, 1) *= scale.y;
+	operator()(3, 1) *= scale.y;
+	
+	operator()(0, 2) *= scale.z;
+	operator()(1, 2) *= scale.z;
+	operator()(2, 2) *= scale.z;
+	operator()(3, 2) *= scale.z;
 }
 
 template<typename T>
@@ -258,36 +280,4 @@ std::ostream& operator<<(std::ostream& os, GenericMat4<T> mat)
 	}
 
 	return os;
-}
-
-template<typename T>
-GenericMat4<T> translate(const GenericMat4<T>& mat, const GenericVec3<T>& vec)
-{
-	GenericMat4<T> m = mat;
-	m(3, 0) += vec.x;
-	m(3, 1) += vec.y;
-	m(3, 2) += vec.z;
-	return m;
-}
-
-template<typename T>
-GenericMat4<T> scale(const GenericMat4<T>& mat, const GenericVec3<T>& vec)
-{
-	GenericMat4<T> m = mat;
-	m(0, 0) *= vec.x;
-	m(1, 0) *= vec.x;
-	m(2, 0) *= vec.x;
-	m(3, 0) *= vec.x;
-
-	m(0, 1) *= vec.y;
-	m(1, 1) *= vec.y;
-	m(2, 1) *= vec.y;
-	m(3, 1) *= vec.y;
-
-	m(0, 2) *= vec.z;
-	m(1, 2) *= vec.z;
-	m(2, 2) *= vec.z;
-	m(3, 2) *= vec.z;
-
-	return m;
 }

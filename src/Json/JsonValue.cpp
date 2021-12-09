@@ -512,7 +512,7 @@ void Json::Value::destructValue()
 		m_value.string.~basic_string<char>();
 		break;
 	case Type::Object:
-		m_value.object.~unordered_map<StringType, Value>();
+		m_value.object.~MapType();
 		break;
 	case Type::Array:
 		m_value.array.~vector();

@@ -12,7 +12,7 @@ class Engine;
 class Scene
 {
 public:
-	Scene(Engine& engine);
+	Scene(Engine& engine, size_t maxEntites);
 	virtual ~Scene() {};
 	
 	virtual void update() = 0;

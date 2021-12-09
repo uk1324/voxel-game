@@ -8,7 +8,7 @@ namespace Lang
 	class NumberConstantExpr : public Expr
 	{
 	public:
-		NumberConstantExpr(Token token);
+		NumberConstantExpr(Token token, size_t start, size_t end);
 
 		void accept(ExprVisitor& visitor) const override;
 		const char* name() const override;

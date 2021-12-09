@@ -1,6 +1,10 @@
 #include <Lang/Parsing/Token.hpp>
 
-Lang::Token::Token(TokenType type, std::string_view text)
+using namespace Lang;
+
+Token::Token(TokenType type, std::string_view text, size_t start, size_t end)
 	: type(type)
 	, text(text)
+	, start(start)
+	, end(end)
 {}

@@ -7,11 +7,17 @@
 
 namespace Gfx
 {
+	struct CubeMapTexturePaths
+	{
+	public:
+		std::string_view right, left, top, bottom, front, back;
+	};
+
 	class CubeMap
 	{
 	public:
+		CubeMap(const CubeMapTexturePaths& texture);
 		CubeMap();
-		CubeMap(std::array<std::string_view, 6> texturePaths);
 		~CubeMap();
 
 		void bind();

@@ -2,22 +2,21 @@
 
 #include <Lang/Ast/Expr.hpp>
 #include <Lang/Parsing/Token.hpp>
-
-#include <memory>
+#include <Utils/SmartPointers.hpp>
 
 namespace Lang
 {
 	class BinaryExpr : public Expr
 	{
 	public:
-		BinaryExpr(std::unique_ptr<Expr>&& lhs, std::unique_ptr<Expr>&& rhs, Token op);
+		BinaryExpr(OwnPtr<Expr>&& lhs, OwnPtr<Expr>&& rhs, Token op, size_t start, size_t end);
 
 		void accept(ExprVisitor& visitor) const override;
 		const char* name() const override;
 
 	public:
-		std::unique_ptr<Expr> lhs;
-		std::unique_ptr<Expr> rhs;
+		OwnPtr<Expr> lhs;
+		OwnPtr<Expr> rhs;
 		Token op;
 	};
 }

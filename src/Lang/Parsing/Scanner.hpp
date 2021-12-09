@@ -1,9 +1,7 @@
 #pragma once
 
 #include <Lang/Parsing/Token.hpp>
-
-#include <vector>
-#include <string_view>
+#include <Lang/Parsing/SourceInfo.hpp>
 
 // Maybe make every function private and only expose a friend function like std::vector<Token> parseTokens(std::string_view source);
 // The problem is that it would need to construct a new object for each parse.
@@ -16,7 +14,7 @@ namespace Lang
 	public:
 		Scanner();
 
-		std::vector<Token> parse(std::string_view source);
+		std::vector<Token> parse(SourceInfo& sourceInfoToComplete);
 
 	private:
 		Token token();
@@ -30,6 +28,7 @@ namespace Lang
 		char peek();
 		bool isAtEnd();
 		void advance();
+		void advanceLine();
 
 		bool isDigit(char c);
 		bool match(char c);
@@ -38,7 +37,8 @@ namespace Lang
 		std::vector<Token> m_tokens;
 
 		// It could be faster to just increment a pointer.
-		std::string_view m_source;
+		SourceInfo* m_sourceInfo;
+
 
 		size_t m_currentCharIndex;
 		size_t m_tokenStartIndex;

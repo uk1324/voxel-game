@@ -25,10 +25,12 @@ namespace Lang
 
 	struct Token
 	{
-		explicit Token(TokenType type, std::string_view text);
+		Token(TokenType type, std::string_view text, size_t start, size_t end);
 
 		// TODO: Maybe make both const
 		TokenType type;
 		std::string_view text;
+		size_t start;
+		size_t end;
 	};
 }

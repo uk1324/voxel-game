@@ -27,7 +27,7 @@ message(STATUS "foo include dir: ${CMAKE_SOURCE_DIR}")
 
 add_subdirectory(src)
 # Working directory can be set by clicking debug > debug and launch settings for <target> and settings "currentDir": "${projectDir}"
-add_executable(voxel-game-run "src/main.cpp")
+add_executable(voxel-game-run "src/main.cpp" "dependencies/stb_image/src/stb_image.c")
 target_link_libraries(voxel-game-run voxel-game-lib)
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)

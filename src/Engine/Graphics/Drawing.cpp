@@ -2,9 +2,9 @@
 
 using namespace Gfx;
 
-void Gfx::setClearColor(float r, float g, float b, float a)
+void Gfx::setClearColor(const Color& color)
 {
-	glClearColor(r, g, b, a);
+	glClearColor(color.r, color.g, color.b, color.a);
 }
 
 void Gfx::clearBuffer(ClearModeBit mode)

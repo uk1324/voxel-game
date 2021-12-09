@@ -17,6 +17,10 @@ namespace Lang
 		void visitExprStmt(const ExprStmt& stmt) override;
 
 	private:
+		void addStartEnd(Json::Value& node, const Expr& expr);
+		void addStartEnd(Json::Value& node, const Stmt& stmt);
+
+	private:
 		// Templated functions can't be virtual so I have to use this for return values.
 		// I could use std::any.
 		Json::Value m_returnValue;

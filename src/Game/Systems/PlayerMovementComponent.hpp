@@ -1,8 +1,6 @@
 #pragma once
 
-#include <Engine/Ecs/Component.hpp>
-
-struct PlayerMovementComponent : public Component
+struct PlayerMovementComponent
 {
 public:
 	PlayerMovementComponent();

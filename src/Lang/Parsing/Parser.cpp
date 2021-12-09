@@ -1,84 +1,137 @@
 #include <Lang/Parsing/Parser.hpp>
-#include <Utils/Assertions.hpp>
 #include <Lang/Ast/Expr/BinaryExpr.hpp>
 #include <Lang/Ast/Expr/NumberConstantExpr.hpp>
 #include <Lang/Ast/Stmt/ExprStmt.hpp>
+#include <Utils/Assertions.hpp>
+#include <Utils/TerminalColors.hpp>
 
 #include <iostream>
 
 using namespace Lang;
+
+Parser::ParsingError::ParsingError(const char* message, size_t start, size_t end)
+	: message(message)
+	, start(start)
+	, end(end)
+{}
+
+Parser::ParsingError::ParsingError(const char* message, const Token& token)
+	: ParsingError(message, token.start, token.end)
+{}
+
+Parser::ParsingError::ParsingError(const char* message, const Expr& expr)
+	: ParsingError(message, expr.start, expr.end)
+{}
+
+Parser::ParsingError::ParsingError(const char* message, const Stmt& stmt)
+	: ParsingError(message, stmt.start, stmt.end)
+{}
 
 Parser::Parser()
 	: m_tokens(nullptr)
 	, m_currentTokenIndex(0)
 {}
 
-std::vector<std::unique_ptr<Stmt>> Parser::parse(const std::vector<Token>& tokens)
+std::vector<OwnPtr<Stmt>> Parser::parse(const std::vector<Token>& tokens, const SourceInfo& sourceInfo)
 {
 	m_tokens = &tokens;
+	m_sourceInfo = &sourceInfo;
 	m_currentTokenIndex = 0;
 
-	std::vector<std::unique_ptr<Stmt>> ast;
+	std::vector<OwnPtr<Stmt>> ast;
 
 	while (isAtEnd() == false)
 	{
-		ast.push_back(stmt());
+		try
+		{
+			if (match(TokenType::Semicolon))
+				; // Null statement like this line
+			else
+				ast.push_back(stmt());
+		}
+		catch (const ParsingError& error)
+		{
+			// if (isAtEnd()) // EOF error // Should there be eof errors
+
+			// Skip errors from scanner.
+			if (peek().type == TokenType::Error)
+			{
+				;
+			}
+			else
+			{
+				// GCC multi line error example
+				/*
+				source>:19:9: error: cannot convert 'X' to 'int'
+			   19 |         X(
+				  |         ^~
+				  |         |
+				  |         X
+			   20 | 
+				  |          
+			   21 |         )
+				  |         ~
+				*/
+				std::cout << TERM_COL_RED << "error: " << TERM_COL_RESET << error.message << '\n'
+					<< m_sourceInfo->getLineText(m_sourceInfo->getLine(error.start));
+			}
+
+			synchronize();
+		}
 	}
 
 	return ast;
 }
 
-std::unique_ptr<Stmt> Parser::stmt()
+OwnPtr<Stmt> Parser::stmt()
 {
 	if (false)
-	{
-
-	}
+		;
 	else
 		return exprStmt();
 
 }
 
-std::unique_ptr<Stmt> Parser::exprStmt()
+OwnPtr<Stmt>Parser::exprStmt()
 {
+	size_t start = peek().start;
 	auto expression = expr();
-	auto stmt = std::make_unique<ExprStmt>(std::move(expression));
 	expect(TokenType::Semicolon, "expected ';'");
+	size_t end = peekPrevious().end;
+
+	auto stmt = std::make_unique<ExprStmt>(std::move(expression), start, end);
 	return stmt;
 }
 
-std::unique_ptr<Expr> Parser::expr()
+OwnPtr<Expr> Parser::expr()
 {
 	return factor();
 }
 
-std::unique_ptr<Expr> Parser::factor()
+OwnPtr<Expr> Parser::factor()
 {
-	auto expr = literal();
+	size_t start = peek().start;
+	auto expr = primary();
 
 	while (match(TokenType::Plus) && (isAtEnd() == false))
 	{
 		Token op = peekPrevious();
-		auto rhs = literal();
-		expr = std::make_unique<BinaryExpr>(std::move(expr), std::move(rhs), op);
+		auto rhs = primary();
+		size_t end = peekPrevious().end;
+		expr = std::make_unique<BinaryExpr>(std::move(expr), std::move(rhs), op, start, end);
 	}
 
 	return expr;
 }
 
-std::unique_ptr<Expr> Parser::literal()
+OwnPtr<Expr> Parser::primary()
 {
 	if (match(TokenType::IntNumber))
 	{
-		return std::make_unique<NumberConstantExpr>(peekPrevious());
+		return std::make_unique<NumberConstantExpr>(peekPrevious(), peekPrevious().start, peekPrevious().end);
 	}
 
-	error("expected literal");
-}
-
-void Parser::error(std::string_view message)
-{
-	std::cout << "Syntax Error: " << message << '\n';
+	throw ParsingError("expected primary expression", peek().start, peek().start);
 }
 
 const Token& Parser::peek() const
@@ -101,11 +154,26 @@ bool Parser::match(TokenType type)
 	return false;
 }
 
-void Parser::expect(TokenType type, std::string_view errorMessage)
+void Parser::expect(TokenType type, const char* errorMessage)
 {
 	if (match(type) == false)
 	{
-		error(errorMessage);
+		throw ParsingError(errorMessage, peek().start, peek().end);
+	}
+}
+
+void Parser::synchronize()
+{
+	while (isAtEnd() == false)
+	{
+		switch (peek().type)
+		{
+			case TokenType::Semicolon:
+				break;
+
+			default:
+				return;
+		}
 	}
 }
 
@@ -117,6 +185,5 @@ void Parser::advance()
 
 bool Parser::isAtEnd()
 {
-	// Shouldn't advance past equality. Probably could remove this.
 	return (peek().type == TokenType::Eof);
 }

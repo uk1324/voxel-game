@@ -8,9 +8,10 @@
 
 void PlayerMovementSystem::update(Scene& scene, Entity& player)
 {
-	Vec3& playerPosition = player.getComponent<Position>().value;
-	Quat& playerRotation = player.getComponent<Rotation>().value;
-	PlayerMovementComponent& playerMovement = player.getComponent<PlayerMovementComponent>();
+	EntityManager& entityManager = scene.entityManager;
+	Vec3& playerPosition = entityManager.entityGetComponent<Position>(player).value;
+	Quat& playerRotation = entityManager.entityGetComponent<Rotation>(player).value;
+	PlayerMovementComponent& playerMovement = entityManager.entityGetComponent<PlayerMovementComponent>(player);
 
 	Vec2 offset = scene.input.lastMousePos() - scene.input.mousePos();
 

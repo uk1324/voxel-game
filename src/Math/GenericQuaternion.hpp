@@ -24,7 +24,7 @@ public:
 
 	GenericQuaternion conjugate() const;
 
-	GenericMat4<T> rotationMatrix();
+	GenericMat4<T> rotationMatrix() const;
 
 	GenericQuaternion operator* (const T rhs) const;
 	GenericQuaternion& operator*= (const T rhs);
@@ -107,7 +107,7 @@ GenericQuaternion<T> GenericQuaternion<T>::conjugate() const
 
 
 template<typename T>
-GenericMat4<T> GenericQuaternion<T>::rotationMatrix()
+GenericMat4<T> GenericQuaternion<T>::rotationMatrix() const
 {
 	return GenericMat4<T>({
 		1 - 2 * y * y - 2 * z * z, 2 * x * y - 2 * z * w, 2 * x * z + 2 * y * w, 0,

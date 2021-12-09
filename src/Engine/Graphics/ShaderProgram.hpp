@@ -15,6 +15,7 @@ namespace Gfx
 	{
 	public:
 		ShaderProgram();
+		ShaderProgram(std::string_view vertexPath, std::string_view fragmentPath);
 		~ShaderProgram();
 
 		ShaderProgram(const ShaderProgram&) = delete;
@@ -34,6 +35,7 @@ namespace Gfx
 		void setVec3I(std::string_view name, const Vec3I& vec);
 		void setMat4(std::string_view name, const Mat4& mat);
 		void setInt(std::string_view name, int value);
+		void setFloat(std::string_view name, float value);
 
 		GLuint handle() const;
 

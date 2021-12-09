@@ -3,8 +3,9 @@
 
 using namespace Lang;
 
-BinaryExpr::BinaryExpr(std::unique_ptr<Expr>&& lhs, std::unique_ptr<Expr>&& rhs, Token op)
-	: lhs(std::move(lhs))
+BinaryExpr::BinaryExpr(OwnPtr<Expr>&& lhs, OwnPtr<Expr>&& rhs, Token op, size_t start, size_t end)
+	: Expr(start, end)
+	, lhs(std::move(lhs))
 	, rhs(std::move(rhs))
 	, op(op)
 {}

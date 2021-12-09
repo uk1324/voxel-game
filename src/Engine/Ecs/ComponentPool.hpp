@@ -5,8 +5,15 @@
 
 class EntityManager;
 
+// Just used as void* for different types of components.
 class Component;
 
+// This only exists because I can't convert a type id back to a type.
+// Could remove this by creating a templated function.
+// componentPoolRemoveComponent(void* componentPool, Component* component)
+// Then when the types are registerd store the pointers to these functions. 
+// This would remove the virtual call, but it would be basically creating my own vtable.
+// Though it might be faster in some cases due to data locality.
 class BaseComponentPool
 {
 public:
@@ -23,6 +30,10 @@ class ComponentPool : public BaseComponentPool
 public:
 	ComponentIterator<T> begin();
 	ComponentIterator<T> end();
+	ConstComponentIterator<T> begin() const;
+	ConstComponentIterator<T> end() const;
+	ConstComponentIterator<T> cbegin() const;
+	ConstComponentIterator<T> cend() const;
 
 private:
 	ComponentPool(EntityManager* manager, size_t maxComponents);
@@ -127,6 +138,30 @@ ComponentIterator<T> ComponentPool<T>::begin()
 
 template<typename T>
 ComponentIterator<T> ComponentPool<T>::end()
+{
+	return ComponentIterator<T>(m_components + m_size, m_componentEntity.get() + m_size);
+}
+
+template<typename T>
+ConstComponentIterator<T> ComponentPool<T>::begin() const
+{
+	return ConstComponentIterator<T>(m_components, m_componentEntity.get());
+}
+
+template<typename T>
+ConstComponentIterator<T> ComponentPool<T>::end() const
+{
+	return ConstComponentIterator<T>(m_components + m_size, m_componentEntity.get() + m_size);
+}
+
+template<typename T>
+ConstComponentIterator<T> ComponentPool<T>::cbegin() const
+{
+	return ComponentIterator<T>(m_components, m_componentEntity.get());
+}
+
+template<typename T>
+ConstComponentIterator<T> ComponentPool<T>::cend() const
 {
 	return ComponentIterator<T>(m_components + m_size, m_componentEntity.get() + m_size);
 }

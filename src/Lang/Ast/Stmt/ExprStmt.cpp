@@ -3,8 +3,9 @@
 
 using namespace Lang;
 
-ExprStmt::ExprStmt(std::unique_ptr<Expr>&& expr)
-	: expr(std::move(expr))
+ExprStmt::ExprStmt(OwnPtr<Expr>&& expr, size_t start, size_t end)
+	: Stmt(start, end)
+	, expr(std::move(expr))
 {}
 
 void ExprStmt::accept(StmtVisitor& visitor) const
