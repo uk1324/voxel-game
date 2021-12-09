@@ -76,7 +76,6 @@ int main()
 		std::cout << entity << " " << component.value << '\n';
 	}
 
-
 	//std::cout << manager.entityGetComponent<C>(e1).value << '\n';
 
 	std::cout << "----------------\n";
