@@ -2,6 +2,7 @@
 
 #include <Lang/Ast/ExprVisitor.hpp>
 #include <Lang/Ast/StmtVisitor.hpp>
+#include <Lang/TypeChecking/DataType.hpp>
 #include <Json/Json.hpp>
 
 namespace Lang
@@ -12,17 +13,25 @@ namespace Lang
 		Json::Value jsonify(const std::vector<std::unique_ptr<Stmt>>& ast);
 
 		void visitBinaryExpr(const BinaryExpr& expr) override;
-		void visitNumberConstantExpr(const NumberConstantExpr& expr) override;
+		void visitIntConstantExpr(const IntConstantExpr& expr) override;
+		void visitFloatConstantExpr(const FloatConstantExpr& expr) override;
 
 		void visitExprStmt(const ExprStmt& stmt) override;
+		void visitPrintStmt(const PrintStmt& stmt) override;
+		void visitVariableDeclarationStmt(const VariableDeclarationStmt& stmt) override;
 
 	private:
-		void addStartEnd(Json::Value& node, const Expr& expr);
-		void addStartEnd(Json::Value& node, const Stmt& stmt);
+		void toJson(const OwnPtr<Expr>& expr);
+		void toJson(const OwnPtr<Stmt>& stmt);
+
+		Json::Value dataTypeToJson(const DataType& type);
+
+		void addCommon(Json::Value& node, const Expr& expr);
+		void addCommon(Json::Value& node, const Stmt& stmt);
 
 	private:
 		// Templated functions can't be virtual so I have to use this for return values.
 		// I could use std::any.
-		Json::Value m_returnValue;
+		Json::Value m_returnValue; // Return value for toJson().
 	};
 }

@@ -20,17 +20,24 @@ namespace Lang
 		Token token();
 
 		Token number();
+		Token keywordOrIdentifier();
 
 		Token makeToken(TokenType type);
 
 		void skipWhitespace();
 
+		Token errorToken(const char* message);
 		char peek();
 		bool isAtEnd();
 		void advance();
 		void advanceLine();
 
+		// Making my own functions because the c functions from ctype.h use int as input the results are also based on the current C locale.
+		// Also negative values might trigger asserts. Negative values happen because of conversion from the default on most compilers
+		// signed char. UTF-8 text could trigger the asserts.
 		bool isDigit(char c);
+		bool isAlpha(char c);
+		bool isAlnum(char c);
 		bool match(char c);
 
 	private:

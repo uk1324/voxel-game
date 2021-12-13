@@ -2,21 +2,19 @@
 
 #include <Lang/Ast/Expr.hpp>
 #include <Lang/Parsing/Token.hpp>
-#include <Utils/SmartPointers.hpp>
+#include <Lang/Value.hpp>
 
 namespace Lang
 {
-	class BinaryExpr : public Expr
+	class IntConstantExpr : public Expr
 	{
 	public:
-		BinaryExpr(OwnPtr<Expr>&& lhs, OwnPtr<Expr>&& rhs, Token op, size_t start, size_t end);
+		IntConstantExpr(Token token, size_t start, size_t end);
 
 		void accept(ExprVisitor& visitor) const override;
 		ExprType type() const override;
 
 	public:
-		OwnPtr<Expr> lhs;
-		OwnPtr<Expr> rhs;
-		Token op;
+		Int value;
 	};
 }

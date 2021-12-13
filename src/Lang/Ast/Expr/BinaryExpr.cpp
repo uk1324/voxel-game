@@ -15,7 +15,7 @@ void BinaryExpr::accept(ExprVisitor& visitor) const
 	visitor.visitBinaryExpr(*this);
 }
 
-const char* BinaryExpr::name() const
+ExprType BinaryExpr::type() const
 {
-	return "BinaryExpr";
+	return ExprType::Binary;
 }

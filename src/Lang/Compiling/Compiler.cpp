@@ -17,10 +17,10 @@ void Compiler::visitBinaryExpr(const BinaryExpr& expr)
 	expr.rhs->accept(*this);
 }
 
-void Compiler::visitNumberConstantExpr(const NumberConstantExpr& expr)
-{
-	std::cout << "Number constant expr";
-}
+//void Compiler::visitNumberConstantExpr(const IntConstantExpr& expr)
+//{
+//	std::cout << "Number constant expr";
+//}
 
 Program Compiler::compile(const Expr& expr)
 {

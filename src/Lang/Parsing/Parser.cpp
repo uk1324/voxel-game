@@ -1,7 +1,8 @@
 #include <Lang/Parsing/Parser.hpp>
 #include <Lang/Ast/Expr/BinaryExpr.hpp>
-#include <Lang/Ast/Expr/NumberConstantExpr.hpp>
+#include <Lang/Ast/Expr/IntConstantExpr.hpp>
 #include <Lang/Ast/Stmt/ExprStmt.hpp>
+#include <Lang/Ast/Stmt/PrintStmt.hpp>
 #include <Utils/Assertions.hpp>
 #include <Utils/TerminalColors.hpp>
 
@@ -9,27 +10,28 @@
 
 using namespace Lang;
 
-Parser::ParsingError::ParsingError(const char* message, size_t start, size_t end)
+Parser::ParsingError::ParsingError(const char* message, size_t start, size_t length)
 	: message(message)
 	, start(start)
-	, end(end)
+	, length(length)
 {}
 
 Parser::ParsingError::ParsingError(const char* message, const Token& token)
-	: ParsingError(message, token.start, token.end)
+	: ParsingError(message, token.start, token.end - token.start)
 {}
 
 Parser::ParsingError::ParsingError(const char* message, const Expr& expr)
-	: ParsingError(message, expr.start, expr.end)
+	: ParsingError(message, expr.start, expr.length)
 {}
 
 Parser::ParsingError::ParsingError(const char* message, const Stmt& stmt)
-	: ParsingError(message, stmt.start, stmt.end)
+	: ParsingError(message, stmt.start, stmt.length)
 {}
 
 Parser::Parser()
 	: m_tokens(nullptr)
 	, m_currentTokenIndex(0)
+	, m_sourceInfo(nullptr)
 {}
 
 std::vector<OwnPtr<Stmt>> Parser::parse(const std::vector<Token>& tokens, const SourceInfo& sourceInfo)
@@ -85,14 +87,14 @@ std::vector<OwnPtr<Stmt>> Parser::parse(const std::vector<Token>& tokens, const 
 
 OwnPtr<Stmt> Parser::stmt()
 {
-	if (false)
-		;
+	if (match(TokenType::Print))
+		return printStmt();
 	else
 		return exprStmt();
 
 }
 
-OwnPtr<Stmt>Parser::exprStmt()
+OwnPtr<Stmt> Parser::exprStmt()
 {
 	size_t start = peek().start;
 	auto expression = expr();
@@ -100,6 +102,18 @@ OwnPtr<Stmt>Parser::exprStmt()
 	size_t end = peekPrevious().end;
 
 	auto stmt = std::make_unique<ExprStmt>(std::move(expression), start, end);
+	return stmt;
+}
+
+OwnPtr<Stmt> Parser::printStmt()
+{
+	size_t start = peekPrevious().start;
+	expect(TokenType::LeftParen, "expected '('");
+	auto expression = expr();
+	expect(TokenType::RightParen, "expected ')'");
+	expect(TokenType::Semicolon, "expected ';'");
+	size_t end = peek().end;
+	auto stmt = std::make_unique<PrintStmt>(std::move(expression), start, end);
 	return stmt;
 }
 
@@ -128,7 +142,7 @@ OwnPtr<Expr> Parser::primary()
 {
 	if (match(TokenType::IntNumber))
 	{
-		return std::make_unique<NumberConstantExpr>(peekPrevious(), peekPrevious().start, peekPrevious().end);
+		return std::make_unique<IntConstantExpr>(peekPrevious(), peekPrevious().start, peekPrevious().end);
 	}
 
 	throw ParsingError("expected primary expression", peek().start, peek().start);
@@ -169,10 +183,11 @@ void Parser::synchronize()
 		switch (peek().type)
 		{
 			case TokenType::Semicolon:
-				break;
+				return;
 
 			default:
-				return;
+				advance();
+				break;
 		}
 	}
 }

@@ -43,6 +43,7 @@ namespace Gfx
 		// This isn't the best way to cache uniforms.
 		// A better way would to to parse the glsl files and extract the variables declarations.
 		// ^ (if you really tried you could make this solution also not require map lookup)
+		// (doing this would be pretty hard because of struct declarations and other thing like iterface blocks).
 		// An even faster solution would be to store the locations in variables so no hashmap lookup is required.
 		// You could inherit from ShaderProgram and create a struct locations in the class and initialize them on creation.
 		// That would require a lot of manual work and would be prone to errors so it isn't worth it.

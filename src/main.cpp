@@ -109,7 +109,7 @@ int main()
 {
 	// Add assetPath function to load assets using asset path
 
-	std::string filename = "src/Lang/test.txt";
+	std::string filename = "src/Lang/test.voxl";
 	std::string source = stringFromFile(filename);
 	Lang::SourceInfo sourceInfo;
 	sourceInfo.source = source;
@@ -126,7 +126,7 @@ int main()
 	Lang::Parser parser;
 	auto ast = parser.parse(tokens, sourceInfo);
 	Lang::AstJsonifier json;
-	//std::cout << json.jsonify(ast);
+	std::cout << json.jsonify(ast);
 
 	//return 0;
 

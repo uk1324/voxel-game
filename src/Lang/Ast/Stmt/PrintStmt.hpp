@@ -6,10 +6,10 @@
 
 namespace Lang
 {
-	class ExprStmt : public Stmt
+	class PrintStmt : public Stmt
 	{
 	public:
-		ExprStmt(OwnPtr<Expr>&& expr, size_t start, size_t end);
+		PrintStmt(OwnPtr<Expr>&& expr, size_t start, size_t end);
 
 		void accept(StmtVisitor& visitor) const override;
 		StmtType type() const override;

@@ -10,7 +10,7 @@ namespace Lang
 		Float
 	};
 
-	using Integer = int64_t;
+	using Int = int64_t;
 	using Float = double;
 
 	struct Value
@@ -19,7 +19,7 @@ namespace Lang
 
 		union
 		{
-			Integer intNumber;
+			Int intNumber;
 			Float floatNumber;
 		} as;
 	};

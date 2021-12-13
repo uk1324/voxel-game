@@ -11,7 +11,8 @@ namespace Lang
 		Compiler();
 
 		void visitBinaryExpr(const BinaryExpr& expr) override;
-		void visitNumberConstantExpr(const NumberConstantExpr& expr) override;
+		void visitIntConstantExpr(const IntConstantExpr& expr) override;
+		void visitFloatConstantExpr(const FloatConstantExpr& expr) override;
 
 		Program compile(const Expr& expr);
 

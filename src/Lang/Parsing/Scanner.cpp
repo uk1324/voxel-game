@@ -1,11 +1,14 @@
 #include <Lang/Parsing/Scanner.hpp>
 #include <Utils/Assertions.hpp>
 
+#include <unordered_map>
+
 using namespace Lang;
 
 Scanner::Scanner()
 	: m_currentCharIndex(0)
 	, m_tokenStartIndex(0)
+	, m_sourceInfo(nullptr)
 {}
 
 std::vector<Token> Scanner::parse(SourceInfo& sourceInfoToComplete)
@@ -37,10 +40,17 @@ Token Scanner::token()
 	{
 		case '+': return makeToken(TokenType::Plus);
 		case ';': return makeToken(TokenType::Semicolon);
+		case '=': return makeToken(TokenType::Equals);
+		case '(': return makeToken(TokenType::LeftParen);
+		case ')': return makeToken(TokenType::RightParen);
 
 		default:
 			if (isDigit(c))
 				return number();
+			if (isAlpha(c))
+				return keywordOrIdentifier();
+
+			return errorToken("illegal character");
 	}
 }
 
@@ -50,6 +60,28 @@ Token Scanner::number()
 		advance();
 
 	return makeToken(TokenType::IntNumber);
+}
+
+Token Scanner::keywordOrIdentifier()
+{
+	static const std::unordered_map<std::string_view, TokenType> keywords = {
+		{ "print", TokenType::Print },
+		{ "let", TokenType::Let },
+		{ "int", TokenType::Int },
+		{ "float", TokenType::Float },
+	};
+
+	while (isAlnum(peek()))
+		advance();
+
+	Token token = makeToken(TokenType::Identifier);
+
+	auto keyword = keywords.find(token.text);
+
+	if (keyword != keywords.end())
+		token.type = keyword->second;
+
+	return token;
 }
 
 #include <iostream>
@@ -92,6 +124,15 @@ void Scanner::skipWhitespace()
 	}
 }
 
+Token Scanner::errorToken(const char* message)
+{
+	Token token = makeToken(TokenType::Error);
+
+	std::cout << "scanner error: " << message << '\n';
+
+	return token;
+}
+
 char Scanner::peek()
 {
 	return m_sourceInfo->source[m_currentCharIndex];
@@ -119,6 +160,16 @@ void Scanner::advanceLine()
 bool Scanner::isDigit(char c)
 {
 	return (c >= '0') && (c <= '9');
+}
+
+bool Scanner::isAlpha(char c)
+{
+	return ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'));
+}
+
+bool Scanner::isAlnum(char c)
+{
+	return isAlpha(c) || isDigit(c);
 }
 
 bool Scanner::match(char c)

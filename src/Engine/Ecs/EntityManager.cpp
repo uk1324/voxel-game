@@ -19,7 +19,8 @@ Entity EntityManager::createEntity()
 	if (m_freeEntityIds.size() == 0)
 	{
 		// I could resize the vector because entity ids are stable but I would also 
-		// need to update all the pointers.
+		// need to update all the pointers to components.
+		// A simpler solution would be to use something like a std::deque which keeps pointers stable but iteration would be a bit slower.
 		LOG_FATAL("maximum entity count exceeded");
 	}
 	else

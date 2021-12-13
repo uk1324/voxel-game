@@ -13,7 +13,7 @@ void ExprStmt::accept(StmtVisitor& visitor) const
 	visitor.visitExprStmt(*this);
 }
 
-const char* ExprStmt::name() const
+StmtType ExprStmt::type() const
 {
-	return "ExprStmt";
+	return StmtType::Expr;
 }

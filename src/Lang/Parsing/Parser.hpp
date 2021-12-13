@@ -26,7 +26,7 @@ namespace Lang
 		public:
 			const char* const message;
 			size_t start;
-			size_t end;
+			size_t length;
 		};
 
 	public:
@@ -38,6 +38,7 @@ namespace Lang
 	private:
 		OwnPtr<Stmt> stmt();
 		OwnPtr<Stmt> exprStmt();
+		OwnPtr<Stmt> printStmt();
 
 		OwnPtr<Expr> expr();
 		
@@ -51,6 +52,10 @@ namespace Lang
 		void advance();
 		bool isAtEnd();
 		bool match(TokenType type);
+		// Don't know if I should automate expect expressions sometimes you can provide additional information why or where the error occured
+		// For example in c++ "expected ';' after struct declaration". Errors like this could also be automated or this could be 
+		// made an exception. To automate this you would need to change ParsingError constructor to use std::string instead of const char* 
+		// or do it at compile time maybe with macros idk.
 		void expect(TokenType type, const char* errorMessage);
 		void synchronize();
 
