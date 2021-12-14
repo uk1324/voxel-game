@@ -5,8 +5,9 @@
 
 RenderingSystem::RenderingSystem()
 	: m_shader("src/TestScene/shader.vert", "src/TestScene/shader.frag")
+	, m_model("src/Model/Box.gltf")
 {
-	
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
 #include <iostream>
@@ -16,6 +17,8 @@ void RenderingSystem::update(const EntityManager& entityManager, const Mat4& vie
 {
 	// Can remove clear ColorBuffer if I use a skybox.
 	Gfx::clearBuffer(Gfx::ClearModeBit::ColorBuffer | Gfx::ClearModeBit::DepthBuffer);
+
+	glDisable(GL_CULL_FACE);
 
 	m_shader.setMat4("view", view);
 	m_shader.setMat4("projection", projection);
@@ -33,5 +36,12 @@ void RenderingSystem::update(const EntityManager& entityManager, const Mat4& vie
 
 		Gfx::Primitives::cubeTrianglesVao->bind();
 		Gfx::drawTriangles(0, 36);
+		//std::cout << "vao: " << m_model.meshes[0].vao.handle() << '\n';
+		m_model.meshes[0].vao.bind();
+		m_model.m_buffers[0].bindAsIndexBuffer();
+
+		glDrawElements(GL_POINTS, m_model.meshes[0].count, GL_UNSIGNED_SHORT, reinterpret_cast<void*>(m_model.meshes[0].offset));
+		//glDrawArrays(GL_TRIANGLES, 0, 24);
 	}
+	//std::cout << m_model.meshes[0].count << ' ' << m_model.meshes[0].offset << '\n';
 }

@@ -24,6 +24,7 @@ namespace Gfx
 		void setData(intptr_t offset, void* data, size_t dataSize);
 
 		void bind() const;
+		void bindAsIndexBuffer() const;
 
 		const uint32_t handle() const;
 

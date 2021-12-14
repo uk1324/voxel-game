@@ -105,33 +105,37 @@
 
 #include <map>
 
+// TODO: Add array index functions to Json::Value
+
 int main()
 {
 	// Add assetPath function to load assets using asset path
 
-	std::string filename = "src/Lang/test.voxl";
-	std::string source = stringFromFile(filename);
-	Lang::SourceInfo sourceInfo;
-	sourceInfo.source = source;
-	sourceInfo.filename = filename;
+	//std::string filename = "src/Lang/test.voxl";
+	//std::string source = stringFromFile(filename);
+	//Lang::SourceInfo sourceInfo;
+	//sourceInfo.source = source;
+	//sourceInfo.filename = filename;
 
-	Lang::Scanner scanner;
-	auto tokens = scanner.parse(sourceInfo);
+	//Lang::Scanner scanner;
+	//auto tokens = scanner.parse(sourceInfo);
 
-	for (size_t line : sourceInfo.lineStartOffsets)
-	{
-		std::cout << line << '\n';
-	}
+	//for (size_t line : sourceInfo.lineStartOffsets)
+	//{
+	//	std::cout << line << '\n';
+	//}
 
-	Lang::Parser parser;
-	auto ast = parser.parse(tokens, sourceInfo);
-	Lang::AstJsonifier json;
-	std::cout << json.jsonify(ast);
+	//Lang::Parser parser;
+	//auto ast = parser.parse(tokens, sourceInfo);
+	//Lang::AstJsonifier json;
+	//std::cout << json.jsonify(ast);
 
 	//return 0;
 
-	//Window window = Engine::init(800, 600, "game");
-	//Engine engine(60, window);
-	//engine.run(std::make_unique<TestScene>(engine));
-	//Engine::terminate();
+	{
+		Window window = Engine::init(800, 600, "game");
+		Engine engine(60, window);
+		engine.run(std::make_unique<TestScene>(engine));
+	}
+	Engine::terminate();
 }

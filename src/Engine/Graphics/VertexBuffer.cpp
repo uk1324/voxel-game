@@ -51,6 +51,11 @@ void VertexBuffer::bind() const
 	glBindBuffer(GL_ARRAY_BUFFER, m_handle);
 }
 
+void VertexBuffer::bindAsIndexBuffer() const
+{
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_handle);
+}
+
 const GLuint VertexBuffer::handle() const
 {
 	return m_handle;

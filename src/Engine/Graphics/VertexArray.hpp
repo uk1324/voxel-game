@@ -19,6 +19,7 @@ namespace Gfx
 	struct BufferLayout
 	{
 	public:
+		BufferLayout() = default;
 		BufferLayout(ShaderDataType dataType, uint32_t dataTypeCountPerVertex, intptr_t offset, size_t stride, bool isNormalized);
 
 	public:

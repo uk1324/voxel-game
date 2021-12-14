@@ -3,6 +3,7 @@
 #include <Engine/Ecs/EntityManager.hpp>
 #include <Engine/Graphics/GraphicsPrimitives.hpp>
 #include <Engine/Graphics/ShaderProgram.hpp>
+#include <Model/Model.hpp>
 
 struct RenderingComponent
 {
@@ -18,4 +19,5 @@ public:
 
 private:
 	Gfx::ShaderProgram m_shader;
+	Model m_model;
 };
