@@ -15,7 +15,7 @@ class RenderingSystem
 public:
 	RenderingSystem();
 
-	void update(const EntityManager& entityManager, const Mat4& view, const Mat4& projection);
+	void update(const EntityManager& entityManager, Entity player, const Mat4& view, const Mat4& projection);
 
 private:
 	Gfx::ShaderProgram m_shader;

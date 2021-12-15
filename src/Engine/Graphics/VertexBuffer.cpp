@@ -24,7 +24,7 @@ VertexBuffer::VertexBuffer(void* data, size_t dataSize)
 
 VertexBuffer::~VertexBuffer()
 {
-	glDeleteBuffers(1, &m_handle);
+ 	glDeleteBuffers(1, &m_handle);
 }
 
 VertexBuffer::VertexBuffer(VertexBuffer&& other) noexcept

@@ -50,6 +50,7 @@ void VertexArray::setAttribute(uint32_t index, const BufferLayout& layout)
 		layout.stride, 
 		reinterpret_cast<void*>(layout.offset)
 	);
+	glEnableVertexAttribArray(index);
 }
 
 void VertexArray::bind() const

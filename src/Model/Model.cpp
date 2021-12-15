@@ -31,22 +31,25 @@ Model::Model(std::string_view path)
 			const Json::Value::MapType& bufferInfo = buffer.getObject();
 			std::string bufferData = stringFromFile((folder / bufferInfo.at("uri").getString()).string());
 			float* data = reinterpret_cast<float*>(bufferData.data());
-			for (int i = 0; i < 576 / 4; i++)
-			{
-				if (i % 3 == 0) std::cout << '|';
-				if (i * 4 == 288) std::cout << '\n' << '\n';
-				std::cout << data[i] << ' ';
-			}
-			data += 576 / 4;
-			GL_UNSIGNED_SHORT;
-			for (int i = 0; i < bufferData.size() / 2 - 576 / 4; i++)
-			{
-				std::cout << reinterpret_cast<unsigned short*>(data)[i] << ' ';
-				//if (i % 3 == 0) std::cout << '|';
-			}
+			//for (int i = 0; i < 576 / 4; i++)
+			//{
+			//	if (i % 3 == 0) std::cout << '|';
+			//	if (i * 4 == 288) std::cout << '\n' << '\n';
+			//	std::cout << data[i] << ' ';
+			//}
+			//data += 576 / 4;
+			//
+			//std::cout << (bufferData.size() - 576) / 2 << '\n';
+			//for (int i = 0; i < (bufferData.size() - 576) / 2; i++)
+			//{
+			//	std::cout << reinterpret_cast<unsigned short*>(data)[i] << ' ';
+			//	//if (i % 3 == 0) std::cout << '|';
+			//}
 			size_t bufferDataLength = static_cast<size_t>(bufferInfo.at("byteLength").getIntNumber());
 			ASSERT(bufferDataLength == bufferData.size());
 			m_buffers.push_back(Gfx::VertexBuffer(bufferData.data(), bufferData.size()));
+			m_buffers[0].bind();
+			glBufferSubData(GL_ARRAY_BUFFER, 0, bufferData.size(), bufferData.data());
 		}
 		this->meshes.push_back(Mesh(this->m_buffers, model, 0));
 	}
@@ -91,8 +94,6 @@ Model::Mesh::Mesh(std::vector<Gfx::VertexBuffer>& buffers, const Json::Value& mo
 	const Json::Value::MapType& mesh = model.at("meshes").getArray()[index].getObject();
 	const Json::Value::ArrayType& accessors = model.at("accessors").getArray();
 	const Json::Value::ArrayType& views = model.at("bufferViews").getArray();
-	
-	vao.bind();
 
 	auto primitives = mesh.at("primitives").getArray()[0].at("attributes").getObject();
 	std::cout << mesh.at("primitives").getArray()[0].at("attributes") << '\n';
@@ -121,8 +122,38 @@ Model::Mesh::Mesh(std::vector<Gfx::VertexBuffer>& buffers, const Json::Value& mo
 		layout.isNormalized = false;
 		layout.offset = view.at("byteOffset").getIntNumber() + accessor.at("byteOffset").getIntNumber();
 		layout.stride = view.at("byteStride").getIntNumber();
+		vao.bind();
 		buffers.at(view.at("buffer").getIntNumber()).bind();
 		vao.setAttribute(0, layout);
+		std::cout << layout.offset << ' ' << layout.stride << '\n';
+		std::cout << view.at("byteOffset").getIntNumber() << ' ' << accessor.at("byteOffset").getIntNumber() << '\n';
+	}
+
+	{
+		//int pos = position->second.getIntNumber();
+		int pos = mesh.at("primitives").getArray()[0].at("attributes").at("NORMAL").getIntNumber();
+		auto accessor = accessors.at(pos);
+		auto view = views.at(accessor.at("bufferView").getIntNumber());
+
+		Gfx::BufferLayout layout;
+		layout.dataType = static_cast<Gfx::ShaderDataType>(accessor.at("componentType").getIntNumber());
+		const std::string& type = accessor.at("type").getString();
+
+		if (type == "VEC3")
+		{
+			layout.dataTypeCountPerVertex = 3;
+		}
+		else
+		{
+			ASSERT_NOT_REACHED();
+		}
+
+		layout.isNormalized = false;
+		layout.offset = view.at("byteOffset").getIntNumber() + accessor.at("byteOffset").getIntNumber();
+		layout.stride = view.at("byteStride").getIntNumber();
+		vao.bind();
+		buffers.at(view.at("buffer").getIntNumber()).bind();
+		vao.setAttribute(1, layout);
 		std::cout << layout.offset << ' ' << layout.stride << '\n';
 		std::cout << view.at("byteOffset").getIntNumber() << ' ' << accessor.at("byteOffset").getIntNumber() << '\n';
 	}
