@@ -11,6 +11,7 @@ public:
 	TestScene(Engine& engine);
 
 	Entity player;
+	Entity entity;
 
 	void update() override;
 

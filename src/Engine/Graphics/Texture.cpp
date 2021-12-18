@@ -8,7 +8,7 @@ Texture::Texture(std::string_view path)
 {
 	int width, height, channelCount;
 	static constexpr int REQUIRED_CHANNEL_COUNT = 4;
-	stbi_set_flip_vertically_on_load(true);
+	//stbi_set_flip_vertically_on_load(true);
 	void* data = stbi_load(path.data(), &width, &height, &channelCount, REQUIRED_CHANNEL_COUNT);
 	if (data == nullptr)
 	{

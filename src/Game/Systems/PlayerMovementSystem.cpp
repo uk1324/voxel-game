@@ -15,8 +15,8 @@ void PlayerMovementSystem::update(Scene& scene, Entity& player)
 
 	Vec2 offset = scene.input.lastMousePos() - scene.input.mousePos();
 
-	playerMovement.rotationX += -offset.x * rotationSpeed * scene.time.deltaTime();
-	playerMovement.rotationY +=  offset.y * rotationSpeed * scene.time.deltaTime();
+	playerMovement.rotationX += offset.x * rotationSpeed * scene.time.deltaTime();
+	playerMovement.rotationY += offset.y * rotationSpeed * scene.time.deltaTime();
 
 	if (playerMovement.rotationX > degToRad(360.0f))
 	{

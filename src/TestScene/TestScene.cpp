@@ -36,6 +36,11 @@ TestScene::TestScene(Engine& engine)
         entityManager.entityEmplaceComponent<Rotation>(entity, rotation);
         entityManager.entityEmplaceComponent<RenderingComponent>(entity);
     }
+
+    entity = entityManager.createEntity();
+    entityManager.entityEmplaceComponent<Position>(entity, Vec3());
+    entityManager.entityEmplaceComponent<Rotation>(entity, Quat::identity);
+    entityManager.entityEmplaceComponent<RenderingComponent>(entity);
 }
 
 void TestScene::update()
@@ -45,16 +50,17 @@ void TestScene::update()
         engine.stop();
     }
 
+    entityManager.entityGetComponent<Position>(entity) = entityManager.entityGetComponent<Position>(player).value + Vec3(0, 0, 5);
+    entityManager.entityGetComponent<Rotation>(entity) = entityManager.entityGetComponent<Rotation>(player);
 
     if (input.isButtonDown("attack"))
     {
-        std::cout << "attack\n";
         Entity e = entityManager.createEntity();
         entityManager.entityEmplaceComponent<RenderingComponent>(e);
         entityManager.entityEmplaceComponent<Position>(e, entityManager.entityGetComponent<Position>(player));
         entityManager.entityEmplaceComponent<Rotation>(e, entityManager.entityGetComponent<Rotation>(player));
         Acceleration a;
-        a.value = entityManager.entityGetComponent<Rotation>(player).value * Vec3(0.05, 0.05, 0.05);
+        a.value = entityManager.entityGetComponent<Rotation>(player).value * (Vec3::forward * 0.05);
         entityManager.entityEmplaceComponent<Acceleration>(e, a);
     }
 
@@ -109,7 +115,7 @@ void TestScene::setupGraphics()
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_CULL_FACE);
     //glFrontFace(GL_CCW);
-    glFrontFace(GL_CW);
+    glFrontFace(GL_CCW);
     engine.window().hideCursor();
 
     /*Gfx::setClearColor(Color(0.52f, 0.80f, 0.92f, 1.0f));*/

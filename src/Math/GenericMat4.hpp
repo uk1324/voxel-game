@@ -208,13 +208,21 @@ GenericMat4<T> GenericMat4<T>::perspective(T fov, T aspectRatio, T near, T far)
 	// Maps the points inside the frustrum to the cube from (-1, -1, -1) to (1, 1, 1), because
 	// OpenGL clips all of the triangles outside of the cube.
 	T fovInv = 1.0f / tanf(fov * 0.5f / 180.0f * 3.14159f);
-	Mat4 mat;
+	GenericMat4<T> mat;
 	mat(0, 0) = fovInv;
 	mat(1, 1) = aspectRatio * fovInv;
 	mat(2, 2) = far / (far - near);
-	// 
 	mat(3, 2) = (-far * near) / (far - near);
 	mat(2, 3) = 1.0f;
+
+	//T fovInv = 1.0f / tanf(fov * 0.5f / 180.0f * 3.14159f);
+	//Mat4 mat;
+	//mat(0, 0) = fovInv / aspectRatio;
+	//mat(1, 1) = fov;
+	//mat(2, 2) = (far + near) / (near - far);
+	//mat(3, 2) = (2 * far * near) / (near - far);
+	//mat(2, 3) = 1.0f;
+
 
 	return mat;
 }
@@ -231,8 +239,8 @@ GenericMat4<T> GenericMat4<T>::lookAt(GenericVec3<T> position, GenericVec3<T> ta
 
 	GenericVec3<T> forward = lookDirection.normalized();
 	// Forward and up create a plane so the cross product is the right vector.
-	GenericVec3<T> right = (cross(forward, up)).normalized();
-	GenericVec3<T> projectedUp(cross(right, forward));
+	GenericVec3<T> right = (cross(up, forward)).normalized();
+	GenericVec3<T> projectedUp(cross(forward, right));
 
 	Mat4 m;
 	// The inverse of a orthogonal matrix is equal to it's transpose so to transpose it I put the transformed basis into rows

@@ -10,6 +10,7 @@ RenderingSystem::RenderingSystem()
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	//glEnable(GL_CULL_FACE);
+
 }
 
 #include <iostream>
@@ -41,6 +42,8 @@ void RenderingSystem::update(const EntityManager& entityManager, Entity player, 
 		//Gfx::Primitives::cubeTrianglesVao->bind();
 		//Gfx::drawTriangles(0, 36);
 		//std::cout << "vao: " << m_model.meshes[0].vao.handle() << '\n';
+		m_model.m_textures[0].bind();
+		m_shader.setInt("tex", 0);
 		m_model.meshes[0].vao.bind();
 		m_model.m_buffers[0].bindAsIndexBuffer();
 

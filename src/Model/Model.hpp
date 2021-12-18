@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Engine/Graphics/VertexArray.hpp>
+#include <Engine/Graphics/Texture.hpp>
 #include <Utils/FileIo.hpp>
 #include <Utils/SmartPointers.hpp>
 
@@ -50,4 +51,5 @@ public:
 
 	Gfx::VertexArray vao;
 	std::vector<Gfx::VertexBuffer> m_buffers;
+	std::vector<Gfx::Texture> m_textures;
 };
