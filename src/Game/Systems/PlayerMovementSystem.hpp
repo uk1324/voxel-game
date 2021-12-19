@@ -9,6 +9,7 @@ class PlayerMovementSystem
 public:
 	PlayerMovementSystem() = default;
 
+	void registerActions(InputManager& inputManager);
 	void update(Scene& scene, Entity& player);
 
 public:

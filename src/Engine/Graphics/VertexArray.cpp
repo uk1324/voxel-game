@@ -1,3 +1,4 @@
+#include "VertexArray.hpp"
 #include <Engine/Graphics/VertexArray.hpp>
 
 #include <stddef.h>
@@ -10,6 +11,13 @@ BufferLayout::BufferLayout(ShaderDataType dataType, uint32_t dataTypeCountPerVer
 	, offset(offset)
 	, stride(stride)
 	, isNormalized(isNormalized)
+{}
+
+IntBufferLayout::IntBufferLayout(ShaderDataType dataType, uint32_t dataTypeCountPerVertex, intptr_t offset, size_t stride)
+	: dataType(dataType)
+	, dataTypeCountPerVertex(dataTypeCountPerVertex)
+	, offset(offset)
+	, stride(stride)
 {}
 
 VertexArray::VertexArray()
@@ -43,11 +51,24 @@ uint32_t VertexArray::handle() const
 
 void VertexArray::setAttribute(uint32_t index, const BufferLayout& layout)
 {
-	glVertexAttribPointer(index,
+	glVertexAttribPointer(
+		index,
 		layout.dataTypeCountPerVertex,
 		static_cast<GLenum>(layout.dataType),
 		layout.isNormalized,
 		layout.stride, 
+		reinterpret_cast<void*>(layout.offset)
+	);
+	glEnableVertexAttribArray(index);
+}
+
+void Gfx::VertexArray::setAttribute(uint32_t index, const IntBufferLayout& layout)
+{
+	glVertexAttribIPointer(
+		index,
+		layout.dataTypeCountPerVertex,
+		static_cast<GLenum>(layout.dataType),
+		layout.stride,
 		reinterpret_cast<void*>(layout.offset)
 	);
 	glEnableVertexAttribArray(index);

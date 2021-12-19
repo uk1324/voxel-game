@@ -114,8 +114,8 @@ void TestScene::setupGraphics()
     glEnable(GL_DEPTH_TEST);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);
     //glFrontFace(GL_CCW);
-    glFrontFace(GL_CCW);
     engine.window().hideCursor();
 
     /*Gfx::setClearColor(Color(0.52f, 0.80f, 0.92f, 1.0f));*/

@@ -15,7 +15,7 @@ VertexBuffer::VertexBuffer(size_t dataSize)
 	glBufferData(GL_ARRAY_BUFFER, dataSize, nullptr, GL_DYNAMIC_DRAW);
 }
 
-VertexBuffer::VertexBuffer(void* data, size_t dataSize)
+VertexBuffer::VertexBuffer(const void* data, size_t dataSize)
 {
 	glGenBuffers(1, &m_handle);
 	bind();
@@ -41,7 +41,7 @@ VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other) noexcept
 	return *this;
 }
 
-void VertexBuffer::setData(intptr_t offset, void* data, size_t dataSize)
+void VertexBuffer::setData(intptr_t offset, const void* data, size_t dataSize)
 {
 	glBufferSubData(GL_ARRAY_BUFFER, offset, dataSize, data);
 }

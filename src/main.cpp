@@ -135,7 +135,7 @@ int main()
 	{
 		Window window = Engine::init(800, 600, "game");
 		Engine engine(60, window);
-		engine.run(std::make_unique<TestScene>(engine));
+		engine.run(std::make_unique<GameScene>(engine));
 	}
 	Engine::terminate();
 }

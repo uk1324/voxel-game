@@ -28,7 +28,6 @@ public:
 	void update() override;
 
 private:
-	void registerActions();
 
 private:
 	PlayerMovementSystem playerMovementSystem;

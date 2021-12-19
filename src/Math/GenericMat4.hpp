@@ -237,14 +237,14 @@ GenericMat4<T> GenericMat4<T>::lookAt(GenericVec3<T> position, GenericVec3<T> ta
 
 	// Calculate an orthonormal basis using the Gram-Schmidt process.
 
-	GenericVec3<T> forward = lookDirection.normalized();
+	GenericVec3<T> forward = -lookDirection.normalized();
 	// Forward and up create a plane so the cross product is the right vector.
 	GenericVec3<T> right = (cross(up, forward)).normalized();
 	GenericVec3<T> projectedUp(cross(forward, right));
 
 	Mat4 m;
 	// The inverse of a orthogonal matrix is equal to it's transpose so to transpose it I put the transformed basis into rows
-	// and not columns.
+	// and not columns. 
 	m(0, 0) = right.x;
 	m(1, 0) = right.y;
 	m(2, 0) = right.z;
@@ -254,9 +254,9 @@ GenericMat4<T> GenericMat4<T>::lookAt(GenericVec3<T> position, GenericVec3<T> ta
 	m(2, 1) = projectedUp.z;
 
 	// Don't know why, but it works if it is negated.
-	m(0, 2) = -forward.x;
-	m(1, 2) = -forward.y;
-	m(2, 2) = -forward.z;
+	m(0, 2) = forward.x;
+	m(1, 2) = forward.y;
+	m(2, 2) = forward.z;
 
 	m(3, 3) = 1;
 

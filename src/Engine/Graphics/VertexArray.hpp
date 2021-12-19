@@ -30,6 +30,19 @@ namespace Gfx
 		intptr_t offset;
 	};
 
+	struct IntBufferLayout
+	{
+	public:
+		IntBufferLayout() = default;
+		IntBufferLayout(ShaderDataType dataType, uint32_t dataTypeCountPerVertex, intptr_t offset, size_t stride);
+
+	public:
+		ShaderDataType dataType;
+		uint32_t dataTypeCountPerVertex;
+		size_t stride;
+		intptr_t offset;
+	};
+
 	class VertexArray
 	{
 	public:
@@ -47,6 +60,7 @@ namespace Gfx
 		// Sets the atribute at index to the currently bound VertexBuffer with specified layout.
 		// The VertexArray must be bound before calling.
 		void setAttribute(uint32_t index, const BufferLayout& layout);
+		void setAttribute(uint32_t index, const IntBufferLayout& layout);
 
 		void bind() const;
 

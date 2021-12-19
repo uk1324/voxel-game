@@ -4,7 +4,16 @@
 #include <Game/Components/Rotation.hpp>
 #include <Math/Angles.hpp>
 
-#include <iostream>
+void PlayerMovementSystem::registerActions(InputManager& inputManager)
+{
+	inputManager.registerKeyboardButton("forward", KeyCode::W);
+	inputManager.registerKeyboardButton("back", KeyCode::S);
+	inputManager.registerKeyboardButton("left", KeyCode::A);
+	inputManager.registerKeyboardButton("right", KeyCode::D);
+		 
+	inputManager.registerKeyboardButton("jump", KeyCode::Space);
+	inputManager.registerKeyboardButton("crouch", KeyCode::LeftShift);
+}
 
 void PlayerMovementSystem::update(Scene& scene, Entity& player)
 {
@@ -13,10 +22,10 @@ void PlayerMovementSystem::update(Scene& scene, Entity& player)
 	Quat& playerRotation = entityManager.entityGetComponent<Rotation>(player).value;
 	PlayerMovementComponent& playerMovement = entityManager.entityGetComponent<PlayerMovementComponent>(player);
 
-	Vec2 offset = scene.input.lastMousePos() - scene.input.mousePos();
+	Vec2 offset = scene.input.mousePos() - scene.input.lastMousePos();
 
 	playerMovement.rotationX += offset.x * rotationSpeed * scene.time.deltaTime();
-	playerMovement.rotationY += offset.y * rotationSpeed * scene.time.deltaTime();
+	playerMovement.rotationY -= offset.y * rotationSpeed * scene.time.deltaTime();
 
 	if (playerMovement.rotationX > degToRad(360.0f))
 	{
