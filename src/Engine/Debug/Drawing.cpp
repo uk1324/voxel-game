@@ -7,8 +7,8 @@ void Debug::drawLine(const Vec3& start, const Vec3& end, const Vec3& color)
 {
 	static Vec3 data[2] = { Vec3(0, 0, 0), Vec3(0, 0, 1) };
 	static Gfx::ShaderProgram shader = [](){
-		Gfx::Shader vertexShader("../../../src/Engine/Debug/line.vert", Gfx::ShaderType::Vertex);
-		Gfx::Shader fragmentShader("../../../src/Engine/Debug/line.frag", Gfx::ShaderType::Fragment);
+		Gfx::Shader vertexShader("src/Engine/Debug/line.vert", Gfx::ShaderType::Vertex);
+		Gfx::Shader fragmentShader("src/Engine/Debug/line.frag", Gfx::ShaderType::Fragment);
 		Gfx::ShaderProgram s;
 		s.addShader(vertexShader);
 		s.addShader(fragmentShader);

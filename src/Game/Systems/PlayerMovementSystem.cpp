@@ -24,8 +24,8 @@ void PlayerMovementSystem::update(Scene& scene, Entity& player)
 
 	Vec2 offset = scene.input.mousePos() - scene.input.lastMousePos();
 
-	playerMovement.rotationX += offset.x * rotationSpeed * scene.time.deltaTime();
-	playerMovement.rotationY -= offset.y * rotationSpeed * scene.time.deltaTime();
+	playerMovement.rotationX -= offset.x * rotationSpeed * scene.time.deltaTime();
+	playerMovement.rotationY += offset.y * rotationSpeed * scene.time.deltaTime();
 
 	if (playerMovement.rotationX > degToRad(360.0f))
 	{
@@ -47,8 +47,8 @@ void PlayerMovementSystem::update(Scene& scene, Entity& player)
 		playerMovement.rotationY = -degToRad(89.99f);
 	}
 
-	Quat rotationX(playerMovement.rotationX, Vec3::up);
-	Quat rotationY(playerMovement.rotationY, Vec3::right);
+	Quat rotationX(playerMovement.rotationX, Vec3::yAxis);
+	Quat rotationY(playerMovement.rotationY, Vec3::xAxis);
 	playerRotation = rotationX * rotationY;
 
 	Vec3 movementDirection;

@@ -30,8 +30,7 @@ void RenderingSystem::update(const EntityManager& entityManager, Entity player, 
 
 	for (auto& [entity, component] : entityManager.getComponents<RenderingComponent>())
 	{
-		auto position = -entityManager.entityGetComponent<Position>(entity).value;
-		position.y = -position.y;
+		const auto& position = entityManager.entityGetComponent<Position>(entity).value;
 		const auto& rotation = entityManager.entityGetComponent<Rotation>(entity).value;
 
 		Mat4 model = rotation.rotationMatrix();

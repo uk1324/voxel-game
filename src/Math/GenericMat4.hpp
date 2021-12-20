@@ -209,11 +209,17 @@ GenericMat4<T> GenericMat4<T>::perspective(T fov, T aspectRatio, T near, T far)
 	// OpenGL clips all of the triangles outside of the cube.
 	T fovInv = 1.0f / tanf(fov * 0.5f / 180.0f * 3.14159f);
 	GenericMat4<T> mat;
-	mat(0, 0) = fovInv;
-	mat(1, 1) = aspectRatio * fovInv;
-	mat(2, 2) = far / (far - near);
-	mat(3, 2) = (-far * near) / (far - near);
-	mat(2, 3) = 1.0f;
+	//mat(0, 0) = fovInv;
+	//mat(1, 1) = aspectRatio * fovInv;
+	//mat(2, 2) = far / (far - near);
+	//mat(3, 2) = (-far * near) / (far - near);
+	//mat(2, 3) = 1.0f;
+
+	mat(0, 0) = T(1) / (aspectRatio * fovInv);
+	mat(1, 1) = T(1) / (fovInv);
+	mat(2, 2) = -(far + near) / (far - near);
+	mat(2, 3) = -T(1);
+	mat(3, 2) = -(T(2) * far * near) / (far - near);
 
 	//T fovInv = 1.0f / tanf(fov * 0.5f / 180.0f * 3.14159f);
 	//Mat4 mat;
@@ -237,10 +243,10 @@ GenericMat4<T> GenericMat4<T>::lookAt(GenericVec3<T> position, GenericVec3<T> ta
 
 	// Calculate an orthonormal basis using the Gram-Schmidt process.
 
-	GenericVec3<T> forward = -lookDirection.normalized();
+	GenericVec3<T> forward = lookDirection.normalized();
 	// Forward and up create a plane so the cross product is the right vector.
-	GenericVec3<T> right = (cross(up, forward)).normalized();
-	GenericVec3<T> projectedUp(cross(forward, right));
+	GenericVec3<T> right = (cross(forward, up)).normalized();
+	GenericVec3<T> projectedUp(cross(right, forward));
 
 	Mat4 m;
 	// The inverse of a orthogonal matrix is equal to it's transpose so to transpose it I put the transformed basis into rows
@@ -254,17 +260,17 @@ GenericMat4<T> GenericMat4<T>::lookAt(GenericVec3<T> position, GenericVec3<T> ta
 	m(2, 1) = projectedUp.z;
 
 	// Don't know why, but it works if it is negated.
-	m(0, 2) = forward.x;
-	m(1, 2) = forward.y;
-	m(2, 2) = forward.z;
+	m(0, 2) = -forward.x;
+	m(1, 2) = -forward.y;
+	m(2, 2) = -forward.z;
 
 	m(3, 3) = 1;
 
 	// One problem with the Gram-Schmidt process is that if fails when the forward vector and the up vector are
 	// linearly depended (they lie on the same line) because the cross product of up and forward is equal to the zero vector.
 
-	position.y = -position.y;
-	return GenericMat4<T>::translation(position) * m;
+	//position.y = -position.y;
+	return GenericMat4<T>::translation(-position) * m;
 }
 
 template<typename T>

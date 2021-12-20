@@ -15,6 +15,9 @@ enum class BlockType : uint16_t
 struct alignas(BlockType) Block
 {
 public:
+	Block() = default;
+	Block(BlockType type);
+
 	Block& operator=(BlockType other);
 
 	bool operator!=(BlockType other);

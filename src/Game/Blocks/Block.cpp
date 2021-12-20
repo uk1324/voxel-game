@@ -1,4 +1,10 @@
+#include "Block.hpp"
+#include "Block.hpp"
 #include <Game/Blocks/Block.hpp>
+
+Block::Block(BlockType type)
+	: type(type)
+{}
 
 Block& Block::operator= (BlockType other)
 {

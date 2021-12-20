@@ -7,6 +7,8 @@ ChunkSystem::ChunkSystem()
 // lastPos is infinity so all the chunks get generated at the start
 	: m_lastChunkPos(Vec3I(std::numeric_limits<int32_t>::infinity(), 0, 0))
 	, noise()
+	// Preallocating all the vertex data isn't a good idea for open worlds because a lot of space if taken up by empty chunks
+	// but it makes sense for cave worlds where the render distance is smaller.
 	, m_vbo(VERTEX_DATA_BYTE_SIZE)
 {
 	m_chunkPool.resize(CHUNKS_IN_RENDER_DISTANCE);
@@ -160,10 +162,14 @@ static std::vector<uint32_t>& meshFromChunk(Chunk& chunk)
 }
 
 #include <iostream>
+#include <unordered_set>
 
 void ChunkSystem::update(const Vec3& loadPos)
 {
-	// if (m_chunksToGenerate.size() == CHUNKS_IN_RENDER_DISTANCE)
+	if (m_chunksToGenerate.size() == CHUNKS_IN_RENDER_DISTANCE)
+	{
+
+	}
 	// generate all
 
 	if (m_chunksToGenerate.size() != 0)
@@ -171,9 +177,7 @@ void ChunkSystem::update(const Vec3& loadPos)
 		ChunkData& chunk = *m_chunksToGenerate.back();
 	
 		initializeChunk(chunk.blocks, chunk.pos);
-		std::vector<uint32_t>& vertices = meshFromChunk(chunk.blocks);
-		chunk.vertexCount = vertices.size();
-		m_vbo.setData(chunk.vboByteOffset, vertices.data(), vertices.size() * sizeof(uint32_t));
+		meshChunk(chunk);
 		m_chunksToDraw.push_back(&chunk);
 		m_chunks[chunk.pos] = &chunk;
 		m_chunksToGenerate.pop_back();
@@ -188,54 +192,58 @@ void ChunkSystem::update(const Vec3& loadPos)
 	}
 	m_lastChunkPos = chunkPos;
 
-
-	auto removeOutOfDistance = [&chunkPos, this](ChunkData* chunk) {
-		if ((chunk->pos.x < (chunkPos.x - HORIZONTAL_RENDER_DISTANCE)) || (chunk->pos.x > (chunkPos.x + HORIZONTAL_RENDER_DISTANCE))
-		 || (chunk->pos.y < (chunkPos.y - VERTICAL_RENDER_DISTANCE))   || (chunk->pos.y > (chunkPos.y + VERTICAL_RENDER_DISTANCE))
-		 || (chunk->pos.z < (chunkPos.z - HORIZONTAL_RENDER_DISTANCE)) || (chunk->pos.z > (chunkPos.z + HORIZONTAL_RENDER_DISTANCE)))
-		{
-			m_chunks.erase(chunk->pos);
-			m_freeChunks.push_back(chunk);
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+	auto isChunkOutOfRenderDistance = [&chunkPos](const Vec3I& pos)
+	{
+		return (pos.x < (chunkPos.x - HORIZONTAL_RENDER_DISTANCE)) || (pos.x > (chunkPos.x + HORIZONTAL_RENDER_DISTANCE))
+			|| (pos.y < (chunkPos.y - VERTICAL_RENDER_DISTANCE))   || (pos.y > (chunkPos.y + VERTICAL_RENDER_DISTANCE))
+			|| (pos.z < (chunkPos.z - HORIZONTAL_RENDER_DISTANCE)) || (pos.z > (chunkPos.z + HORIZONTAL_RENDER_DISTANCE));
 	};
 
-	m_chunksToGenerate.erase(std::remove_if(m_chunksToGenerate.begin(), m_chunksToGenerate.end(), removeOutOfDistance), m_chunksToGenerate.end());
-	m_chunksToDraw.erase(std::remove_if(m_chunksToDraw.begin(), m_chunksToDraw.end(), removeOutOfDistance), m_chunksToDraw.end());
+	m_chunksToGenerate.erase(
+		std::remove_if(
+			m_chunksToGenerate.begin(),
+			m_chunksToGenerate.end(),
+			[isChunkOutOfRenderDistance, this](ChunkData* chunk)
+			{
+				if (isChunkOutOfRenderDistance(chunk->pos))
+				{
+					m_freeChunks.push_back(chunk);
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		),
+		m_chunksToGenerate.end()
+	);
+	m_chunksToDraw.erase(
+		std::remove_if(
+			m_chunksToDraw.begin(),
+			m_chunksToDraw.end(), 
+			[isChunkOutOfRenderDistance, this](ChunkData* chunk) {
+				if (isChunkOutOfRenderDistance(chunk->pos))
+				{
+					m_chunks.erase(chunk->pos);
+					m_freeChunks.push_back(chunk);
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		),
+		m_chunksToDraw.end()
+	);
 
-	//for (auto it = m_chunks.cbegin(); it != m_chunks.cend(); )
-	//{
-	//	const Vec3I& pos = it->first;
-	//	ChunkData* chunk = it->second;
 
-	//	if ((pos.x < (chunkPos.x - HORIZONTAL_RENDER_DISTANCE)) || (pos.x > (chunkPos.x + HORIZONTAL_RENDER_DISTANCE))
-	//	 || (pos.y < (chunkPos.y - VERTICAL_RENDER_DISTANCE))   || (pos.y > (chunkPos.y + VERTICAL_RENDER_DISTANCE))
-	//	 || (pos.z < (chunkPos.z - HORIZONTAL_RENDER_DISTANCE)) || (pos.z > (chunkPos.z + HORIZONTAL_RENDER_DISTANCE)))
-	//	{
-	//		std::cout << pos << '\n';
-	//		// erease returns the next item
-	//		it = m_chunks.erase(it);
-	//		m_freeChunks.push_back(chunk);
-	//		{
-	//			auto toDelete = std::find(m_chunksToGenerate.begin(), m_chunksToGenerate.end(), chunk);
-	//			if (toDelete != m_chunksToGenerate.end())
-	//				m_chunksToGenerate.erase(toDelete);
-	//		}
-	//		{
-	//			auto toDelete = std::find(m_chunksToDraw.begin(), m_chunksToDraw.end(), chunk);
-	//			if (toDelete != m_chunksToDraw.end())
-	//				m_chunksToDraw.erase(toDelete);
-	//		}
-	//	}
-	//	else
-	//	{
-	//		++it;
-	//	}
-	//}
+	std::unordered_set<Vec3I> chunksToGenerateSet;
+	for (auto a : m_chunksToGenerate)
+	{
+		chunksToGenerateSet.insert(a->pos);
+	}
 
 	for (int32_t z = chunkPos.z - HORIZONTAL_RENDER_DISTANCE; z <= chunkPos.z + HORIZONTAL_RENDER_DISTANCE; z++)
 	{
@@ -244,8 +252,10 @@ void ChunkSystem::update(const Vec3& loadPos)
 			for (int32_t x = chunkPos.x - HORIZONTAL_RENDER_DISTANCE; x <= chunkPos.x + HORIZONTAL_RENDER_DISTANCE; x++)
 			{
 				const Vec3I chunkPos(x, y, z);
-				auto chunk = m_chunks.find(chunkPos);
-				if (chunk == m_chunks.end())
+				const auto chunk = m_chunks.find(chunkPos);
+
+				if (chunk == m_chunks.end()
+  				 && chunksToGenerateSet.find(chunkPos) == chunksToGenerateSet.end())
 				{
 					ASSERT(m_freeChunks.size() != 0 && "Chunk pool should have enough chunks");
 					ChunkData& chunk = *m_freeChunks.back();
@@ -264,66 +274,188 @@ void ChunkSystem::update(const Vec3& loadPos)
 	); 
 }
 
+void ChunkSystem::set(int32_t x, int32_t y, int32_t z, Block block)
+{
+	Vec3I chunkPos(x / Chunk::SIZE, y / Chunk::SIZE, z / Chunk::SIZE);
+	Vec3I posInChunk(x % Chunk::SIZE, y % Chunk::SIZE, z % Chunk::SIZE);
+	ChunkData& chunk = *m_chunks[chunkPos];
+
+	auto find = [this](const Vec3I& chunkPos) -> ChunkData&
+	{
+		auto a = m_chunks.find(chunkPos);
+		//auto a =std::find_if(m_chunksToDraw.begin(), m_chunksToDraw.end(), [&chunkPos, this](ChunkData* a) { if (a->pos == chunkPos) { m_freeChunks.push_back(a); return true; } else return false; });
+		ASSERT(a != m_chunks.end());
+		return *a->second;
+	};
+
+	//for (block)
+
+	chunk.blocks.set(posInChunk.x, posInChunk.y, posInChunk.z, block);
+	auto& a = find(chunkPos);
+	ASSERT(&a == &chunk); 
+	//remesh();
+	meshChunk(chunk);
+
+
+	std::cout << "pos: " << Vec3I(x, y, z) << " | " << "chunkPos: " << chunkPos << " | " << "posInChunk: " << posInChunk << '\n';
+	if (posInChunk.x >= 0)
+	{
+		if (posInChunk.x == 0)
+		{
+			//ASSERT_NOT_REACHED();
+			meshChunk(find(chunkPos + Vec3I(-1, 0, 0)));
+		} 
+		if (posInChunk.x == Chunk::SIZE - 1)
+		{
+			//ASSERT_NOT_REACHED();
+			meshChunk(find(chunkPos + Vec3I(1, 0, 0)));
+		}
+	}
+	else
+	{
+		//ASSERT_NOT_REACHED();
+		if (posInChunk.x == -(int32_t(Chunk::SIZE) - 1))
+		{
+			meshChunk(find(chunkPos + Vec3I(-1, 0, 0)));
+		}
+		if (posInChunk.x == -1)
+		{
+			meshChunk(find(chunkPos + Vec3I(1, 0, 0)));
+		}
+	}
+	
+	if (posInChunk.y >= 0)
+	{
+		if (posInChunk.y == 0)
+		{
+			//ASSERT_NOT_REACHED();
+			//std::cout << "c\n";
+			meshChunk(find(chunkPos + Vec3I(0, -1, 0)));
+		}
+		if (posInChunk.y == Chunk::SIZE - 1)
+		{
+			//ASSERT_NOT_REACHED();
+			//std::cout << "d\n";
+			meshChunk(find(chunkPos + Vec3I(0, 1, 0)));
+		}
+	}
+	else
+	{
+		//ASSERT_NOT_REACHED();
+		if (posInChunk.y == -(int32_t(Chunk::SIZE) - 1))
+		{
+			meshChunk(find(chunkPos + Vec3I(-1, 0, 0)));
+		}
+		if (posInChunk.y == -1)
+		{
+			meshChunk(find(chunkPos + Vec3I(1, 0, 0)));
+		}
+	}
+	if (posInChunk.z >= 0)
+	{
+		if (posInChunk.z == 0)
+		{
+			//std::cout << "e\n";
+			//ASSERT_NOT_REACHED();
+			meshChunk(find(chunkPos + Vec3I(0, 0, -1)));
+		}
+		if (posInChunk.z == Chunk::SIZE - 1)
+		{
+			//ASSERT_NOT_REACHED();
+			//std::cout << "f\n";
+			meshChunk(find(chunkPos + Vec3I(0, 0, 1)));
+		}
+	}
+	else
+	{
+		//ASSERT_NOT_REACHED();
+		if (posInChunk.z == -(int32_t(Chunk::SIZE) - 1))
+		{
+			meshChunk(find(chunkPos + Vec3I(-1, 0, 0)));
+		}
+		if (posInChunk.z == -1)
+		{
+			meshChunk(find(chunkPos + Vec3I(1, 0, 0)));
+		}
+	}
+
+
+}
+
+Block ChunkSystem::get(int32_t x, int32_t y, int32_t z)
+{
+	Vec3I chunkPos(x / Chunk::SIZE, y / Chunk::SIZE, z / Chunk::SIZE);
+	Vec3I posInChunk(x % Chunk::SIZE, y % Chunk::SIZE, z % Chunk::SIZE);
+	Chunk& chunk = m_chunks[chunkPos]->blocks;
+	return chunk.get(posInChunk.x, posInChunk.y, posInChunk.z);
+}
+
+void ChunkSystem::remesh()
+{
+	meshChunk(*m_chunks[Vec3I(62, 1, 62)]);
+	//for (auto chunk : m_chunksToDraw)
+	//{
+	//	meshChunk(*chunk);
+	//}
+}
+
 void ChunkSystem::initializeChunk(Chunk& chunk, const Vec3I& pos)
 {
 	for (size_t z = 0; z < Chunk::SIZE; z++)
 	{ 
 		for (size_t x = 0; x < Chunk::SIZE; x++)
 		{
-			double value = noise.accumulatedOctaveNoise2D_0_1((x - pos.x * 16.0) / 256.0, (z - pos.z * 16.0) / 256.0, 8) * 50;
+			//double value = noise.accumulatedOctaveNoise2D_0_1((x + pos.x * 16.0) / 256.0, (z + pos.z * 16.0) / 256.0, 8) * 50;
 			//double value = 0.2;
 			double input = (rand() % 256) / 256.0;
 			for (size_t y = 0; y < Chunk::SIZE; y++)
 			{
-				//double value = noise.accumulatedOctaveNoise3D_0_1((x - pos.x * 16.0) / 20.0, (z - pos.z * 16.0) / 20.0, (y - pos.y * 16.0) / 20.0, 8);
-				//if (value > 0.4)
+				double value = noise.accumulatedOctaveNoise3D_0_1((x + pos.x * 16.0) / 20.0, (y + pos.y * 16.0) / 20.0, (z + pos.z * 16.0) / 20.0, 8);
+				if (value > 0.4)
+				{
+					chunk.operator()(x, y, z) = BlockType::Grass2;
+				}
+				//if ((y + pos.y * Chunk::SIZE) < value)
 				//{
-				//	chunk->operator()(x, y, z) = BlockType::Grass2;
+				//	//chunk->operator()(x, y, z) = static_cast<BlockType>((rand() % 3) + 1);
+				//	/*chunk->operator()(x, y, z) = static_cast<BlockType>((y % 3) + 1);*/
+				//	int realY = y + pos.y * Chunk::SIZE;
+				//	if (realY > 30)
+				//	{
+				//		chunk.operator()(x, y, z) = BlockType::Grass2;
+				//	}
+				//	else if (realY < 30 && realY > 25)
+				//	{
+				//		if (rand() % 2 == 0)
+				//		{
+				//			chunk.operator()(x, y, z) = BlockType::Grass2;
+				//		}
+				//		else
+				//		{
+				//			chunk.operator()(x, y, z) = BlockType::Grass;
+				//		}
+				//	}
+				//	else
+				//	{
+				//		chunk.operator()(x, y, z) = BlockType::Grass;
+				//	}
 				//}
-				if ((y + pos.y * Chunk::SIZE) < value)
-				{
-					//chunk->operator()(x, y, z) = static_cast<BlockType>((rand() % 3) + 1);
-					/*chunk->operator()(x, y, z) = static_cast<BlockType>((y % 3) + 1);*/
-					int realY = y + pos.y * Chunk::SIZE;
-					if (realY > 30)
-					{
-						chunk.operator()(x, y, z) = BlockType::Grass2;
-					}
-					else if (realY < 30 && realY > 25)
-					{
-						if (rand() % 2 == 0)
-						{
-							chunk.operator()(x, y, z) = BlockType::Grass2;
-						}
-						else
-						{
-							chunk.operator()(x, y, z) = BlockType::Grass;
-						}
-					}
-					else
-					{
-						chunk.operator()(x, y, z) = BlockType::Grass;
-					}
-				}
-				else
-				{
-					chunk.operator()(x, y, z) = BlockType::Air;
-				}
+				//else
+				//{
+				//	chunk.operator()(x, y, z) = BlockType::Air;
+				//}
 			}
 		}
 	}
 }
 
-//void ChunkSystem::meshChunk(const Vec3I& pos)
-//{
-//	ChunkStruct& chunk = chunkMesh[pos];
-//
-//	std::vector<GLuint>& vertices = meshFromChunk(*chunks[pos]);
-//
-//	chunk.vertexCount = vertices.size();
-//	//vao.bind();
-//	//vbo = Gfx::VertexBuffer(vertices.data(), sizeof(GLuint) * vertices.size());
-//	//vbo.bind();
-//	//glVertexAttribIPointer(0, 1, GL_UNSIGNED_INT, sizeof(GLuint), (void*)(0));
-//	//glEnableVertexAttribArray(0);
-//}
+void ChunkSystem::meshChunk(ChunkData& chunk)
+{
+	const std::vector<uint32_t>& vertices = meshFromChunk(chunk.blocks);
+	//std::cout << vertices.size() << ' ' << chunk.vboByteOffset << '\n';
+	//std::cout << "meshing chunk: " << chunk.pos << '\n';
+	std::cout << "meshing: " << chunk.pos << '\n';
+	chunk.vertexCount = vertices.size();
+	m_vbo.bind();
+	m_vbo.setData(chunk.vboByteOffset, vertices.data(), vertices.size() * sizeof(uint32_t));
+}

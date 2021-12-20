@@ -23,6 +23,18 @@ public:
 
 	Gfx::TextureArray textureArray;
 
+	static constexpr float point[] = { 0.0, 0.0, 0.0 };
+	Gfx::VertexBuffer vbo;
+	Gfx::VertexArray vao;
+	Gfx::ShaderProgram pointShader;
+
+	std::vector<Vec3> points;
+
+	//static constexpr float point[] = { 0.0 };
+	//Gfx::VertexArray vao;
+	//Gfx::VertexArray vbo;
+
+
 	Entity player;
 
 	void update() override;

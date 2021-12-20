@@ -41,6 +41,9 @@ public:
 	static const GenericVec3<T> right;
 	static const GenericVec3<T> forward;
 	static const GenericVec3<T> back;
+	static const GenericVec3<T> xAxis;
+	static const GenericVec3<T> yAxis;
+	static const GenericVec3<T> zAxis;
 
 public:
 	T x;
@@ -199,7 +202,7 @@ float GenericVec3<T>::distanceSquared(const GenericVec3<T>& a, const GenericVec3
 	return (a - b).lengthSquared();
 }
 
-// Left handed coorinate system
+// Right handed coorinate system
 template <typename T>
 const GenericVec3<T> GenericVec3<T>::up(0, 1, 0);
 
@@ -207,16 +210,25 @@ template <typename T>
 const GenericVec3<T> GenericVec3<T>::down(0, -1, 0);
 
 template <typename T>
-const GenericVec3<T> GenericVec3<T>::left(-1, 0, 0);
+const GenericVec3<T> GenericVec3<T>::left(1, 0, 0);
 
 template <typename T>
-const GenericVec3<T> GenericVec3<T>::right(1, 0, 0);
+const GenericVec3<T> GenericVec3<T>::right(-1, 0, 0);
 
 template <typename T>
 const GenericVec3<T> GenericVec3<T>::forward(0, 0, 1);
 
 template <typename T>
 const GenericVec3<T> GenericVec3<T>::back(0, 0, -1);
+
+template <typename T>
+const GenericVec3<T> GenericVec3<T>::xAxis(1, 0, 0);
+
+template <typename T>
+const GenericVec3<T> GenericVec3<T>::yAxis(0, 1, 0);
+
+template <typename T>
+const GenericVec3<T> GenericVec3<T>::zAxis(0, 0, 1);
 
 template <typename T>
 std::ostream& operator<< (std::ostream& os, const GenericVec3<T>& vec)
