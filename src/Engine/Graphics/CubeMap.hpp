@@ -1,7 +1,5 @@
 #pragma
 
-#include <glad/glad.h>
-
 #include <array>
 #include <string_view>
 
@@ -23,6 +21,6 @@ namespace Gfx
 		void bind();
 
 	private:
-		GLuint m_handle;
+		uint32_t m_handle;
 	};
 }

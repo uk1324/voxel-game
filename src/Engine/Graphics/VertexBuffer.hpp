@@ -9,9 +9,9 @@ namespace Gfx
 	public:
 		VertexBuffer();
 		// Dynamic draw
-		explicit VertexBuffer(size_t dataSize);
+		explicit VertexBuffer(size_t dataByteSize);
 		// Static draw
-		VertexBuffer(const void* data, size_t dataSize);
+		VertexBuffer(const void* data, size_t dataByteSize);
 		~VertexBuffer();
 
 		VertexBuffer(const VertexBuffer&) = delete;

@@ -40,8 +40,6 @@ vec2 texCoords[4] = {
 
 #define CHUNK_SIZE 16
 
-uniform ivec3 chunkPos;
-
 void main()
 {
 	vec3 vertexPosition = vec3(
@@ -50,7 +48,7 @@ void main()
 		(vert & Z_MASK) >> Z_OFFSET
 	);
 
-	vertexPosition += chunkPos * CHUNK_SIZE;
+	// vertexPosition += chunkPos * CHUNK_SIZE;
 
 	texIndex = (vert & TEXTURE_INDEX_MASK) >> TEXTURE_INDEX_OFFSET;
 

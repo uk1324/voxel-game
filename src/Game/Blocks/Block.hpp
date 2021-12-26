@@ -24,5 +24,8 @@ public:
 	bool operator==(BlockType other);
 
 public:
+	static constexpr int SIZE = 1;
+
+public:
 	BlockType type;
 };

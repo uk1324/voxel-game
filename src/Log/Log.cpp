@@ -1,4 +1,5 @@
 #include <Log/Log.hpp>
+#include <Utils/Assertions.hpp>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -42,6 +43,7 @@ void Log::fatal(const char* filename, int line, const char* format, ...)
 	vprintf(format, args);
 	va_end(args);
 	printf("\n");
+	ASSERT_NOT_REACHED();
 	exit(EXIT_FAILURE);
 }
 

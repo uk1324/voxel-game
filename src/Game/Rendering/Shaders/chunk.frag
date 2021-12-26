@@ -13,7 +13,10 @@ void main()
 	//gl_FragColor = texture(sprite, texCoord);
 	vec4 tex = texture(blockTextureArray, vec3(texCoord, texIndex));
 
-	gl_FragColor = tex * clamp((1 - gl_FragCoord.z) * 50, 0, 1);
+	vec4 o = tex * clamp((1 - gl_FragCoord.z) * 50, 0, 1);
+	o.a = 1;
+	gl_FragColor = o;
+	//gl_FragColor = tex;
 	// gl_FragColor = tex;
 	//gl_FragColor = tex * 0.2 + tex * clamp(dot(dirLight, normal), 0, 1);
 }

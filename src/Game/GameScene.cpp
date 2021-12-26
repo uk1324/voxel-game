@@ -1,5 +1,8 @@
 #include <Game/GameScene.hpp>
 #include <Engine/Engine.hpp>
+#include <chrono>
+
+#include <string>
 
 #include <Engine/Graphics/GraphicsPrimitives.hpp>
 #include <Game/Components/Position.hpp>
@@ -13,22 +16,13 @@
 
 #include <math.h>
 
+// Should timestep be fixed for things like chunk loading
+
 GameScene::GameScene(Engine& engine)
-	: Scene(engine, 100)
-    , shader("src/Game/Blocks/chunk.vert", "src/Game/Blocks/chunk.frag")
-    , textureArray(16, 16, { "assets/textures/blocks/dirt.png", "assets/textures/blocks/stone.png", "assets/textures/blocks/cobblestone.png", "assets/textures/blocks/grass.png", "assets/textures/blocks/grass2.png" })
-    , cameraSystem(90, 0.1f, 1000.0f)
-    , skyboxShader("src/Game/cubemap.vert", "src/Game/cubemap.frag")
-    , skybox( Gfx::CubeMapTexturePaths { "assets/textures/skybox/right.png", "assets/textures/skybox/left.png", "assets/textures/skybox/top.png", "assets/textures/skybox/bottom.png", "assets/textures/skybox/front.png", "assets/textures/skybox/back.png" })
-    , vbo(point, sizeof(point))
-    , pointShader("src/Game/b.vert", "src/Game/a.frag")
+    : Scene(engine, 100)
+    , m_renderingSystem(*this)
+    , m_physicsSystem(*this)
 {
-    vao.bind();
-    vbo.bind();
-    vao.setAttribute(0, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 3, 0, sizeof(float) * 3, false));
-
-    //glBindBuffer(GL_ARRAY_BUFFER, 0);
-
     entityManager.registerComponent<Position>();
     entityManager.registerComponent<Rotation>();
     entityManager.registerComponent<PlayerMovementComponent>();
@@ -44,140 +38,89 @@ GameScene::GameScene(Engine& engine)
 
     glfwSetWindowPos(engine.window().handle(), 600, 400);
 
-    glEnable(GL_DEPTH_TEST);
-
-    glEnable(GL_CULL_FACE);
-    glFrontFace(GL_CCW);
-
-    input.registerKeyboardButton("exit", KeyCode::Escape);
+    input.registerKeyboardButton("exit", KeyCode::X);
     input.registerKeyboardButton("test", KeyCode::F);
     input.registerKeyboardButton("test1", KeyCode::E);
     input.registerMouseButton("attack", MouseButton::Left);
     input.registerMouseButton("use", MouseButton::Right);
 
-    Gfx::setClearColor(Color(0.52f, 0.80f, 0.92f, 1.0f));
+    input.registerKeyboardButton("toggleCursor", KeyCode::Escape);
 
-    glEnable(GL_PROGRAM_POINT_SIZE);
-    glPointSize(10);
+    //glEnable(GL_PROGRAM_POINT_SIZE);
+    isCursorShown = false;
+    engine.window().hideCursor();
+
+    //Entity e = entityManager.createEntity();
+    //entityManager.entityAddComponent<Position>(e, Vec3(1000, 35, 1000));
+    PhysicsAabbCollider collider;
+    collider.centerOffset = Vec3(0, -(1.62 - 0.5 * (1.875)), 0);
+    collider.size = Vec3(0.625, 1.875, 0.625);
+    //entityManager.entityEmplaceComponent<PhysicsAabbCollider>(e, collider);
+    //entityManager.entityEmplaceComponent<PhysicsVelocity>(e, PhysicsVelocity{ Vec3(0, 0, 0) });
+
+    entityManager.entityEmplaceComponent<PhysicsAabbCollider>(player, collider);
+    entityManager.entityEmplaceComponent<PhysicsVelocity>(player, PhysicsVelocity{ Vec3(0, 0, 0) });
+
+
+    //glPointSize(10);'
 }
 
 void GameScene::update()
 {
+    auto start = std::chrono::high_resolution_clock::now();
     if (input.isButtonDown("exit"))
     {
         engine.stop();
     }
 
-    Gfx::clearBuffer(Gfx::ClearModeBit::ColorBuffer | Gfx::ClearModeBit::DepthBuffer);
+    if (input.isButtonDown("toggleCursor"))
+    {
+        if (isCursorShown)
+            engine.window().hideCursor();
+        else
+            engine.window().showCursor();
+        isCursorShown = !isCursorShown;
+    }
 
-    playerMovementSystem.update(*this, player);
+    const Vec3 playerPos = entityManager.entityGetComponent<Position>(player).value;
+    const Quat playerRot = entityManager.entityGetComponent<Rotation>(player).value;
+    const Vec2I windowSize = engine.window().getWindowSize();
+    m_renderingSystem.update(
+        static_cast<float>(windowSize.x), static_cast<float>(windowSize.y),
+        playerPos, playerRot,
+        entityManager,
+        chunkSystem
+    );
 
-    //entityManager.entityGetComponent<Rotation>(player).value = Quat::identity;
-    
-    Vec2I windowSize = engine.window().getWindowSize();
-    glViewport(0, 0, windowSize.x, windowSize.y);
-    cameraSystem.update(entityManager, player, static_cast<float>(windowSize.x), static_cast<float>(windowSize.y));
+    //std::cout << playerPos << '\n';
+
     chunkSystem.update(entityManager.entityGetComponent<Position>(player).value);
-
-    shader.setMat4("model", Mat4::identity);
-    shader.setMat4("camera", cameraSystem.view());
-    shader.setMat4("projection", cameraSystem.projection());
-
-
-    textureArray.bind();
-
-    int i = 0;
-
-    for (const auto& chunk : chunkSystem.m_chunksToDraw)
-    {
-        i++;
-        shader.use();
-        chunkSystem.m_vao.bind();
-        Vec3I pos = chunk->pos;
-        shader.setVec3I("chunkPos", pos);
-         Gfx::drawTriangles(chunk->vboByteOffset / sizeof(uint32_t), chunk->vertexCount);
-
-        Mat4 model = Mat4::identity;
-        model.scale(Vec3(8, 8, 8));
-        model = model * Mat4::translation(Vec3(pos.x, pos.y, pos.z) * Chunk::SIZE + Vec3(8, 8, 8));
-        // model = model * Mat4::translation(Vec3(pos.x * Chunk::SIZE - 8, pos.y * Chunk::SIZE - 8, pos.z * Chunk::SIZE - 8));
-
-        pointShader.setMat4("model", model);
-        pointShader.setMat4("view", cameraSystem.view());
-        pointShader.setMat4("projection", cameraSystem.projection());
-        pointShader.use();
-        Gfx::Primitives::cubeTrianglesVao->bind();
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glDisable(GL_CULL_FACE);
-
-        //glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        glEnable(GL_CULL_FACE);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        //std::cout << chunk->pos << ' ' << chunk->vboByteOffset << ' ' << chunk->vertexCount << '\n';
-    }
-
-    //std::cout << "draw: " << i << " chunks\n";
-    //glDisable(GL_CULL_FACE);
-
-    skybox.bind();
-    Gfx::Primitives::cubeTrianglesVao->bind();
-    skyboxShader.use();
-    skyboxShader.setInt("skybox", 0);
-    skyboxShader.setMat4("projection", cameraSystem.projection());
-    Mat4 view = cameraSystem.view();
-    view.removeTranslation();
-    skyboxShader.setMat4("view", view);
-    glDepthFunc(GL_LEQUAL);
-    glDepthMask(GL_FALSE);
-    glFrontFace(GL_CCW);
-    Gfx::drawTriangles(0, 36);
-    glDepthFunc(GL_LESS);
-    glFrontFace(GL_CW);
-    glDepthMask(GL_TRUE);
-
-    engine.window().hideCursor();
-
-    vao.bind();
-    pointShader.use();
-    pointShader.setVec3("color", Vec3(1, 0, 0));
-    for (Vec3 point : points)
-    {
-        pointShader.setMat4("model", Mat4::translation(point));
-        pointShader.setMat4("view", cameraSystem.view());
-        pointShader.setMat4("projection", cameraSystem.projection());
-        
-        //vao.bind();
-        //glDrawArrays(GL_POINTS, 0, 1);
-    }
-
-    pointShader.setMat4("model", Mat4::identity);
-    pointShader.setMat4("view", Mat4::identity);
-    pointShader.setMat4("projection", Mat4::identity);
-    pointShader.setVec3("color", Vec3(0, 0, 0));
-    glDrawArrays(GL_POINTS, 0, 1);
-
-    /*Gfx::Primitives::cubeTrianglesVao->bind();
-    glDrawArrays(GL_TRIANGLES, 0, 36);*/
-
-    //std::cout << entityManager.entityGetComponent<Position>(player).value << '\n';
-
-    //Box b(Vec3(4.5, 4.5, 4.5), Vec3(1, 1, 1));
-    //if (b.contains(entityManager.entityGetComponent<Position>(player).value))
-    //{
-    //    std::cout << "Collision\n";
-    //}
-    if (input.isButtonDown("test"))
-    {
-        chunkSystem.set(1006, 29, 993, BlockType::Cobblestone);
-        //chunkSystem.remesh();
-    }
 
     if (input.isButtonDown("test1"))
     {
         chunkSystem.remesh();
     }
 
+    playerMovementSystem.update(*this, player);
+
+    m_physicsSystem.update(entityManager, chunkSystem);
+
+    if (input.isButtonDown("test"))
+    {
+        //chunkSystem.set(1006, 29, 993, BlockType::Cobblestone);
+        Entity e = entityManager.createEntity();
+        entityManager.entityAddComponent<Position>(e, Vec3(playerPos));
+        PhysicsAabbCollider collider;
+        collider.centerOffset = Vec3(0, 0, 0);
+        collider.size = Vec3(1, 1, 1);
+        entityManager.entityEmplaceComponent<PhysicsAabbCollider>(e, collider);
+        entityManager.entityEmplaceComponent<PhysicsVelocity>(e, PhysicsVelocity{ Vec3(0, 0, 0) });
+    }
+
+    for (auto point : points)
+    {
+        Debug::drawCube(Vec3(point) + Vec3(0.5), Vec3(1), Vec3(0, 0, 1));
+    }
 
     if (input.isButtonDown("use"))
     {
@@ -417,7 +360,12 @@ void GameScene::update()
         //points.push_back(playerPos);
     }
 
+    //for (const auto& point : points)
+    //{
+    //    Debug::drawCube(Vec3(point) + Vec3(0.5, 0.5, 0.5));
+    //}
 
-
-
+    auto end = std::chrono::high_resolution_clock::now();
+    glfwSetWindowTitle(engine.window().handle(), (std::string("frame time: ") + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count())).c_str());
+    //std::cout << "frame time" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << '\n';
 }

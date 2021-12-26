@@ -57,10 +57,9 @@ namespace Gfx
 
 		uint32_t handle() const;
 
-		// Sets the atribute at index to the currently bound VertexBuffer with specified layout.
-		// The VertexArray must be bound before calling.
-		void setAttribute(uint32_t index, const BufferLayout& layout);
-		void setAttribute(uint32_t index, const IntBufferLayout& layout);
+		// Sets the atribute of the currently bound VertexArray at index to the currently bound VertexBuffer with specified layout.
+		static void setAttribute(uint32_t index, const BufferLayout& layout);
+		static void setAttribute(uint32_t index, const IntBufferLayout& layout);
 
 		void bind() const;
 

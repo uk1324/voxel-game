@@ -26,5 +26,5 @@ private:
 private:
 	PlayerMovementSystem playerMovementSystem;
 	CameraSystem cameraSystem;
-	RenderingSystem renderingSystem;
+	RenderSystem renderingSystem;
 };

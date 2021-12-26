@@ -7,10 +7,19 @@ struct GenericVec3
 {
 public:
 	GenericVec3();
+	explicit GenericVec3(T all);
 	GenericVec3(T x, T y, T z);
+	template<typename U>
+	GenericVec3(const GenericVec3<U>& other);
 
 	float length() const;
 	float lengthSquared() const;
+
+	//GenericVec3 apply
+	GenericVec3<T> applied(T (*function)(T));
+
+	// TODO:
+	// Make more function chainable
 
 	GenericVec3<T> normalized() const;
 	void normalize();
@@ -67,10 +76,25 @@ GenericVec3<T>::GenericVec3()
 {}
 
 template<typename T>
+GenericVec3<T>::GenericVec3(T all)
+	: x(all)
+	, y(all)
+	, z(all)
+{}
+
+template<typename T>
 GenericVec3<T>::GenericVec3(T x, T y, T z)
 	: x(x)
 	, y(y)
 	, z(z)
+{}
+
+template<typename T>
+template<typename U>
+GenericVec3<T>::GenericVec3(const GenericVec3<U>& other)
+	: x(T(other.x))
+	, y(T(other.y))
+	, z(T(other.z))
 {}
 
 template<typename T>
@@ -83,6 +107,12 @@ template<typename T>
 float GenericVec3<T>::lengthSquared() const
 {
 	return (x * x) + (y * y) + (z * z);
+}
+
+template<typename T>
+inline GenericVec3<T> GenericVec3<T>::applied(T(*function)(T))
+{
+	return GenericVec3<T>(function(x), function(y), function(z));
 }
 
 template<typename T>

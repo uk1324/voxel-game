@@ -3,7 +3,7 @@
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>
 
-RenderingSystem::RenderingSystem()
+RenderSystem::RenderSystem()
 	: m_shader("src/TestScene/shader.vert", "src/TestScene/shader.frag")
 	, m_model("src/Model/Duck.gltf")
 {
@@ -16,7 +16,7 @@ RenderingSystem::RenderingSystem()
 #include <iostream>
 #include <Engine/Time.hpp>
 
-void RenderingSystem::update(const EntityManager& entityManager, Entity player, const Mat4& view, const Mat4& projection)
+void RenderSystem::update(const EntityManager& entityManager, Entity player, const Mat4& view, const Mat4& projection)
 {
 	// Can remove clear ColorBuffer if I use a skybox.
 	Gfx::clearBuffer(Gfx::ClearModeBit::ColorBuffer | Gfx::ClearModeBit::DepthBuffer);

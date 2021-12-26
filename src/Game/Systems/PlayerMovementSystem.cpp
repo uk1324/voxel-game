@@ -37,14 +37,14 @@ void PlayerMovementSystem::update(Scene& scene, Entity& player)
 	}
 
 	// Limit rotation up and down.
-	// Using 89.99 so the Gram-Schmidt process doesn't fail (read Mat4::lookAt). 
-	if (playerMovement.rotationY > degToRad(89.99f))
+	// Using 89.50 so the Gram-Schmidt process doesn't fail (read Mat4::lookAt). 
+	if (playerMovement.rotationY > degToRad(89.50f))
 	{
-		playerMovement.rotationY = degToRad(89.99f);
+		playerMovement.rotationY = degToRad(89.50f);
 	}
-	else if (playerMovement.rotationY < -degToRad(89.99f))
+	else if (playerMovement.rotationY < -degToRad(89.50f))
 	{
-		playerMovement.rotationY = -degToRad(89.99f);
+		playerMovement.rotationY = -degToRad(89.50f);
 	}
 
 	Quat rotationX(playerMovement.rotationX, Vec3::yAxis);

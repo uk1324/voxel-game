@@ -10,30 +10,30 @@
 // https://cs.stanford.edu/~acoates/quaternion.h
 
 template <typename T>
-struct GenericQuaternion
+struct GenericQuat
 {
 public:
-	GenericQuaternion();
-	GenericQuaternion(T x, T y, T z, T w);
-	GenericQuaternion(T angle, GenericVec3<T> axis);
+	GenericQuat();
+	GenericQuat(T x, T y, T z, T w);
+	GenericQuat(T angle, GenericVec3<T> axis);
 
 	T length() const;
 
-	GenericQuaternion normalized() const;
+	GenericQuat normalized() const;
 	void normalize();
 
-	GenericQuaternion conjugate() const;
+	GenericQuat conjugate() const;
 
 	GenericMat4<T> rotationMatrix() const;
 
-	GenericQuaternion operator* (const T rhs) const;
-	GenericQuaternion& operator*= (const T rhs);
-	GenericQuaternion operator* (const GenericQuaternion& rhs) const;
-	GenericQuaternion& operator*= (const GenericQuaternion& rhs);
+	GenericQuat operator* (const T rhs) const;
+	GenericQuat& operator*= (const T rhs);
+	GenericQuat operator* (const GenericQuat& rhs) const;
+	GenericQuat& operator*= (const GenericQuat& rhs);
 	GenericVec3<T> operator* (const GenericVec3<T>& rhs) const;
 
 public:
-	static const GenericQuaternion identity;
+	static const GenericQuat identity;
 
 public:
 	T x;
@@ -43,10 +43,10 @@ public:
 };
 
 template<typename T>
-std::ostream& operator<< (std::ostream& os, const GenericQuaternion<T>& quaternion);
+std::ostream& operator<< (std::ostream& os, const GenericQuat<T>& quaternion);
 
 template<typename T>
-GenericQuaternion<T>::GenericQuaternion()
+GenericQuat<T>::GenericQuat()
 	: x(0)
 	, y(0)
 	, z(0)
@@ -54,7 +54,7 @@ GenericQuaternion<T>::GenericQuaternion()
 {}
 
 template<typename T>
-GenericQuaternion<T>::GenericQuaternion(T x, T y, T z, T w)
+GenericQuat<T>::GenericQuat(T x, T y, T z, T w)
 	: x(x)
 	, y(y)
 	, z(z)
@@ -62,7 +62,7 @@ GenericQuaternion<T>::GenericQuaternion(T x, T y, T z, T w)
 {}
 
 template<typename T>
-GenericQuaternion<T>::GenericQuaternion(T angle, GenericVec3<T> axis)
+GenericQuat<T>::GenericQuat(T angle, GenericVec3<T> axis)
 	: x(axis.x)
 	, y(axis.y)
 	, z(axis.z)
@@ -77,13 +77,13 @@ GenericQuaternion<T>::GenericQuaternion(T angle, GenericVec3<T> axis)
 }
 
 template<typename T>
-T GenericQuaternion<T>::length() const
+T GenericQuat<T>::length() const
 {
 	return sqrt((x * x) + (y * y) + (z * z) + (w * w));
 }
 
 template<typename T>
-GenericQuaternion<T> GenericQuaternion<T>::normalized() const
+GenericQuat<T> GenericQuat<T>::normalized() const
 {
 	T len = length();
 	if (len != 0)
@@ -94,20 +94,20 @@ GenericQuaternion<T> GenericQuaternion<T>::normalized() const
 }
 
 template<typename T>
-void GenericQuaternion<T>::normalize()
+void GenericQuat<T>::normalize()
 {
 	*this = normalized();
 }
 
 template<typename T>
-GenericQuaternion<T> GenericQuaternion<T>::conjugate() const
+GenericQuat<T> GenericQuat<T>::conjugate() const
 {
-	return GenericQuaternion<T>(-x, -y, -z, w);
+	return GenericQuat<T>(-x, -y, -z, w);
 }
 
 
 template<typename T>
-GenericMat4<T> GenericQuaternion<T>::rotationMatrix() const
+GenericMat4<T> GenericQuat<T>::rotationMatrix() const
 {
 	return GenericMat4<T>({
 		1 - 2 * y * y - 2 * z * z, 2 * x * y - 2 * z * w, 2 * x * z + 2 * y * w, 0,
@@ -118,13 +118,13 @@ GenericMat4<T> GenericQuaternion<T>::rotationMatrix() const
 }
 
 template<typename T>
-GenericQuaternion<T> GenericQuaternion<T>::operator* (const T rhs) const
+GenericQuat<T> GenericQuat<T>::operator* (const T rhs) const
 {
-	return GenericQuaternion<T>(x * rhs, y * rhs, z * rhs, w * rhs);
+	return GenericQuat<T>(x * rhs, y * rhs, z * rhs, w * rhs);
 }
 
 template<typename T>
-GenericQuaternion<T>& GenericQuaternion<T>::operator*= (const T rhs)
+GenericQuat<T>& GenericQuat<T>::operator*= (const T rhs)
 {
 	x *= rhs;
 	y *= rhs;
@@ -134,7 +134,7 @@ GenericQuaternion<T>& GenericQuaternion<T>::operator*= (const T rhs)
 }
 
 template<typename T>
-GenericQuaternion<T> GenericQuaternion<T>::operator* (const GenericQuaternion& rhs) const
+GenericQuat<T> GenericQuat<T>::operator* (const GenericQuat& rhs) const
 {
 	// TODO: derive this
 	return Quat(y * rhs.z - z * rhs.y + x * rhs.w + w * rhs.x,
@@ -144,25 +144,25 @@ GenericQuaternion<T> GenericQuaternion<T>::operator* (const GenericQuaternion& r
 }
 
 template<typename T>
-GenericQuaternion<T>& GenericQuaternion<T>::operator*=(const GenericQuaternion& rhs)
+GenericQuat<T>& GenericQuat<T>::operator*=(const GenericQuat& rhs)
 {
 	*this = *this * rhs;
 	return *this;
 }
 
 template<typename T>
-GenericVec3<T> GenericQuaternion<T>::operator* (const GenericVec3<T>& rhs) const
+GenericVec3<T> GenericQuat<T>::operator* (const GenericVec3<T>& rhs) const
 {
 	// https://blog.molecular-matters.com/2013/05/24/a-faster-quaternion-vector-multiplication/
-	GenericQuaternion<T> q = (*this * GenericQuaternion<T>(rhs.x, rhs.y, rhs.z, 0.0)) * conjugate();
+	GenericQuat<T> q = (*this * GenericQuat<T>(rhs.x, rhs.y, rhs.z, 0.0)) * conjugate();
 	return GenericVec3<T>(q.x, q.y, q.z);
 }
 
 template<typename T>
-const GenericQuaternion<T> GenericQuaternion<T>::identity(0.0, 0.0, 0.0, 1.0);
+const GenericQuat<T> GenericQuat<T>::identity(0.0, 0.0, 0.0, 1.0);
 
 template<typename T>
-std::ostream& operator<<(std::ostream& os, const GenericQuaternion<T>& quaternion)
+std::ostream& operator<<(std::ostream& os, const GenericQuat<T>& quaternion)
 {
 	os << '(' << quaternion.x << "i + " << quaternion.y << "j + " << quaternion.z << "k + " << quaternion.w << ')';
 	return os;

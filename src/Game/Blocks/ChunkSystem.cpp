@@ -382,12 +382,15 @@ void ChunkSystem::set(int32_t x, int32_t y, int32_t z, Block block)
 
 }
 
-Block ChunkSystem::get(int32_t x, int32_t y, int32_t z)
+Block ChunkSystem::get(int32_t x, int32_t y, int32_t z) const
 {
 	Vec3I chunkPos(x / Chunk::SIZE, y / Chunk::SIZE, z / Chunk::SIZE);
 	Vec3I posInChunk(x % Chunk::SIZE, y % Chunk::SIZE, z % Chunk::SIZE);
-	Chunk& chunk = m_chunks[chunkPos]->blocks;
-	return chunk.get(posInChunk.x, posInChunk.y, posInChunk.z);
+	auto it = m_chunks.find(chunkPos);
+	if (it == m_chunks.end())
+		return BlockType::Air;
+
+	return it->second->blocks.get(posInChunk.x, posInChunk.y, posInChunk.z);
 }
 
 void ChunkSystem::remesh()
@@ -405,45 +408,49 @@ void ChunkSystem::initializeChunk(Chunk& chunk, const Vec3I& pos)
 	{ 
 		for (size_t x = 0; x < Chunk::SIZE; x++)
 		{
-			//double value = noise.accumulatedOctaveNoise2D_0_1((x + pos.x * 16.0) / 256.0, (z + pos.z * 16.0) / 256.0, 8) * 50;
+			double value = noise.accumulatedOctaveNoise2D_0_1((x + pos.x * 16.0) / 256.0, (z + pos.z * 16.0) / 256.0, 8) * 50;
 			//double value = 0.2;
 			double input = (rand() % 256) / 256.0;
 			for (size_t y = 0; y < Chunk::SIZE; y++)
 			{
-				double value = noise.accumulatedOctaveNoise3D_0_1((x + pos.x * 16.0) / 20.0, (y + pos.y * 16.0) / 20.0, (z + pos.z * 16.0) / 20.0, 8);
-				if (value > 0.4)
+				//double value = noise.accumulatedOctaveNoise3D_0_1((x + pos.x * 16.0) / 20.0, (y + pos.y * 16.0) / 20.0, (z + pos.z * 16.0) / 20.0, 8);
+				//if (x == 8 && y == 8 && z == 8)
+				//{
+				//	chunk.operator()(x, y, z) = BlockType::Grass2;
+				//}
+				//if (value > 0.4)
+				//{
+				//	chunk.operator()(x, y, z) = BlockType::Grass2;
+				//}
+				if ((y + pos.y * Chunk::SIZE) < value)
 				{
-					chunk.operator()(x, y, z) = BlockType::Grass2;
+					//chunk->operator()(x, y, z) = static_cast<BlockType>((rand() % 3) + 1);
+					/*chunk->operator()(x, y, z) = static_cast<BlockType>((y % 3) + 1);*/
+					int realY = y + pos.y * Chunk::SIZE;
+					if (realY > 30)
+					{
+						chunk.operator()(x, y, z) = BlockType::Grass2;
+					}
+					else if (realY < 30 && realY > 25)
+					{
+						if (rand() % 2 == 0)
+						{
+							chunk.operator()(x, y, z) = BlockType::Grass2;
+						}
+						else
+						{
+							chunk.operator()(x, y, z) = BlockType::Grass;
+						}
+					}
+					else
+					{
+						chunk.operator()(x, y, z) = BlockType::Grass;
+					}
 				}
-				//if ((y + pos.y * Chunk::SIZE) < value)
-				//{
-				//	//chunk->operator()(x, y, z) = static_cast<BlockType>((rand() % 3) + 1);
-				//	/*chunk->operator()(x, y, z) = static_cast<BlockType>((y % 3) + 1);*/
-				//	int realY = y + pos.y * Chunk::SIZE;
-				//	if (realY > 30)
-				//	{
-				//		chunk.operator()(x, y, z) = BlockType::Grass2;
-				//	}
-				//	else if (realY < 30 && realY > 25)
-				//	{
-				//		if (rand() % 2 == 0)
-				//		{
-				//			chunk.operator()(x, y, z) = BlockType::Grass2;
-				//		}
-				//		else
-				//		{
-				//			chunk.operator()(x, y, z) = BlockType::Grass;
-				//		}
-				//	}
-				//	else
-				//	{
-				//		chunk.operator()(x, y, z) = BlockType::Grass;
-				//	}
-				//}
-				//else
-				//{
-				//	chunk.operator()(x, y, z) = BlockType::Air;
-				//}
+				else
+				{
+					chunk.operator()(x, y, z) = BlockType::Air;
+				}
 			}
 		}
 	}

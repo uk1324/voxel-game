@@ -116,20 +116,12 @@ int main()
 	//Lang::SourceInfo sourceInfo;
 	//sourceInfo.source = source;
 	//sourceInfo.filename = filename;
-
 	//Lang::Scanner scanner;
 	//auto tokens = scanner.parse(sourceInfo);
-
-	//for (size_t line : sourceInfo.lineStartOffsets)
-	//{
-	//	std::cout << line << '\n';
-	//}
-
 	//Lang::Parser parser;
 	//auto ast = parser.parse(tokens, sourceInfo);
 	//Lang::AstJsonifier json;
 	//std::cout << json.jsonify(ast);
-
 	//return 0;
 
 	{

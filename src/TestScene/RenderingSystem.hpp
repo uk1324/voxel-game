@@ -10,10 +10,10 @@ struct RenderingComponent
 
 };
 
-class RenderingSystem
+class RenderSystem
 {
 public:
-	RenderingSystem();
+	RenderSystem();
 
 	void update(const EntityManager& entityManager, Entity player, const Mat4& view, const Mat4& projection);
 

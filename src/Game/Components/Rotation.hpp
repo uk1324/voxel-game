@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Math/Quaternion.hpp>
+#include <Math/Quat.hpp>
 
 class Rotation
 {

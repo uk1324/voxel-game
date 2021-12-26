@@ -8,18 +8,18 @@ VertexBuffer::VertexBuffer()
 	: m_handle(NULL)
 {}
 
-VertexBuffer::VertexBuffer(size_t dataSize)
+VertexBuffer::VertexBuffer(size_t dataByteSize)
 {
 	glGenBuffers(1, &m_handle);
 	bind();
-	glBufferData(GL_ARRAY_BUFFER, dataSize, nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, dataByteSize, nullptr, GL_DYNAMIC_DRAW);
 }
 
-VertexBuffer::VertexBuffer(const void* data, size_t dataSize)
+VertexBuffer::VertexBuffer(const void* data, size_t dataByteSize)
 {
 	glGenBuffers(1, &m_handle);
 	bind();
-	glBufferData(GL_ARRAY_BUFFER, dataSize, data, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, dataByteSize, data, GL_STATIC_DRAW);
 }
 
 VertexBuffer::~VertexBuffer()

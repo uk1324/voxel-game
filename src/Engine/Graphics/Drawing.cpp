@@ -1,4 +1,5 @@
 #include <Engine/Graphics/Drawing.hpp>
+#include "..\Debug\Drawing.hpp"
 
 using namespace Gfx;
 

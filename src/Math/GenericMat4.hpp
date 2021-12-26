@@ -22,6 +22,7 @@ public:
 	GenericMat4<T> operator* (T scalar) const;
 	GenericMat4<T> operator* (const GenericMat4<T> mat) const;
 
+	GenericMat4<T> removedTranslation() const;
 	void removeTranslation();
 	void setTranslation(const Vec3& translation);
 	void scale(const Vec3& scale);
@@ -30,8 +31,9 @@ public:
 	const T* data() const;
 
 public:
+	//static GenericMat4<T> scale(const Vec3& scale);
 	static GenericMat4<T> translation(const Vec3& translation);
-	static GenericMat4<T> perspective(T fov, T aspectRatio, T near, T far);
+	static GenericMat4<T> perspective(T fov, T aspectRatio, T nearZ, T farZ);
 	static GenericMat4<T> lookAt(GenericVec3<T> pos, GenericVec3<T> target, GenericVec3<T> up);
 
 public:
@@ -142,6 +144,14 @@ GenericMat4<T> GenericMat4<T>::operator* (const GenericMat4<T> mat) const
 }
 
 template<typename T>
+GenericMat4<T> GenericMat4<T>::removedTranslation() const
+{
+	GenericMat4<T> mat = *this;
+	mat.removeTranslation();
+	return mat;
+}
+
+template<typename T>
 void GenericMat4<T>::removeTranslation()
 {
 	set(3, 0, 0);
@@ -199,7 +209,7 @@ GenericMat4<T> GenericMat4<T>::translation(const Vec3& translation)
 }
 
 template<typename T>
-GenericMat4<T> GenericMat4<T>::perspective(T fov, T aspectRatio, T near, T far)
+GenericMat4<T> GenericMat4<T>::perspective(T fov, T aspectRatio, T nearZ, T farZ)
 {
 	// near and far represent the z position of the clip plane
 
@@ -207,7 +217,7 @@ GenericMat4<T> GenericMat4<T>::perspective(T fov, T aspectRatio, T near, T far)
 
 	// Maps the points inside the frustrum to the cube from (-1, -1, -1) to (1, 1, 1), because
 	// OpenGL clips all of the triangles outside of the cube.
-	T fovInv = 1.0f / tanf(fov * 0.5f / 180.0f * 3.14159f);
+	T fovInv = 1.0f / tanf(fov * 0.5f);
 	GenericMat4<T> mat;
 	//mat(0, 0) = fovInv;
 	//mat(1, 1) = aspectRatio * fovInv;
@@ -217,9 +227,9 @@ GenericMat4<T> GenericMat4<T>::perspective(T fov, T aspectRatio, T near, T far)
 
 	mat(0, 0) = T(1) / (aspectRatio * fovInv);
 	mat(1, 1) = T(1) / (fovInv);
-	mat(2, 2) = -(far + near) / (far - near);
+	mat(2, 2) = -(farZ + nearZ) / (farZ - nearZ);
 	mat(2, 3) = -T(1);
-	mat(3, 2) = -(T(2) * far * near) / (far - near);
+	mat(3, 2) = -(T(2) * farZ * nearZ) / (farZ - nearZ);
 
 	//T fovInv = 1.0f / tanf(fov * 0.5f / 180.0f * 3.14159f);
 	//Mat4 mat;

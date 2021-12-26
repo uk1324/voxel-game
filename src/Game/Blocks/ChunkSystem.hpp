@@ -40,7 +40,7 @@ public:
 	void update(const Vec3& loadPos);
 
 	void set(int32_t x, int32_t y, int32_t z, Block block);
-	Block get(int32_t x, int32_t y, int32_t z);
+	Block get(int32_t x, int32_t y, int32_t z) const;
 
 	void remesh();
 

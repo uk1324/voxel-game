@@ -1,3 +1,4 @@
+#include "ShaderProgram.hpp"
 #include <Engine/Graphics/ShaderProgram.hpp>
 #include <Log/Log.hpp>
 
@@ -83,6 +84,11 @@ void ShaderProgram::setMat4(std::string_view name, const Mat4& mat)
 void ShaderProgram::setInt(std::string_view name, int value)
 {
 	glProgramUniform1i(m_handle, getUniformLocation(name.data()), value);
+}
+
+void Gfx::ShaderProgram::setTexture(std::string_view name, int value)
+{
+	setInt(name, value);
 }
 
 void ShaderProgram::setFloat(std::string_view name, float value)
