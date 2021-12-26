@@ -29,6 +29,7 @@ public:
 private:
 	static void initGlfw();
 	static void initOpenGl();
+	static void initImGui(Window& window);
 
 	static void glfwErrorCallback(int errorCode, const char* errorMessage);
 	static void APIENTRY openGlErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);

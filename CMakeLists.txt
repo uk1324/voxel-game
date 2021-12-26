@@ -21,13 +21,20 @@ include_directories(
 	dependencies/glad/include
 	dependencies/glfw/include
 	dependencies/stb_image/include
+	dependencies/imgui
 )
-
-message(STATUS "foo include dir: ${CMAKE_SOURCE_DIR}")
 
 add_subdirectory(src)
 # Working directory can be set by clicking debug > debug and launch settings for <target> and settings "currentDir": "${projectDir}"
-add_executable(voxel-game-run "src/main.cpp" "dependencies/stb_image/src/stb_image.c")
+add_executable(voxel-game-run "src/main.cpp" "dependencies/stb_image/src/stb_image.c"
+"dependencies/imgui/imgui.cpp"
+"dependencies/imgui/imgui_draw.cpp"
+"dependencies/imgui/imgui_impl_glfw.cpp"
+"dependencies/imgui/imgui_tables.cpp"
+"dependencies/imgui/imgui_widgets.cpp"
+"dependencies/imgui/imgui_impl_opengl3.cpp"
+"dependencies/imgui/imgui_impl_opengl3.h"
+)
 target_link_libraries(voxel-game-run voxel-game-lib)
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)

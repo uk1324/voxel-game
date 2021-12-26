@@ -1,10 +1,11 @@
-#include "Engine.hpp"
-#include "Engine.hpp"
 #include <Engine/Engine.hpp>
 #include <Engine/Window.hpp>
 #include <Utils/Assertions.hpp>
 #include <Log/Log.hpp>
 #include <Engine/Graphics/GraphicsPrimitives.hpp>
+#include <imgui.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_glfw.h>
 
 Engine::Engine(int updatesPerSecond, Window& window)
 	: m_currentScene(nullptr)
@@ -49,7 +50,12 @@ void Engine::update()
 {
 	m_time.update();
 	m_currentScene->input.update();
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
 	m_currentScene->update();
+ 	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	m_window.update();
 	m_currentScene->entityManager.update();
 }
@@ -78,6 +84,7 @@ Window Engine::init(int windowWidth, int windowHeight, std::string_view windowTi
 	if (s_isInitialized == false)
 	{
 		initOpenGl();
+		initImGui(window);
 
 		Gfx::Primitives::init();
 
@@ -89,6 +96,10 @@ Window Engine::init(int windowWidth, int windowHeight, std::string_view windowTi
 
 void Engine::terminate()
 {
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
 	glfwTerminate();
 }
 
@@ -121,6 +132,16 @@ void Engine::initOpenGl()
 	{
 		LOG_ERROR("failed to initialize debug output");
 	}
+}
+
+void Engine::initImGui(Window& window)
+{
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	ImGui::StyleColorsDark();
+	ImGui_ImplGlfw_InitForOpenGL(window.handle(), true);
+	ImGui_ImplOpenGL3_Init("#version 430");
 }
 
 void Engine::glfwErrorCallback(int errorCode, const char* errorMessage)

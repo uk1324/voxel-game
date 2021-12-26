@@ -15,7 +15,7 @@
 #include <iostream>
 
 #include <math.h>
-
+#include <imgui.h>
 // Should timestep be fixed for things like chunk loading
 
 GameScene::GameScene(Engine& engine)
@@ -91,6 +91,13 @@ void GameScene::update()
         entityManager,
         chunkSystem
     );
+
+    ImGui::Begin("window");
+
+    if (ImGui::Button("press"))
+        std::cout << "hello";
+
+    ImGui::End();
 
     //std::cout << playerPos << '\n';
 
