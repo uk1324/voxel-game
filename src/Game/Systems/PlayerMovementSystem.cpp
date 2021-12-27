@@ -2,6 +2,7 @@
 #include <Game/Systems/PlayerMovementComponent.hpp>
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>
+#include <Game/PhysicsSystem.hpp>
 #include <Math/Angles.hpp>
 
 void PlayerMovementSystem::registerActions(InputManager& inputManager)
@@ -19,6 +20,7 @@ void PlayerMovementSystem::update(Scene& scene, Entity& player)
 {
 	EntityManager& entityManager = scene.entityManager;
 	Vec3& playerPosition = entityManager.entityGetComponent<Position>(player).value;
+	Vec3& playerVel = entityManager.entityGetComponent<PhysicsVelocity>(player).value;
 	Quat& playerRotation = entityManager.entityGetComponent<Rotation>(player).value;
 	PlayerMovementComponent& playerMovement = entityManager.entityGetComponent<PlayerMovementComponent>(player);
 
@@ -73,10 +75,10 @@ void PlayerMovementSystem::update(Scene& scene, Entity& player)
 		movementDirection += Vec3::back;
 	}
 
-	if (scene.input.isButtonHeld("jump"))
-	{
-		movementDirection += Vec3::up;
-	}
+	//if (scene.input.isButtonHeld("jump"))
+	//{
+	//	movementDirection += Vec3::up;
+	//}
 
 	if (scene.input.isButtonHeld("crouch"))
 	{
@@ -84,6 +86,12 @@ void PlayerMovementSystem::update(Scene& scene, Entity& player)
 	}
 
 	movementDirection.normalize();
-	playerPosition += (rotationX * movementDirection) * walkSpeed * scene.time.deltaTime();
+	const bool isEntityGrounded = entityManager.entityGetComponent<Grounded>(player).value;
+	if (scene.input.isButtonDown("jump") && isEntityGrounded)
+	{
+		movementDirection += Vec3::up * 20;
+	}
+
+	playerVel += (rotationX * movementDirection) * walkSpeed * scene.time.deltaTime();
 
 }

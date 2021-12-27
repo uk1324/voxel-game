@@ -418,10 +418,10 @@ void ChunkSystem::initializeChunk(Chunk& chunk, const Vec3I& pos)
 				//{
 				//	chunk.operator()(x, y, z) = BlockType::Grass2;
 				//}
-				//if (value > 0.4)
-				//{
-				//	chunk.operator()(x, y, z) = BlockType::Grass2;
-				//}
+				if (value > 0.4)
+				{
+					chunk.operator()(x, y, z) = BlockType::Grass2;
+				}
 				if ((y + pos.y * Chunk::SIZE) < value)
 				{
 					//chunk->operator()(x, y, z) = static_cast<BlockType>((rand() % 3) + 1);

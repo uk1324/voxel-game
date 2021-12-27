@@ -17,10 +17,18 @@ public:
 	Vec3 size;
 };
 
+struct Grounded
+{
+	bool value;
+};
+
 class PhysicsSystem
 {
 public:
 	PhysicsSystem(Scene& scene);
 
-	void update(EntityManager& entityManger, const ChunkSystem& chunkSystem);
+	void update(EntityManager& entityManager, const ChunkSystem& chunkSystem);
+
+private:
+	void applyGravity(EntityManager& entityManager);
 };

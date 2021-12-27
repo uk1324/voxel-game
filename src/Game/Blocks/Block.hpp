@@ -23,6 +23,8 @@ public:
 	bool operator!=(BlockType other);
 	bool operator==(BlockType other);
 
+	bool isSolid();
+
 public:
 	static constexpr int SIZE = 1;
 

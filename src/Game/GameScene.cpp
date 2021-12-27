@@ -15,7 +15,6 @@
 #include <iostream>
 
 #include <math.h>
-#include <imgui.h>
 // Should timestep be fixed for things like chunk loading
 
 GameScene::GameScene(Engine& engine)
@@ -53,13 +52,16 @@ GameScene::GameScene(Engine& engine)
     //Entity e = entityManager.createEntity();
     //entityManager.entityAddComponent<Position>(e, Vec3(1000, 35, 1000));
     PhysicsAabbCollider collider;
+    /*collider.centerOffset = Vec3(0, -(1.62 - 0.5 * (1.875)), 0);
+    collider.size = Vec3(0.625, 1.875, 0.625);*/
     collider.centerOffset = Vec3(0, -(1.62 - 0.5 * (1.875)), 0);
-    collider.size = Vec3(0.625, 1.875, 0.625);
+    collider.size = Vec3(1.875, 1.875, 1.875);
     //entityManager.entityEmplaceComponent<PhysicsAabbCollider>(e, collider);
     //entityManager.entityEmplaceComponent<PhysicsVelocity>(e, PhysicsVelocity{ Vec3(0, 0, 0) });
 
     entityManager.entityEmplaceComponent<PhysicsAabbCollider>(player, collider);
     entityManager.entityEmplaceComponent<PhysicsVelocity>(player, PhysicsVelocity{ Vec3(0, 0, 0) });
+    entityManager.entityEmplaceComponent<Grounded>(player, Grounded{ false });
 
 
     //glPointSize(10);'
@@ -91,15 +93,6 @@ void GameScene::update()
         entityManager,
         chunkSystem
     );
-
-    ImGui::Begin("window");
-
-    if (ImGui::Button("press"))
-        std::cout << "hello";
-
-    ImGui::End();
-
-    //std::cout << playerPos << '\n';
 
     chunkSystem.update(entityManager.entityGetComponent<Position>(player).value);
 

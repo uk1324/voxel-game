@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Engine/Scene.hpp>
+#include <Game/PhysicsSystem.hpp>
 
 // Maybe store this in a file with PlayerMovementComponent
 
@@ -14,5 +15,6 @@ public:
 
 public:
 	float rotationSpeed = 0.2f;
-	float walkSpeed = 4.0f;
+	/*float walkSpeed = 4.0f;*/
+	float walkSpeed = 1.f;
 };
