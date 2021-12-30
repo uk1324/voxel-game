@@ -16,24 +16,18 @@ class GameScene : public Scene
 public:
 	GameScene(Engine& engine);
 
-	Entity player;
-
 	void update() override;
-
-	Gfx::CubeMap skybox;
-
-	Gfx::ShaderProgram skyboxShader;
 
 	std::vector<Vec3I> points;
 
+private:
+	bool m_isCursorShown;
 
 private:
+	Entity m_player;
 
-	bool isCursorShown;
-
-private:
-	PlayerMovementSystem playerMovementSystem;
+	PlayerMovementSystem m_playerMovementSystem;
 	RenderingSystem m_renderingSystem;
-	ChunkSystem chunkSystem;
+	ChunkSystem m_chunkSystem;
 	PhysicsSystem m_physicsSystem;
 };

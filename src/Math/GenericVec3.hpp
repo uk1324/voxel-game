@@ -17,6 +17,7 @@ public:
 
 	//GenericVec3 apply
 	GenericVec3<T> applied(T (*function)(T)) const;
+	GenericVec3<T>& apply(T(*function)(T));
 
 	// TODO:
 	// Make more function chainable
@@ -110,9 +111,16 @@ float GenericVec3<T>::lengthSquared() const
 }
 
 template<typename T>
-inline GenericVec3<T> GenericVec3<T>::applied(T(*function)(T)) const
+GenericVec3<T> GenericVec3<T>::applied(T(*function)(T)) const
 {
 	return GenericVec3<T>(function(x), function(y), function(z));
+}
+
+template<typename T>
+GenericVec3<T>& GenericVec3<T>::apply(T(*function)(T))
+{
+	*this = this->applied(function);
+	return *this;
 }
 
 template<typename T>

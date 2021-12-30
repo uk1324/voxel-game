@@ -12,10 +12,335 @@ PhysicsSystem::PhysicsSystem(Scene& scene)
 }
 
 #include <iostream>
+#include <algorithm>
 
-void PhysicsSystem::update(EntityManager& entityManager, const ChunkSystem& chunkSystem)
+// TODO: Make an actuall AABB class that will have utility function like top bottom and maybe store the AABB as a min and max
+// instead of center and size.
+
+#include <imgui.h>
+
+void PhysicsSystem::update(const Time& time, EntityManager& entityManager, const ChunkSystem& chunkSystem)
 {
+
+	ImGui::Begin("gravity");
+	ImGui::SliderFloat("gravity", &gravity, 0, 100);
+	ImGui::End();
+
 	for (auto& [entity, velocityComponent] : entityManager.getComponents<PhysicsVelocity>())
+	{
+		Vec3& entityVel = velocityComponent.value;
+		Vec3& entityPos = entityManager.entityGetComponent<Position>(entity).value;
+		bool& isEntityGrounded = entityManager.entityGetComponent<Grounded>(entity).value;
+		const PhysicsAabbCollider& collider = entityManager.entityGetComponent<PhysicsAabbCollider>(entity);
+
+		entityVel += Vec3::down * gravity * time.deltaTime();
+
+		float entryAbc = 1.0f;
+		Vec3 normal(0, 0, 0);
+
+		auto abc = [&]()
+		{
+
+			const Vec3 pos = entityPos + collider.centerOffset;
+			const Vec3 halfSize = collider.size / 2.0f;
+
+			const Vec3 newPos = pos + entityVel;
+
+			Vec3 start;
+			Vec3 end;
+
+			if (pos.x < newPos.x)
+			{
+				start.x = pos.x;
+				end.x = newPos.x;
+			}
+			else
+			{
+				start.x = newPos.x;
+				end.x = pos.x;
+			}
+
+			if (pos.y < newPos.y)
+			{
+				start.y = pos.y;
+				end.y = newPos.y;
+			}
+			else
+			{
+				start.y = newPos.y;
+				end.y = pos.y;
+			}
+
+			if (pos.z < newPos.z)
+			{
+				start.z = pos.z;
+				end.z = newPos.z;
+			}
+			else
+			{
+				start.z = newPos.z;
+				end.z = pos.z;
+			}
+
+			start -= halfSize;
+			end += halfSize;
+			start.apply(floor);
+			end.apply(ceil);
+
+			for (float z = start.z; z < end.z; z += Block::SIZE)
+			{
+				for (float y = start.y; y < end.y; y += Block::SIZE)
+				{
+					for (float x = start.x; x < end.x; x += Block::SIZE)
+					{
+						if (chunkSystem.get(x, y, z).isSolid())
+						{
+							/*Debug::drawCube(Vec3(x, y, z) + Vec3(Block::SIZE / 2.0f), Vec3(1, 1, 1));*/
+
+							Vec3 entryDistance;
+							Vec3 exitDistance;
+
+							if (entityVel.x > 0)
+							{
+								entryDistance.x = (x - (pos.x + halfSize.x));
+								exitDistance.x = (x + Block::SIZE) - (pos.x - halfSize.x);
+							}
+							else
+							{
+								entryDistance.x = (x + Block::SIZE) - (pos.x - halfSize.x);
+								exitDistance.x = (x - (pos.x + halfSize.x));
+							}
+
+							if (entityVel.y > 0)
+							{
+								entryDistance.y = (y - (pos.y + halfSize.y));
+								exitDistance.y = (y + Block::SIZE) - (pos.y - halfSize.y);
+							}
+							else
+							{
+								entryDistance.y = (y + Block::SIZE) - (pos.y - halfSize.y);
+								exitDistance.y = (y - (pos.y + halfSize.y));
+							}
+
+							if (entityVel.z > 0)
+							{
+								entryDistance.z = (z - (pos.z + halfSize.z));
+								exitDistance.z = (z + Block::SIZE) - (pos.z - halfSize.z);
+							}
+							else
+							{
+								entryDistance.z = (z + Block::SIZE) - (pos.z - halfSize.z);
+								exitDistance.z = (z - (pos.z + halfSize.z));
+							}
+
+							Vec3 entryTime;
+							Vec3 exitTime;
+
+							if (entityVel.x == 0.0f)
+							{
+								entryTime.x = -std::numeric_limits<float>::infinity();
+								exitTime.x = std::numeric_limits<float>::infinity();
+							}
+							else
+							{
+								entryTime.x = entryDistance.x / entityVel.x;
+								exitTime.x = exitDistance.x / entityVel.x;
+							}
+
+							if (entityVel.y == 0.0f)
+							{
+								entryTime.y = -std::numeric_limits<float>::infinity();
+								exitTime.y = std::numeric_limits<float>::infinity();
+							}
+							else
+							{
+								entryTime.y = entryDistance.y / entityVel.y;
+								exitTime.y = exitDistance.y / entityVel.y;
+							}
+
+							if (entityVel.z == 0.0f)
+							{
+								entryTime.z = -std::numeric_limits<float>::infinity();
+								exitTime.z = std::numeric_limits<float>::infinity();
+							}
+							else
+							{
+								entryTime.z = entryDistance.z / entityVel.z;
+								exitTime.z = exitDistance.z / entityVel.z;
+							}
+
+							std::vector<float> d = { entryTime.x, entryTime.y, entryTime.z };
+							std::vector<float> e = { exitTime.x, exitTime.y, exitTime.z };
+
+							float entry = *std::max_element(d.begin(), d.end());
+							float exit = *std::min_element(e.begin(), e.end());;
+
+							Vec3 n;
+
+							if (entry > exit || entryTime.x < 0.0f && entryTime.y < 0.0f && entryTime.z < 0.0f || entryTime.x > 1.0f || entryTime.y > 1.0f || entryTime.z > 1.0f)
+							{
+								n.x = 0.0f;
+								n.y = 0.0f;
+								n.z = 0.0f;
+								if (entry < entryAbc)
+								{
+									entryAbc = 1.0;
+									normal = n;
+								}
+								continue;
+							}
+							else
+							{
+								//ASSERT_NOT_REACHED();
+								if (entryTime.x > entryTime.y && entryTime.x > entryTime.z)
+								{
+									if (entryDistance.x < 0.0f)
+									{
+										n.x = 1.0f;
+										n.y = 0.0f;
+										n.z = 0.0f;
+									}
+									else
+									{
+										n.x = -1.0f;
+										n.y = 0.0f;
+										n.z = 0.0f;
+									}
+								}
+								else if (entryTime.y > entryTime.x && entryTime.y > entryTime.z)
+								{
+									if (entryDistance.y < 0.0f)
+									{
+										n.x = 0.0f;
+										n.y = 1.0f;
+										n.z = 0.0f;
+									}
+									else
+									{
+										n.x = 0.0f;
+										n.y = -1.0f;
+										n.z = 0.0f;
+									}
+								}
+								else
+								{
+									if (entryDistance.z < 0.0f)
+									{
+										n.x = 0.0f;
+										n.y = 0.0f;
+										n.z = 1.0f;
+									}
+									else
+									{
+										n.x = 0.0f;
+										n.y = 0.0f;
+										n.z = -1.0f;
+									}
+								}
+							}
+
+							if (entry < entryAbc)
+							{
+								normal = n;
+								entryAbc = entry;
+							}
+						}
+
+					}
+				}
+			}
+
+		};
+	
+		const Vec3 halfSize = collider.size / 2.0f;
+		Vec3 start = entityPos + collider.centerOffset - halfSize;
+		Vec3 end = entityPos + collider.centerOffset + halfSize;
+		start.apply(floor);
+		end.apply(ceil);
+		start.y -= 1.0f;
+		//end.y = start.y;
+		float friction = 1.0f;
+
+		for (float x = start.x; x < end.x; x++)
+		{
+			for (float z = start.z; z < end.z; z++)
+			{
+				Debug::drawCube(Vec3(x, start.y, z) + Vec3(Block::SIZE / 2.0f), Vec3(1, 1, 1));
+
+				if (chunkSystem.get(x, start.y, z) == BlockType::Cobblestone)
+				{
+					std::cout << "yes";
+					friction = 0.95;
+				}
+			}
+		}
+
+		bool xResolved = false, yResolved = false, zResolved = false;
+
+		bool& isGrounded = entityManager.entityGetComponent<Grounded>(entity).value;
+		isGrounded = false;
+
+		for (int i = 0; i < 3; i++)
+		{
+			entryAbc = 1.0f;
+			normal = Vec3(0);
+			abc();
+			if (entryAbc != 1.0f)
+			{
+				float remainingtime = (1.0f - entryAbc);
+				entityPos += entityVel * (entryAbc - 0.01);
+
+				if (normal.y == 1)
+				{
+					isGrounded = true;
+				}
+
+				if (normal.x != 0.0f)
+				{
+					if (xResolved)
+						std::cout << "ABC";
+					entityVel.x = 0.0f;
+					xResolved = true;
+				}
+				else if (normal.y != 0.0f)
+				{
+					if (yResolved)
+						std::cout << "ABC";
+					entityVel.y = 0.0f;
+					yResolved = true;
+				}
+				else if (normal.z != 0.0f)
+				{
+					if (zResolved)
+						std::cout << "ABC";
+					entityVel.z = 0.0f;
+					zResolved = true;
+				}
+				entityVel = entityVel * remainingtime;
+			}
+		}
+		if (xResolved || yResolved || zResolved)
+			std::cout << xResolved << yResolved << zResolved << '\n';
+
+		entityPos += entityVel;
+
+
+		if (friction == 1.0f)
+		{
+			entityVel.x *= 0.85;
+			entityVel.z *= 0.85;
+		}
+		else
+		{
+			entityVel.x *= friction;
+			entityVel.z *= friction;
+		}
+		//entityVel.y *= 0.85;
+
+		//Debug::drawCube(entityPos + collider.centerOffset, collider.size, Vec3(0, 1, 0));
+	}
+
+	/*for (auto& [entity, velocityComponent] : entityManager.getComponents<PhysicsVelocity>())
 	{
 		Vec3& entityVel = velocityComponent.value;
 		Vec3& entityPos = entityManager.entityGetComponent<Position>(entity).value;
@@ -51,8 +376,9 @@ void PhysicsSystem::update(EntityManager& entityManager, const ChunkSystem& chun
 			return yes;
 		};
 
-		entityVel += Vec3(0, -0.01, 0);
-		entityVel *= 0.85;
+		entityVel += Vec3(0, -gravity, 0) * time.deltaTime();
+		entityVel.x *= 0.85;
+		entityVel.z *= 0.85;
 
 
 		const Vec3 start = (colliderPos - halfSize).applied(floor);
@@ -65,7 +391,7 @@ void PhysicsSystem::update(EntityManager& entityManager, const ChunkSystem& chun
 				for (float x = start.x; x < end.x; x += Block::SIZE)
 				{
 					const Vec3 voxelPos(x, y, z);
-					Debug::drawCube(voxelPos + Vec3(Block::SIZE / 2.0f), Vec3(1, 1, 1));
+					//Debug::drawCube(voxelPos + Vec3(Block::SIZE / 2.0f), Vec3(1, 1, 1));
 
 					if (chunkSystem.get(x, y, z).isSolid())
 					{
@@ -167,215 +493,7 @@ void PhysicsSystem::update(EntityManager& entityManager, const ChunkSystem& chun
 		else
 			entityVel.z = 0;
 
-		Debug::drawCube(entityPos + collider.centerOffset, collider.size, Vec3(0, 1, 0));
-	}
-
-	//for (const auto& [entity, collider] : entityManager.getComponents<PhysicsAabbCollider>())
-	//{
-	//	Vec3& entityPos = entityManager.entityGetComponent<Position>(entity).value;
-	//	Vec3& entityVel = entityManager.entityGetComponent<PhysicsVelocity>(entity).value;
-
-	//	const Vec3 pos = entityPos + collider.centerOffset;
-	//	const Vec3 halfSize = collider.size / 2.0f;
-
-	//	const Vec3 start = (pos - halfSize).applied(floor);
-	//	const Vec3 end = (pos + halfSize).applied(ceil);
-
-	//	enum class CollisionSide
-	//	{
-	//		PositiveX,
-	//		PositiveY,
-	//		PositiveZ,
-	//		NegativeX,
-	//		NegativeY,
-	//		NegativeZ,
-	//		None,
-	//	};
-
-	//	Vec3 collisionAreaSize = (end - start).applied(ceil);
-
-	//	struct Collision
-	//	{
-	//		Vec3 position;
-	//		CollisionSide side;
-	//		bool shouldBeResolved;
-	//	};
-
-	//	std::vector<Collision> collisions;
-
-	//	for (float z = start.z; z < end.z; z += Block::SIZE)
-	//	{
-	//		for (float y = start.y; y < end.y; y += Block::SIZE)
-	//		{
-	//			for (float x = start.x; x < end.x; x += Block::SIZE)
-	//			{
-	//				// Could just iterate over it
-	//				const Vec3 voxelPos(x, y, z);
-	//				if (chunkSystem.get(x, y, z).isSolid())
-	//				{
-	//					const Vec3 positiveDistance = Vec3((pos - halfSize) - (Vec3(x, y, z) + Vec3(Block::SIZE))).applied(abs);
-	//					const Vec3 negativeDistance = Vec3((pos + halfSize) - Vec3(x, y, z)).applied(abs); 
-
-	//					const std::array<float, 6> distances = {
-	//						positiveDistance.x,
-	//						positiveDistance.y,
-	//						positiveDistance.z,
-	//						negativeDistance.x,
-	//						negativeDistance.y,
-	//						negativeDistance.z
-	//					};
-
-	//					CollisionSide closestSide = CollisionSide::None;
-	//					float distanceToClosestSide = std::numeric_limits<float>::infinity();
-
-	//					const std::vector<bool (*)(const ChunkSystem&, float, float, float)> a = {
-	//						[](const ChunkSystem& c, float x, float y, float z) -> bool { return c.get(x + 1, y, z) == BlockType::Air; },
-	//						[](const ChunkSystem& c, float x, float y, float z) -> bool { return c.get(x, y + 1, z) == BlockType::Air; },
-	//						[](const ChunkSystem& c, float x, float y, float z) -> bool { return c.get(x, y, z + 1) == BlockType::Air; },
-	//						[](const ChunkSystem& c, float x, float y, float z) -> bool { return c.get(x - 1, y, z) == BlockType::Air; },
-	//						[](const ChunkSystem& c, float x, float y, float z) -> bool { return c.get(x, y - 1, z) == BlockType::Air; },
-	//						[](const ChunkSystem& c, float x, float y, float z) -> bool { return c.get(x, y, z - 1) == BlockType::Air; },
-	//					};
-
-	//					for (size_t i = 0; i < distances.size(); i++)
-	//					{
-	//						if (a[i](chunkSystem, x, y, z) == false)
-	//							continue;
-	//						if (distances[i] < distanceToClosestSide)
-	//						{
-	//							closestSide = static_cast<CollisionSide>(i);
-	//							distanceToClosestSide = distances[i];
-	//						}
-	//					}
-
-	//					//if (a[static_cast<int>(closestSide)](chunkSystem, x, y, z) )
-	//					if (closestSide != CollisionSide::None)
-	//					{
-	//						collisions.push_back(Collision{ voxelPos, closestSide, true });
-	//					}
-
-	//				}
-	//			}
-	//		}
-	//	}
-
-	//	auto resolveCollision = [&halfSize](Vec3& pos, const Vec3& voxelPos, CollisionSide side) -> void
-	//	{
-	//		switch (side)
-	//		{
-	//		case CollisionSide::PositiveX:
-	//			pos.x = voxelPos.x + Block::SIZE + halfSize.x;
-	//			break;
-
-	//		case CollisionSide::PositiveY:
-	//			pos.y = voxelPos.y + Block::SIZE + halfSize.y;
-	//			break;
-
-	//		case CollisionSide::PositiveZ:
-	//			pos.z = voxelPos.z + Block::SIZE + halfSize.z;
-	//			break;
-
-	//		case CollisionSide::NegativeX:
-	//			pos.x = voxelPos.x - halfSize.x;
-	//			break;
-
-	//		case CollisionSide::NegativeY:
-	//			pos.y = voxelPos.y - halfSize.y;
-	//			break;
-
-	//		case CollisionSide::NegativeZ:
-	//			pos.z = voxelPos.z - halfSize.z;
-	//			break;
-	//		}
-	//	};
-
-	//	auto isCollision = [&chunkSystem, &halfSize](const Vec3& pos, const Vec3& voxelPos) -> bool
-	//	{
-	//		return (pos.x - halfSize.x < voxelPos.x + Block::SIZE) && (pos.x + halfSize.x > voxelPos.x)
-	//			&& (pos.y - halfSize.y < voxelPos.y + Block::SIZE) && (pos.y + halfSize.y > voxelPos.y)
-	//			&& (pos.z - halfSize.z < voxelPos.z + Block::SIZE) && (pos.z + halfSize.z > voxelPos.z);
-	//	};
-
-	//	for (size_t i = 0; i < collisions.size(); i++)
-	//	{
-	//		Vec3 testPos = pos;
-
-	//		if (collisions[i].shouldBeResolved == false)
-	//			continue;
-
-	//		resolveCollision(testPos, collisions[i].position, collisions[i].side);
-
-	//		for (size_t j = 0; j < i; j++)
-	//		{
-	//			//if (collisions[j].shouldBeResolved == false)
-	//			//	continue;
-
-	//			if (isCollision(testPos, collisions[j].position) == false)
-	//				collisions[j].shouldBeResolved = false;
-	//			else
-	//				collisions[j].shouldBeResolved = true;
-	//		}
-
-	//		for (size_t j = i + 1; j < collisions.size(); j++)
-	//		{
-	//			//if (collisions[j].shouldBeResolved == false)
-	//			//	continue;
-
-	//			if (isCollision(testPos, collisions[j].position) == false)
-	//				collisions[j].shouldBeResolved = false;
-	//			else
-	//				collisions[j].shouldBeResolved = true;
-	//		}
-	//	}
-
-	//	for (const Collision& collision : collisions)
-	//	{
-	//		if (collision.shouldBeResolved)
-	//		{
-	//			switch (collision.side)
-	//			{
-	//			case CollisionSide::PositiveX:
-	//				Debug::drawCube(collision.position + Vec3(Block::SIZE, Block::SIZE / 2.0f, Block::SIZE / 2.0f) + Vec3(0.01), Vec3(0, 1, 1));
-	//				entityPos.x = collision.position.x + Block::SIZE + halfSize.x - collider.centerOffset.x;
-	//				entityVel.x = 0;
-	//				break;
-
-	//			case CollisionSide::PositiveY:
-	//				Debug::drawCube(collision.position + Vec3(Block::SIZE / 2.0f, Block::SIZE, Block::SIZE / 2.0f) + Vec3(0.01), Vec3(1, 0, 1));
-	//				entityPos.y = collision.position.y + Block::SIZE + halfSize.y - collider.centerOffset.y;
-	//				entityVel.y = 0;
-	//				break;
-
-	//			case CollisionSide::PositiveZ:
-	//				Debug::drawCube(collision.position + Vec3(Block::SIZE / 2.0f, Block::SIZE / 2.0f, Block::SIZE) + Vec3(0.01), Vec3(1, 1, 0));
-	//				entityPos.z = collision.position.z + Block::SIZE + halfSize.z - collider.centerOffset.z;
-	//				entityVel.z = 0;
-	//				break;
-
-	//			case CollisionSide::NegativeX:
-	//				Debug::drawCube(collision.position + Vec3(0, Block::SIZE / 2.0f, Block::SIZE / 2.0f) + Vec3(0.01), Vec3(0, 1, 1));
-	//				entityPos.x = collision.position.x - halfSize.x - collider.centerOffset.x;
-	//				entityVel.x = 0;
-	//				break;
-
-	//			case CollisionSide::NegativeY:
-	//				Debug::drawCube(collision.position + Vec3(Block::SIZE / 2.0f, 0, Block::SIZE / 2.0f) + Vec3(0.01), Vec3(1, 0, 1));
-	//				entityPos.y = collision.position.y - halfSize.y - collider.centerOffset.y;
-	//				entityVel.y = 0;
-	//				break;
-
-	//			case CollisionSide::NegativeZ:
-	//				Debug::drawCube(collision.position + Vec3(Block::SIZE / 2.0f, Block::SIZE / 2.0f, 0 ) + Vec3(0.01), Vec3(1, 1, 0));
-	//				entityPos.z = collision.position.z - halfSize.z - collider.centerOffset.z;
-	//				entityVel.z = 0;
-	//				break;
-	//			}
-	//		}
-	//	}
-
-
-	//	Debug::drawCube(entityPos + collider.centerOffset, collider.size, Vec3(0, 1, 0));
-	//}
+	}*/
 }
 
 void PhysicsSystem::applyGravity(EntityManager& entityManager)

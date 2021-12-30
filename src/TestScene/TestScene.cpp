@@ -4,7 +4,6 @@
 #include <Engine/Graphics/Drawing.hpp>
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>
-#include <Game/Systems/PlayerMovementComponent.hpp>
 
 #include <iostream>
 
@@ -16,6 +15,7 @@ struct Acceleration
 TestScene::TestScene(Engine& engine)
     : Scene(engine, 100)
     , cameraSystem(90.0f, 0.1f, 1000.0f)
+    , playerMovementSystem(*this)
 {
     registerInputActions();
     registerComponents();

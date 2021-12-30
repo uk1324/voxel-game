@@ -6,7 +6,6 @@
 
 #include <Engine/Graphics/GraphicsPrimitives.hpp>
 #include <Game/Components/Position.hpp>
-#include <Game/Systems/PlayerMovementComponent.hpp>
 #include <Game/Components/Rotation.hpp>
 #include <Engine/Graphics/Drawing.hpp>
 
@@ -20,20 +19,18 @@
 GameScene::GameScene(Engine& engine)
     : Scene(engine, 100)
     , m_renderingSystem(*this)
+    , m_playerMovementSystem(*this)
     , m_physicsSystem(*this)
 {
     entityManager.registerComponent<Position>();
     entityManager.registerComponent<Rotation>();
-    entityManager.registerComponent<PlayerMovementComponent>();
 
-    playerMovementSystem.registerActions(input);
-
-    player = entityManager.createEntity();
+    m_player = entityManager.createEntity();
     //entityManager.entityEmplaceComponent<Position>(player, Vec3(0, 40, -2));
-    entityManager.entityEmplaceComponent<Position>(player, Vec3(1000, 40, 1000));
+    entityManager.entityEmplaceComponent<Position>(m_player, Vec3(0, 40, 0));
     //entityManager.entityEmplaceComponent<Position>(player, Vec3(0, 0, 0));
-    entityManager.entityEmplaceComponent<Rotation>(player, Quat::identity);
-    entityManager.entityEmplaceComponent<PlayerMovementComponent>(player);
+    entityManager.entityEmplaceComponent<Rotation>(m_player, Quat::identity);
+    entityManager.entityEmplaceComponent<PlayerMovementComponent>(m_player);
 
     glfwSetWindowPos(engine.window().handle(), 600, 400);
 
@@ -43,78 +40,81 @@ GameScene::GameScene(Engine& engine)
     input.registerMouseButton("attack", MouseButton::Left);
     input.registerMouseButton("use", MouseButton::Right);
 
-    input.registerKeyboardButton("toggleCursor", KeyCode::Escape);
+    input.registerKeyboardButton("pause", KeyCode::Escape);
 
-    //glEnable(GL_PROGRAM_POINT_SIZE);
-    isCursorShown = false;
+    m_isCursorShown = false;
     engine.window().hideCursor();
 
-    //Entity e = entityManager.createEntity();
-    //entityManager.entityAddComponent<Position>(e, Vec3(1000, 35, 1000));
     PhysicsAabbCollider collider;
     /*collider.centerOffset = Vec3(0, -(1.62 - 0.5 * (1.875)), 0);
-    collider.size = Vec3(0.625, 1.875, 0.625);*/
+    collider.size = Vec3(1.875, 1.875, 1.875);*/
     collider.centerOffset = Vec3(0, -(1.62 - 0.5 * (1.875)), 0);
-    collider.size = Vec3(1.875, 1.875, 1.875);
-    //entityManager.entityEmplaceComponent<PhysicsAabbCollider>(e, collider);
-    //entityManager.entityEmplaceComponent<PhysicsVelocity>(e, PhysicsVelocity{ Vec3(0, 0, 0) });
-
-    entityManager.entityEmplaceComponent<PhysicsAabbCollider>(player, collider);
-    entityManager.entityEmplaceComponent<PhysicsVelocity>(player, PhysicsVelocity{ Vec3(0, 0, 0) });
-    entityManager.entityEmplaceComponent<Grounded>(player, Grounded{ false });
-
-
-    //glPointSize(10);'
+    collider.size = Vec3(0.6, 1.875, 0.6);
+    entityManager.entityEmplaceComponent<PhysicsAabbCollider>(m_player, collider);
+    entityManager.entityEmplaceComponent<PhysicsVelocity>(m_player, PhysicsVelocity{ Vec3(0, 0, 0) });
+    entityManager.entityEmplaceComponent<Grounded>(m_player, Grounded{ false });
 }
 
 void GameScene::update()
 {
     auto start = std::chrono::high_resolution_clock::now();
+
     if (input.isButtonDown("exit"))
     {
         engine.stop();
     }
 
-    if (input.isButtonDown("toggleCursor"))
+    if (input.isButtonDown("pause"))
     {
-        if (isCursorShown)
+        if (m_isCursorShown)
             engine.window().hideCursor();
         else
             engine.window().showCursor();
-        isCursorShown = !isCursorShown;
+        m_isCursorShown = !m_isCursorShown;
     }
 
-    const Vec3 playerPos = entityManager.entityGetComponent<Position>(player).value;
-    const Quat playerRot = entityManager.entityGetComponent<Rotation>(player).value;
+    const Vec3 playerPos = entityManager.entityGetComponent<Position>(m_player).value;
+    const Quat playerRot = entityManager.entityGetComponent<Rotation>(m_player).value;
     const Vec2I windowSize = engine.window().getWindowSize();
     m_renderingSystem.update(
         static_cast<float>(windowSize.x), static_cast<float>(windowSize.y),
         playerPos, playerRot,
         entityManager,
-        chunkSystem
+        m_chunkSystem
     );
 
-    chunkSystem.update(entityManager.entityGetComponent<Position>(player).value);
+    m_chunkSystem.update(entityManager.entityGetComponent<Position>(m_player).value);
 
-    if (input.isButtonDown("test1"))
-    {
-        chunkSystem.remesh();
-    }
+    m_playerMovementSystem.update(*this, m_player);
 
-    playerMovementSystem.update(*this, player);
-
-    m_physicsSystem.update(entityManager, chunkSystem);
+    m_physicsSystem.update(time, entityManager, m_chunkSystem);
 
     if (input.isButtonDown("test"))
     {
         //chunkSystem.set(1006, 29, 993, BlockType::Cobblestone);
-        Entity e = entityManager.createEntity();
-        entityManager.entityAddComponent<Position>(e, Vec3(playerPos));
-        PhysicsAabbCollider collider;
-        collider.centerOffset = Vec3(0, 0, 0);
-        collider.size = Vec3(1, 1, 1);
-        entityManager.entityEmplaceComponent<PhysicsAabbCollider>(e, collider);
-        entityManager.entityEmplaceComponent<PhysicsVelocity>(e, PhysicsVelocity{ Vec3(0, 0, 0) });
+        //Entity e = entityManager.createEntity();
+        //entityManager.entityAddComponent<Position>(e, Vec3(playerPos));
+        //PhysicsAabbCollider collider;
+        //collider.centerOffset = Vec3(0, 0, 0);
+        //collider.size = Vec3(1, 1, 1);
+        //entityManager.entityEmplaceComponent<PhysicsAabbCollider>(e, collider);
+        //entityManager.entityEmplaceComponent<PhysicsVelocity>(e, PhysicsVelocity{ Vec3(0, 0, 0) });
+        std::cout << playerPos.applied(floor) << ' ';
+        Vec3I chunkPos(floor(playerPos.x / Chunk::SIZE), floor(playerPos.y / Chunk::SIZE), floor(playerPos.z / Chunk::SIZE));
+        Vec3I posInChunk(playerPos.x - chunkPos.x * Chunk::SIZE, playerPos.y - chunkPos.y * Chunk::SIZE, playerPos.z - chunkPos.z * Chunk::SIZE);
+        //if (posInChunk.x < 0)
+        //{
+        //    posInChunk.x += Chunk::SIZE;
+        //}
+        //if (posInChunk.y < 0)
+        //{
+        //    posInChunk.y += Chunk::SIZE;
+        //}
+        //if (posInChunk.z < 0)
+        //{
+        //    posInChunk.z += Chunk::SIZE;
+        //}
+        std::cout << chunkPos << ' ' << posInChunk << '\n';
     }
 
     for (auto point : points)
@@ -124,8 +124,8 @@ void GameScene::update()
 
     if (input.isButtonDown("use"))
     {
-        Vec3 ray_start = entityManager.entityGetComponent<Position>(player).value;
-        const Quat& rotation = entityManager.entityGetComponent<Rotation>(player).value;
+        Vec3 ray_start = entityManager.entityGetComponent<Position>(m_player).value;
+        const Quat& rotation = entityManager.entityGetComponent<Rotation>(m_player).value;
         const Vec3& direction = rotation * Vec3::forward;
         Vec3 ray_end = ray_start + direction * 5;;
 
@@ -185,7 +185,7 @@ void GameScene::update()
         }
 
         while (last_voxel != current_voxel) {
-            if (chunkSystem.get(current_voxel.x, current_voxel.y, current_voxel.z) != BlockType::Air)
+            if (m_chunkSystem.get(current_voxel.x, current_voxel.y, current_voxel.z) != BlockType::Air)
             {
                 //points.push_back(current_voxel);
                 Block b;
@@ -195,9 +195,9 @@ void GameScene::update()
                 try
                 {
                     current_voxel = points.at(points.size() - 2);
-                    if (chunkSystem.get(current_voxel.x, current_voxel.y, current_voxel.z).type == BlockType::Air)
+                    if (m_chunkSystem.get(current_voxel.x, current_voxel.y, current_voxel.z).type == BlockType::Air)
                     {
-                        chunkSystem.set(current_voxel.x, current_voxel.y, current_voxel.z, b);
+                        m_chunkSystem.set(current_voxel.x, current_voxel.y, current_voxel.z, b);
                     }
                 }
                 catch (const std::exception&)
@@ -241,23 +241,10 @@ void GameScene::update()
         //points.push_back(playerPos);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     if (input.isButtonDown("attack"))
     {
-        Vec3 ray_start = entityManager.entityGetComponent<Position>(player).value;
-        const Quat& rotation = entityManager.entityGetComponent<Rotation>(player).value;
+        Vec3 ray_start = entityManager.entityGetComponent<Position>(m_player).value;
+        const Quat& rotation = entityManager.entityGetComponent<Rotation>(m_player).value;
         const Vec3& direction = rotation * Vec3::forward;
         Vec3 ray_end = ray_start + direction * 5;;
 
@@ -317,12 +304,12 @@ void GameScene::update()
         }
 
         while (last_voxel != current_voxel) {
-            if (chunkSystem.get(current_voxel.x, current_voxel.y, current_voxel.z) != BlockType::Air)
+            if (m_chunkSystem.get(current_voxel.x, current_voxel.y, current_voxel.z) != BlockType::Air)
             {
                 //points.push_back(current_voxel);
                 Block b;
                 b.type = BlockType::Air;
-                chunkSystem.set(current_voxel.x, current_voxel.y, current_voxel.z, b);
+                m_chunkSystem.set(current_voxel.x, current_voxel.y, current_voxel.z, b);
                 break;
             }
 
@@ -349,23 +336,8 @@ void GameScene::update()
             }
             points.push_back(current_voxel);
         }
-
-        for (auto voxel : visited_voxels)
-        {
-            //std::cout << voxel << '\n';
-        }
-
-        //std::cout << current_voxel << ' '  << ray_start << '\n';
-
-        //points.push_back(playerPos);
     }
-
-    //for (const auto& point : points)
-    //{
-    //    Debug::drawCube(Vec3(point) + Vec3(0.5, 0.5, 0.5));
-    //}
 
     auto end = std::chrono::high_resolution_clock::now();
     glfwSetWindowTitle(engine.window().handle(), (std::string("frame time: ") + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count())).c_str());
-    //std::cout << "frame time" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << '\n';
 }

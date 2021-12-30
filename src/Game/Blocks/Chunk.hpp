@@ -15,9 +15,9 @@ public:
 	Block set(size_t x, size_t y, size_t z, Block value);
 
 public:
-	static constexpr uint32_t SIZE = 16;
-	static constexpr uint32_t SIZE_SQUARED = SIZE * SIZE;
-	static constexpr uint32_t SIZE_CUBED = SIZE * SIZE * SIZE;
+	static constexpr int32_t SIZE = 16;
+	static constexpr int32_t SIZE_SQUARED = SIZE * SIZE;
+	static constexpr int32_t SIZE_CUBED = SIZE * SIZE * SIZE;
 
 private:
 	Block m_data[SIZE_CUBED];

@@ -83,7 +83,10 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 		m_chunkShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE));
 		chunkSystem.m_vao.bind();
 		glDrawArrays(GL_TRIANGLES, chunk->vboByteOffset / sizeof(uint32_t), chunk->vertexCount);
+		// Chunk borders
+		//Debug::drawCube(chunk->pos * Chunk::SIZE * Block::SIZE + Vec3(Chunk::SIZE) / 2, Vec3(Chunk::SIZE));
 	} 
+
 
 	// Skybox
 	// Drawing after everything because is behind everything so less fragments need to be drawn.

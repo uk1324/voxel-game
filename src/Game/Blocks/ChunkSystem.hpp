@@ -49,8 +49,8 @@ private:
 	void meshChunk(ChunkData& chunk);
 
 public:
-	static constexpr int32_t VERTICAL_RENDER_DISTANCE = 2;
-	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 2;
+	static constexpr int32_t VERTICAL_RENDER_DISTANCE = 1;
+	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 1;
 	static constexpr int32_t CHUNKS_IN_RENDER_DISTANCE = (2 * VERTICAL_RENDER_DISTANCE + 1) * (2 * HORIZONTAL_RENDER_DISTANCE + 1) * (2 * HORIZONTAL_RENDER_DISTANCE + 1);
 	static constexpr size_t VERTEX_DATA_PER_CHUNK_BYTE_SIZE = Chunk::SIZE_CUBED * 6 * 3 * 2 * 4;
 	static constexpr size_t VERTEX_DATA_BYTE_SIZE = CHUNKS_IN_RENDER_DISTANCE * VERTEX_DATA_PER_CHUNK_BYTE_SIZE;

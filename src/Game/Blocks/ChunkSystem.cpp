@@ -183,7 +183,7 @@ void ChunkSystem::update(const Vec3& loadPos)
 		m_chunksToGenerate.pop_back();
 	}
 
-	const Vec3I chunkPos(loadPos.x / Chunk::SIZE, loadPos.y / Chunk::SIZE, loadPos.z / Chunk::SIZE);
+	const Vec3I chunkPos(floor(loadPos.x / Chunk::SIZE), floor(loadPos.y / Chunk::SIZE), floor(loadPos.z / Chunk::SIZE));
 
 	if (chunkPos == m_lastChunkPos)
 	{
@@ -276,8 +276,10 @@ void ChunkSystem::update(const Vec3& loadPos)
 
 void ChunkSystem::set(int32_t x, int32_t y, int32_t z, Block block)
 {
-	Vec3I chunkPos(x / Chunk::SIZE, y / Chunk::SIZE, z / Chunk::SIZE);
-	Vec3I posInChunk(x % Chunk::SIZE, y % Chunk::SIZE, z % Chunk::SIZE);
+	Vec3I chunkPos(floor(float(x) / Chunk::SIZE), floor(float(y) / Chunk::SIZE), floor(float(z) / Chunk::SIZE));
+	Vec3I posInChunk(x - chunkPos.x * Chunk::SIZE, y - chunkPos.y * Chunk::SIZE, z - chunkPos.z * Chunk::SIZE);
+	ASSERT(posInChunk.x >= 0 && posInChunk.y >= 0 && posInChunk.z >= 0);
+	std::cout << chunkPos << ' ' << posInChunk << '\n';
 	ChunkData& chunk = *m_chunks[chunkPos];
 
 	auto find = [this](const Vec3I& chunkPos) -> ChunkData&
@@ -297,7 +299,7 @@ void ChunkSystem::set(int32_t x, int32_t y, int32_t z, Block block)
 	meshChunk(chunk);
 
 
-	std::cout << "pos: " << Vec3I(x, y, z) << " | " << "chunkPos: " << chunkPos << " | " << "posInChunk: " << posInChunk << '\n';
+	//std::cout << "pos: " << Vec3I(x, y, z) << " | " << "chunkPos: " << chunkPos << " | " << "posInChunk: " << posInChunk << '\n';
 	if (posInChunk.x >= 0)
 	{
 		if (posInChunk.x == 0)
@@ -384,11 +386,28 @@ void ChunkSystem::set(int32_t x, int32_t y, int32_t z, Block block)
 
 Block ChunkSystem::get(int32_t x, int32_t y, int32_t z) const
 {
-	Vec3I chunkPos(x / Chunk::SIZE, y / Chunk::SIZE, z / Chunk::SIZE);
-	Vec3I posInChunk(x % Chunk::SIZE, y % Chunk::SIZE, z % Chunk::SIZE);
+	Vec3I chunkPos(floor(float(x) / Chunk::SIZE), floor(float(y) / Chunk::SIZE), floor(float(z) / Chunk::SIZE));
+	Vec3I posInChunk(x - chunkPos.x * Chunk::SIZE, y - chunkPos.y * Chunk::SIZE, z - chunkPos.z * Chunk::SIZE);
+	//if (posInChunk)
+	//if (posInChunk.x < 0)
+	//{
+	//	posInChunk.x += Chunk::SIZE;
+	//}
+	//if (posInChunk.y < 0)
+	//{
+	//	posInChunk.y += Chunk::SIZE;
+	//}
+	//if (posInChunk.z < 0)
+	//{
+	//	posInChunk.z += Chunk::SIZE;
+	//}
+
 	auto it = m_chunks.find(chunkPos);
 	if (it == m_chunks.end())
 		return BlockType::Air;
+
+	/*if (it->second->blocks.get(posInChunk.x, posInChunk.y, posInChunk.z).isSolid())
+		std::cout << "get: " << chunkPos << ' ' << posInChunk << '\n';*/
 
 	return it->second->blocks.get(posInChunk.x, posInChunk.y, posInChunk.z);
 }
@@ -461,7 +480,7 @@ void ChunkSystem::meshChunk(ChunkData& chunk)
 	const std::vector<uint32_t>& vertices = meshFromChunk(chunk.blocks);
 	//std::cout << vertices.size() << ' ' << chunk.vboByteOffset << '\n';
 	//std::cout << "meshing chunk: " << chunk.pos << '\n';
-	std::cout << "meshing: " << chunk.pos << '\n';
+	//std::cout << "meshing: " << chunk.pos << '\n';
 	chunk.vertexCount = vertices.size();
 	m_vbo.bind();
 	m_vbo.setData(chunk.vboByteOffset, vertices.data(), vertices.size() * sizeof(uint32_t));

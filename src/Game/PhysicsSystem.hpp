@@ -2,6 +2,7 @@
 
 #include <Engine/Scene.hpp>
 #include <Engine/Ecs/EntityManager.hpp>
+#include <Engine/Time.hpp>
 #include <Game/Blocks/ChunkSystem.hpp>
 
 struct PhysicsVelocity
@@ -27,8 +28,11 @@ class PhysicsSystem
 public:
 	PhysicsSystem(Scene& scene);
 
-	void update(EntityManager& entityManager, const ChunkSystem& chunkSystem);
+	void update(const Time& time, EntityManager& entityManager, const ChunkSystem& chunkSystem);
 
 private:
 	void applyGravity(EntityManager& entityManager);
+
+private:
+	float gravity = 0.5;
 };
