@@ -19,7 +19,8 @@ public:
 	void update() override;
 
 	std::vector<Vec3I> points;
-
+	Vec3 rayStart;
+	Vec3 rayEnd;
 private:
 	bool m_isCursorShown;
 

@@ -34,27 +34,33 @@ void InputManager::update()
 
 void InputManager::registerKeyboardButton(std::string name, KeyCode key)
 {
+	m_isButtonDown[name] = false;
+	m_isButtonUp[name] = false;
+	m_isButtonHeld[name] = false;
 	m_keyToAction[key] = std::move(name);
 }
 
 void InputManager::registerMouseButton(std::string name, MouseButton button)
 {
+	m_isButtonDown[name] = false;
+	m_isButtonUp[name] = false;
+	m_isButtonHeld[name] = false;
 	m_mouseButtonToAction[button] = std::move(name);
 }
 
-bool InputManager::isButtonDown(const std::string name)
+bool InputManager::isButtonDown(const std::string name) const
 {
-	return m_isButtonDown[name];
+	return m_isButtonDown.at(name);
 }
 
-bool InputManager::isButtonUp(const std::string name)
+bool InputManager::isButtonUp(const std::string name) const
 {
-	return m_isButtonUp[name];
+	return m_isButtonUp.at(name);
 }
 
-bool InputManager::isButtonHeld(const std::string name)
+bool InputManager::isButtonHeld(const std::string name) const
 {
-	return m_isButtonHeld[name];
+	return m_isButtonHeld.at(name);
 }
 
 const Vec2& InputManager::mousePos() const

@@ -118,7 +118,8 @@ void TestScene::setupGraphics()
     engine.window().hideCursor();
 
     /*Gfx::setClearColor(Color(0.52f, 0.80f, 0.92f, 1.0f));*/
-    Gfx::setClearColor(Color(0, 0, 0, 1.0f));
+    glClearColor(0, 0, 0, 1.0f);
+    //Gfx::setClearColor(Color(0, 0, 0, 1.0f));
 }
 
 void TestScene::updateCamera()

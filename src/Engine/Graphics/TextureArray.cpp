@@ -6,6 +6,10 @@
 
 using namespace Gfx;
 
+TextureArray::TextureArray()
+	: m_handle(NULL)
+{}
+
 TextureArray::TextureArray(size_t width, size_t height, std::vector<std::string_view> textures)
 {
 	std::unique_ptr<uint32_t[]> data(new uint32_t[textures.size() * (width * height)]);
@@ -17,6 +21,11 @@ TextureArray::TextureArray(size_t width, size_t height, std::vector<std::string_
 		uint32_t* imageData = reinterpret_cast<uint32_t*>(
 			stbi_load(textures[i].data(), &imageWidth, &imageHeight, &channelCount, RGBA_CHANNEL_COUNT)
 		);
+
+		if (imageData == nullptr)
+		{
+			LOG_FATAL("failed to load file %s", textures[i].data());
+		}
 
 		if ((imageWidth != width) || (imageHeight != height))
 		{

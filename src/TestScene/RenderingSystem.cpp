@@ -19,7 +19,8 @@ RenderSystem::RenderSystem()
 void RenderSystem::update(const EntityManager& entityManager, Entity player, const Mat4& view, const Mat4& projection)
 {
 	// Can remove clear ColorBuffer if I use a skybox.
-	Gfx::clearBuffer(Gfx::ClearModeBit::ColorBuffer | Gfx::ClearModeBit::DepthBuffer);
+	//Gfx::clearBuffer(Gfx::ClearModeBit::ColorBuffer | Gfx::ClearModeBit::DepthBuffer);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	m_shader.setMat4("view", view);
 	m_shader.setMat4("projection", projection);

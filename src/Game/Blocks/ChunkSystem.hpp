@@ -2,6 +2,7 @@
 
 #include <Math/Vec3.hpp>
 #include <Game/Blocks/Chunk.hpp>
+#include <Game/Blocks/BlockData.hpp>
 #include "PerlinNoise.hpp"
 #include <Engine/Graphics/VertexArray.hpp>
 
@@ -73,4 +74,16 @@ public:
 	std::vector<ChunkData*> m_freeChunks;
 	std::vector<ChunkData*> m_chunksToGenerate;
 	std::vector<ChunkData*> m_chunksToDraw;
+
+	void addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex);
+	void addCubeTop(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
+	void addCubeBottom(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
+	void addCubeLeft(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
+	void addCubeRight(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
+	void addCubeFront(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
+	void addCubeBack(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
+	bool isInBounds(size_t x, size_t y, size_t z);
+	std::vector<uint32_t>& meshFromChunk(Chunk& chunk);
+
+	BlockData blockData;
 };

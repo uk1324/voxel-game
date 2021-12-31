@@ -1,5 +1,6 @@
 #include <Game/Rendering/RenderingSystem.hpp>
 #include <Math/Angles.hpp>
+#include <Game/Debug/Debug.hpp>
 
 // TODO: Maybe change this to range -0.5 to 0.5
 
@@ -7,6 +8,7 @@ static float cubeTrianglesVertices[] = { -1.0f,  1.0f, -1.0f,-1.0f, -1.0f, -1.0f
 static float cubeLinesVertices[] = { 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5,-0.5,0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5,0.5,0.5, -0.5,-0.5,0.5, -0.5, -0.5, -0.5, -0.5,-0.5,0.5, 0.5,-0.5,0.5, -0.5,-0.5,0.5, -0.5,0.5,0.5, 0.5,0.5,0.5, 0.5, 0.5, -0.5, 0.5,0.5,0.5, 0.5,-0.5,0.5, 0.5,0.5,0.5, -0.5,0.5,0.5, };
 static float squareTrianglesVertices[] = { -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f };
 static float point[] = { 0.0f, 0.0f, 0.0f };
+static float lineData[] = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f };
 
 RenderingSystem::RenderingSystem(Scene& scene)
 	: m_skyboxTexture(Gfx::CubeMapTexturePaths{
@@ -18,16 +20,6 @@ RenderingSystem::RenderingSystem(Scene& scene)
 		"assets/textures/skybox/back.png"
 		})
 	, m_skyboxShader("src/Game/Rendering/Shaders/skybox.vert", "src/Game/Rendering/Shaders/skybox.frag")
-	, m_blockTextureArray(
-		16, 16,
-		{
-			"assets/textures/blocks/dirt.png",
-			"assets/textures/blocks/stone.png",
-			"assets/textures/blocks/cobblestone.png",
-			"assets/textures/blocks/grass.png",
-			"assets/textures/blocks/grass2.png"
-		}
-	)
 	, m_chunkShader("src/Game/Rendering/Shaders/chunk.vert", "src/Game/Rendering/Shaders/chunk.frag")
 	, m_crosshairTexture("assets/textures/crosshair.png")
 	, m_squareShader("src/Game/Rendering/Shaders/2dTextured.vert", "src/Game/Rendering/Shaders/2dTextured.frag")
@@ -36,6 +28,7 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	, m_cubeLinesVbo(cubeLinesVertices, sizeof(cubeLinesVertices))
 	, m_squareTrianglesVbo(squareTrianglesVertices, sizeof(squareTrianglesVertices))
 	, m_pointVbo(point, sizeof(point))
+	, m_LineVbo(lineData, sizeof(lineData))
 {
 	m_cubeTrianglesVao.bind();
 	m_cubeTrianglesVbo.bind();
@@ -49,11 +42,13 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	m_pointVao.bind();
 	m_pointVbo.bind();
 	Gfx::VertexArray::setAttribute(0, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 3, 0, sizeof(float) * 3, false));
+	m_LineVao.bind();
+	m_LineVbo.bind();
+	Gfx::VertexArray::setAttribute(0, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 3, 0, sizeof(float) * 3, false));
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_PROGRAM_POINT_SIZE);
 	//glEnable(GL_CULL_FACE);
-	Debug::renderingSystem = this;
 }
 
 #include <Engine/Graphics/GraphicsPrimitives.hpp>
@@ -73,7 +68,8 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 
 	// Chunks
 	glActiveTexture(GL_TEXTURE0);
-	m_blockTextureArray.bind();
+	//m_blockTextureArray.bind();
+	chunkSystem.blockData.textureArray.bind();
 	m_chunkShader.setTexture("blockTextureArray", 0);
 	m_chunkShader.setMat4("camera", view);
 	m_chunkShader.setMat4("projection", projection);
@@ -83,10 +79,12 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 		m_chunkShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE));
 		chunkSystem.m_vao.bind();
 		glDrawArrays(GL_TRIANGLES, chunk->vboByteOffset / sizeof(uint32_t), chunk->vertexCount);
-		// Chunk borders
-		//Debug::drawCube(chunk->pos * Chunk::SIZE * Block::SIZE + Vec3(Chunk::SIZE) / 2, Vec3(Chunk::SIZE));
-	} 
 
+		if (Debug::shouldShowChunkBorders)
+		{
+			Debug::drawCube(chunk->pos * Chunk::SIZE * Block::SIZE + Vec3(Chunk::SIZE) / 2, Vec3(Chunk::SIZE), Vec3(1, 1, 1));
+		}
+	} 
 
 	// Skybox
 	// Drawing after everything because is behind everything so less fragments need to be drawn.
@@ -106,18 +104,6 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 	glEnable(GL_DEPTH_TEST);
 	glFrontFace(GL_CW);
 	glDepthMask(GL_TRUE);
-
-	// Crosshair
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	m_squareShader.use();
-	m_squareTrianglesVao.bind();
-	glActiveTexture(GL_TEXTURE0);
-	m_crosshairTexture.bind();
-	m_squareShader.setTexture("txt", 0);
-	m_squareShader.setVec2("viewportSize", Vec2(width, height));
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glDisable(GL_BLEND);
 	
 	glLineWidth(2);
 	m_cubeLinesVao.bind();
@@ -134,6 +120,7 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 	}
 	m_cubesToDraw.clear();
 
+	m_pointVao.bind();
 	for (const Point& point : m_pointsToDraw)
 	{
 		glPointSize(point.size);
@@ -142,6 +129,30 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 		glDrawArrays(GL_POINTS, 0, 1);
 	}
 	m_pointsToDraw.clear();
+
+	m_LineVao.bind();
+	for (const Line& line : m_linesToDraw)
+	{
+		Mat4 scale = Mat4::identity;
+		scale.scale(line.scale);
+		m_debugShader.setMat4("model", scale * Mat4::translation(line.startPos));
+		m_debugShader.setVec3("color", line.color);
+		glDrawArrays(GL_LINES, 0, (sizeof(lineData) / (sizeof(float) * 3)));
+	}
+	m_linesToDraw.clear();
+
+
+	// Crosshair
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	m_squareShader.use();
+	m_squareTrianglesVao.bind();
+	glActiveTexture(GL_TEXTURE0);
+	m_crosshairTexture.bind();
+	m_squareShader.setTexture("txt", 0);
+	m_squareShader.setVec2("viewportSize", Vec2(width, height));
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDisable(GL_BLEND);
 }
 
 void RenderingSystem::drawCube(const Vec3& pos, const Vec3& scale, const Vec3& color)
@@ -154,14 +165,7 @@ void RenderingSystem::drawPoint(const Vec3& pos, float size, const Vec3& color)
 	m_pointsToDraw.push_back(Point{ pos, size, color });
 }
 
-void Debug::drawCube(const Vec3& pos, const Vec3& scale, const Vec3& color)
+void RenderingSystem::drawLine(const Vec3& startPos, const Vec3& endPos, const Vec3& color)
 {
-	renderingSystem->drawCube(pos, scale, color);
+	m_linesToDraw.push_back(Line{ startPos, endPos - startPos, color });
 }
-
-void Debug::drawPoint(const Vec3& pos, float size, const Vec3& color)
-{
-	renderingSystem->drawPoint(pos, size, color);
-}
-
-RenderingSystem* Debug::renderingSystem = nullptr;

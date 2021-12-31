@@ -10,6 +10,7 @@ ChunkSystem::ChunkSystem()
 	// Preallocating all the vertex data isn't a good idea for open worlds because a lot of space if taken up by empty chunks
 	// but it makes sense for cave worlds where the render distance is smaller.
 	, m_vbo(VERTEX_DATA_BYTE_SIZE)
+	, blockData("abc")
 {
 	m_chunkPool.resize(CHUNKS_IN_RENDER_DISTANCE);
 	m_freeChunks.reserve(CHUNKS_IN_RENDER_DISTANCE);
@@ -23,7 +24,7 @@ ChunkSystem::ChunkSystem()
 	m_vao.setAttribute(0, Gfx::IntBufferLayout(Gfx::ShaderDataType::UnsignedInt, 1, 0, 4));
 }
 
-static void addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex)
+void ChunkSystem::addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex)
 {
 	GLuint vertex;
 
@@ -35,13 +36,16 @@ static void addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t 
 	vertex = x;
 	vertex |= (y << Y_OFFSET);
 	vertex |= (z << Z_OFFSET);
-	vertex |= ((static_cast<GLuint>(textureIndex.type) - 1) << TEXTURE_INDEX_OFFSET);
+	vertex |= ((static_cast<GLuint>(textureIndex.type)) << TEXTURE_INDEX_OFFSET);
 	vertex |= (texturePosIndex << TEXTURE_POS_INDEX_OFFSET);
 
 	vertices.push_back(vertex);
 }
 
-static void addCubeTop(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
+// To swap texture rotation 
+// 90deg swap 0 with 3 or 2 with 1
+// 180 swap 0 with 3 and 2 with 1
+void ChunkSystem::addCubeTop(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
 	addVertex(vertices, x, y + 1, z, block, 0);
 	addVertex(vertices, x + 1, y + 1, z + 1, block, 3);
@@ -52,7 +56,7 @@ static void addCubeTop(Block block, std::vector<GLuint>& vertices, size_t x, siz
 	addVertex(vertices, x + 1, y + 1, z + 1, block, 3);
 }
 
-static void addCubeBottom(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
+void ChunkSystem::addCubeBottom(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
 	addVertex(vertices, x, y, z, block, 0);
 	addVertex(vertices, x, y, z + 1, block, 2);
@@ -63,58 +67,58 @@ static void addCubeBottom(Block block, std::vector<GLuint>& vertices, size_t x, 
 	addVertex(vertices, x + 1, y, z, block, 1);
 }
 
-static void addCubeLeft(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
+void ChunkSystem::addCubeLeft(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
-	addVertex(vertices, x, y, z, block, 0);
-	addVertex(vertices, x, y + 1, z, block, 2);
-	addVertex(vertices, x, y, z + 1, block, 1);
+	addVertex(vertices, x, y, z, block, 3);
+	addVertex(vertices, x, y + 1, z, block, 1);
+	addVertex(vertices, x, y, z + 1, block, 2);
 
-	addVertex(vertices, x, y, z + 1, block, 1);
-	addVertex(vertices, x, y + 1, z, block, 2);
-	addVertex(vertices, x, y + 1, z + 1, block, 3);
+	addVertex(vertices, x, y, z + 1, block, 2);
+	addVertex(vertices, x, y + 1, z, block, 1);
+	addVertex(vertices, x, y + 1, z + 1, block, 0);
 }
 
-static void addCubeRight(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
+void ChunkSystem::addCubeRight(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
-	addVertex(vertices, x + 1, y, z, block, 0);
-	addVertex(vertices, x + 1, y, z + 1, block, 1);
-	addVertex(vertices, x + 1, y + 1, z, block, 2);
+	addVertex(vertices, x + 1, y, z, block, 3);
+	addVertex(vertices, x + 1, y, z + 1, block, 2);
+	addVertex(vertices, x + 1, y + 1, z, block, 1);
 
-	addVertex(vertices, x + 1, y, z + 1, block, 1);
-	addVertex(vertices, x + 1, y + 1, z + 1, block, 3);
-	addVertex(vertices, x + 1, y + 1, z, block, 2);
+	addVertex(vertices, x + 1, y, z + 1, block, 2);
+	addVertex(vertices, x + 1, y + 1, z + 1, block, 0);
+	addVertex(vertices, x + 1, y + 1, z, block, 1);
 }
 
-static void addCubeFront(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
+void ChunkSystem::addCubeFront(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
-	addVertex(vertices, x, y, z, block, 0);
-	addVertex(vertices, x + 1, y + 1, z, block, 3);
-	addVertex(vertices, x, y + 1, z, block, 2);
+	addVertex(vertices, x, y, z, block, 3);
+	addVertex(vertices, x + 1, y + 1, z, block, 0);
+	addVertex(vertices, x, y + 1, z, block, 1);
 
-	addVertex(vertices, x, y, z, block, 0);
-	addVertex(vertices, x + 1, y, z, block, 1);
-	addVertex(vertices, x + 1, y + 1, z, block, 3);
+	addVertex(vertices, x, y, z, block, 3);
+	addVertex(vertices, x + 1, y, z, block, 2);
+	addVertex(vertices, x + 1, y + 1, z, block, 0);
 }
 
-static void addCubeBack(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
+void ChunkSystem::addCubeBack(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
-	addVertex(vertices, x, y, z + 1, block, 0);
-	addVertex(vertices, x, y + 1, z + 1, block, 2);
-	addVertex(vertices, x + 1, y + 1, z + 1, block, 3);
+	addVertex(vertices, x, y, z + 1, block, 3);
+	addVertex(vertices, x, y + 1, z + 1, block, 1);
+	addVertex(vertices, x + 1, y + 1, z + 1, block, 0);
 
-	addVertex(vertices, x, y, z + 1, block, 0);
-	addVertex(vertices, x + 1, y + 1, z + 1, block, 3);
-	addVertex(vertices, x + 1, y, z + 1, block, 1);
+	addVertex(vertices, x, y, z + 1, block, 3);
+	addVertex(vertices, x + 1, y + 1, z + 1, block, 0);
+	addVertex(vertices, x + 1, y, z + 1, block, 2);
 }
 
-static bool isInBounds(size_t x, size_t y, size_t z)
+bool ChunkSystem::isInBounds(size_t x, size_t y, size_t z)
 {
 	return ((x >= 0) && (x < Chunk::SIZE))
 		&& ((y >= 0) && (y < Chunk::SIZE))
 		&& ((z >= 0) && (z < Chunk::SIZE));
 }
 
-static std::vector<uint32_t>& meshFromChunk(Chunk& chunk)
+std::vector<uint32_t>& ChunkSystem::meshFromChunk(Chunk& chunk)
 {
 	static std::vector<uint32_t> vertices(16 * 16 * 16 * 6 * 3);
 	vertices.clear();
@@ -131,27 +135,27 @@ static std::vector<uint32_t>& meshFromChunk(Chunk& chunk)
 					Block block = chunk(x, y, z);
 					if (isInBounds(x, y + 1, z) == false || chunk(x, y + 1, z) == BlockType::Air)
 					{
-						addCubeTop(block, vertices, x, y, z);
+						addCubeTop(static_cast<BlockType>(blockData[block.type].topTextureIndex), vertices, x, y, z);
 					}
 					if (isInBounds(x, y - 1, z) == false || chunk(x, y - 1, z) == BlockType::Air)
 					{
-						addCubeBottom(block, vertices, x, y, z);
+						addCubeBottom(static_cast<BlockType>(blockData[block.type].bottomTextureIndex), vertices, x, y, z);
 					}
 					if (isInBounds(x + 1, y, z) == false || chunk(x + 1, y, z) == BlockType::Air)
 					{
-						addCubeRight(block, vertices, x, y, z);
+						addCubeRight(static_cast<BlockType>(blockData[block.type].rightTextureIndex), vertices, x, y, z);
 					}
 					if (isInBounds(x - 1, y, z) == false || chunk(x - 1, y, z) == BlockType::Air)
 					{
-						addCubeLeft(block, vertices, x, y, z);
+						addCubeLeft(static_cast<BlockType>(blockData[block.type].leftTextureIndex), vertices, x, y, z);
 					}
 					if (isInBounds(x, y, z + 1) == false || chunk(x, y, z + 1) == BlockType::Air)
 					{
-						addCubeBack(block, vertices, x, y, z);
+						addCubeBack(static_cast<BlockType>(blockData[block.type].backTextureIndex), vertices, x, y, z);
 					}
 					if (isInBounds(x, y, z - 1) == false || chunk(x, y, z - 1) == BlockType::Air)
 					{
-						addCubeFront(block, vertices, x, y, z);
+						addCubeFront(static_cast<BlockType>(blockData[block.type].frontTextureIndex), vertices, x, y, z);
 					}
 				}
 			}
@@ -430,40 +434,47 @@ void ChunkSystem::initializeChunk(Chunk& chunk, const Vec3I& pos)
 			double value = noise.accumulatedOctaveNoise2D_0_1((x + pos.x * 16.0) / 256.0, (z + pos.z * 16.0) / 256.0, 8) * 50;
 			//double value = 0.2;
 			double input = (rand() % 256) / 256.0;
+
+			size_t highest = 0;
 			for (size_t y = 0; y < Chunk::SIZE; y++)
 			{
 				//double value = noise.accumulatedOctaveNoise3D_0_1((x + pos.x * 16.0) / 20.0, (y + pos.y * 16.0) / 20.0, (z + pos.z * 16.0) / 20.0, 8);
-				if (x == 8 && y == 8 && z == 8)
-				{
-					chunk.operator()(x, y, z) = BlockType::Grass2;
-				}
+				//if (x == 8 && y == 8 && z == 8)
+				//{
+				//	chunk.operator()(x, y, z) = BlockType::Grass2;
+				//}
 				if (value > 0.4)
 				{
-					chunk.operator()(x, y, z) = BlockType::Grass2;
+					chunk.operator()(x, y, z) = BlockType::Stone;
 				}
 				if ((y + pos.y * Chunk::SIZE) < value)
 				{
+					if ((y + pos.y * Chunk::SIZE + 1) > value)
+					{
+						chunk.operator()(x, y, z) = BlockType::Grass;
+						continue;
+					}
 					//chunk->operator()(x, y, z) = static_cast<BlockType>((rand() % 3) + 1);
 					/*chunk->operator()(x, y, z) = static_cast<BlockType>((y % 3) + 1);*/
 					int realY = y + pos.y * Chunk::SIZE;
 					if (realY > 30)
 					{
-						chunk.operator()(x, y, z) = BlockType::Grass2;
+						chunk.operator()(x, y, z) = BlockType::Stone;
 					}
 					else if (realY < 30 && realY > 25)
 					{
 						if (rand() % 2 == 0)
 						{
-							chunk.operator()(x, y, z) = BlockType::Grass2;
+							chunk.operator()(x, y, z) = BlockType::Stone;
 						}
 						else
 						{
-							chunk.operator()(x, y, z) = BlockType::Grass;
+							chunk.operator()(x, y, z) = BlockType::Dirt;
 						}
 					}
 					else
 					{
-						chunk.operator()(x, y, z) = BlockType::Grass;
+						chunk.operator()(x, y, z) = BlockType::Dirt;
 					}
 				}
 				else

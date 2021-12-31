@@ -5,11 +5,10 @@
 enum class BlockType : uint16_t
 {
 	Air = 0,
-	Dirt = 1,
-	Stone = 2,
-	Cobblestone = 3,
-	Grass = 4,
-	Grass2 = 5,
+	Stone = 1,
+	Grass = 2,
+	Dirt = 3,
+	Count
 };
 
 struct alignas(BlockType) Block
@@ -24,6 +23,7 @@ public:
 	bool operator==(BlockType other);
 
 	bool isSolid();
+
 
 public:
 	static constexpr int SIZE = 1;
