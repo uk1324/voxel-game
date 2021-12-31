@@ -433,10 +433,10 @@ void ChunkSystem::initializeChunk(Chunk& chunk, const Vec3I& pos)
 			for (size_t y = 0; y < Chunk::SIZE; y++)
 			{
 				//double value = noise.accumulatedOctaveNoise3D_0_1((x + pos.x * 16.0) / 20.0, (y + pos.y * 16.0) / 20.0, (z + pos.z * 16.0) / 20.0, 8);
-				//if (x == 8 && y == 8 && z == 8)
-				//{
-				//	chunk.operator()(x, y, z) = BlockType::Grass2;
-				//}
+				if (x == 8 && y == 8 && z == 8)
+				{
+					chunk.operator()(x, y, z) = BlockType::Grass2;
+				}
 				if (value > 0.4)
 				{
 					chunk.operator()(x, y, z) = BlockType::Grass2;

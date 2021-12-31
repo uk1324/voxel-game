@@ -99,9 +99,9 @@ void GameScene::update()
         //collider.size = Vec3(1, 1, 1);
         //entityManager.entityEmplaceComponent<PhysicsAabbCollider>(e, collider);
         //entityManager.entityEmplaceComponent<PhysicsVelocity>(e, PhysicsVelocity{ Vec3(0, 0, 0) });
-        std::cout << playerPos.applied(floor) << ' ';
-        Vec3I chunkPos(floor(playerPos.x / Chunk::SIZE), floor(playerPos.y / Chunk::SIZE), floor(playerPos.z / Chunk::SIZE));
-        Vec3I posInChunk(playerPos.x - chunkPos.x * Chunk::SIZE, playerPos.y - chunkPos.y * Chunk::SIZE, playerPos.z - chunkPos.z * Chunk::SIZE);
+        //std::cout << playerPos.applied(floor) << ' ';
+        //Vec3I chunkPos(floor(playerPos.x / Chunk::SIZE), floor(playerPos.y / Chunk::SIZE), floor(playerPos.z / Chunk::SIZE));
+        //Vec3I posInChunk(playerPos.x - chunkPos.x * Chunk::SIZE, playerPos.y - chunkPos.y * Chunk::SIZE, playerPos.z - chunkPos.z * Chunk::SIZE);
         //if (posInChunk.x < 0)
         //{
         //    posInChunk.x += Chunk::SIZE;
@@ -114,7 +114,7 @@ void GameScene::update()
         //{
         //    posInChunk.z += Chunk::SIZE;
         //}
-        std::cout << chunkPos << ' ' << posInChunk << '\n';
+        //std::cout << chunkPos << ' ' << posInChunk << '\n';
     }
 
     for (auto point : points)

@@ -95,28 +95,45 @@ void PlayerMovementSystem::update(Scene& scene, Entity& player)
 
 	const bool isEntityGrounded = entityManager.entityGetComponent<Grounded>(player).value;
 
-	//if (isEntityGrounded)
+	if (isEntityGrounded)
 	{
 		playerVel += (rotationX * movementDirection) * walkSpeed * scene.time.deltaTime();
 	}
-	//else
-	//{
-	//	Vec3 speed = (rotationX * movementDirection) * walkSpeed * scene.time.deltaTime();
-	//	Vec3 velocity = playerVel.normalized();
-	//	velocity.y = 0.0f;
-	//	float d = dot(speed.normalized(), velocity.normalized());
-	//	if (d < 0)
-	//		d = 0;
-	//	speed *= d;
-	//	playerVel += speed;
-	//}
+	else
+	{
+		playerVel += (rotationX * movementDirection) * 0.1 * scene.time.deltaTime();
+		//Vec3 speed = (rotationX * movementDirection) * walkSpeed * scene.time.deltaTime();
+		//Vec3 velocity = playerVel.normalized();
+		//velocity.y = 0.0f;
+		//float d = dot(speed.normalized(), velocity.normalized());
+		//if (d < 0)
+		//	d = 0;
+		//speed *= d;
+		//playerVel += speed;
+	}
 
 	if (scene.input.isButtonHeld("jump"))
 	{
 		jumpPressedTime = Time::currentTime();
 	}
 
-	if (isEntityGrounded && Time::currentTime() - jumpPressedTime < 0.2)
+	if (scene.input.isButtonDown("test"))
+	{
+		playerVel += (rotationX * movementDirection) * 10 * scene.time.deltaTime();
+	}
+
+	if (isEntityGrounded && Time::currentTime() - jumpPressedTime < 0.2 && Time::currentTime() - lastJump > 0.5)
+	{
+		//lastJump = Time::currentTime();
+
+		if (movementDirection.lengthSquared() != 0)
+			playerVel *= 1.2;
 		playerVel += Vec3::up * jumpForce * scene.time.deltaTime();
+	}
+
+	ImGui::Begin("velocity");
+	ImGui::Text("%f", Vec2(playerVel.x, playerVel.z).length());
+	ImGui::End();
+
 
 }

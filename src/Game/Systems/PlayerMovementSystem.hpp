@@ -20,8 +20,11 @@ public:
 
 public:
 	float rotationSpeed = 0.2f;
+	/*float walkSpeed = 1.0f;*/
 	float walkSpeed = 1.0f;
+	float lastJump = 0.0f;
 	float airSpeed = 0.8f;
-	float jumpForce = 10.0f;
+	/*float jumpForce = 10.0f;*/
+	float jumpForce = 10;
 	double jumpPressedTime;
 };
