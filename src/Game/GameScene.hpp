@@ -9,6 +9,7 @@
 #include <Engine/Graphics/ShaderProgram.hpp>
 #include <Engine/Graphics/VertexArray.hpp>
 #include <Engine/Graphics/TextureArray.hpp>
+#include <Game/Inventory/Inventory.hpp>
 #include <Game/Rendering/RenderingSystem.hpp>
 
 class GameScene : public Scene
@@ -16,24 +17,20 @@ class GameScene : public Scene
 public:
 	GameScene(Engine& engine);
 
-	Entity player;
-
 	void update() override;
 
-	Gfx::CubeMap skybox;
-
-	Gfx::ShaderProgram skyboxShader;
-
 	std::vector<Vec3I> points;
-
+	Vec3 rayStart;
+	Vec3 rayEnd;
+private:
+	bool m_isCursorShown;
 
 private:
+	Entity m_player;
 
-	bool isCursorShown;
-
-private:
-	PlayerMovementSystem playerMovementSystem;
+	Inventory m_inventory;
+	PlayerMovementSystem m_playerMovementSystem;
 	RenderingSystem m_renderingSystem;
-	ChunkSystem chunkSystem;
+	ChunkSystem m_chunkSystem;
 	PhysicsSystem m_physicsSystem;
 };

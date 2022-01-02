@@ -81,12 +81,17 @@ void ShaderProgram::setMat4(std::string_view name, const Mat4& mat)
 	glProgramUniformMatrix4fv(m_handle, getUniformLocation(name.data()), 1, GL_FALSE, mat.data());
 }
 
-void ShaderProgram::setInt(std::string_view name, int value)
+void ShaderProgram::setInt(std::string_view name, int32_t value)
 {
 	glProgramUniform1i(m_handle, getUniformLocation(name.data()), value);
 }
 
-void Gfx::ShaderProgram::setTexture(std::string_view name, int value)
+void ShaderProgram::setUnsignedInt(std::string_view name, uint32_t value)
+{
+	glProgramUniform1ui(m_handle, getUniformLocation(name.data()), value);
+}
+
+void ShaderProgram::setTexture(std::string_view name, int value)
 {
 	setInt(name, value);
 }

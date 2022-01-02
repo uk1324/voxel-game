@@ -8,12 +8,12 @@ Time::Time()
 	, m_currentTick(0)
 {}
 
-float Time::deltaTime()
+float Time::deltaTime() const
 {
 	return static_cast<float>(m_deltaTime);
 }
 
-uint64_t Time::currentTick()
+uint64_t Time::currentTick() const
 {
 	return m_currentTick;
 }

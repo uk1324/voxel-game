@@ -21,6 +21,8 @@ public:
 	GenericVec2& operator*=(T rhs);
 	GenericVec2 operator/(T rhs) const;
 	GenericVec2& operator/=(T rhs);
+	GenericVec2 operator/(const GenericVec2& rhs) const;
+	GenericVec2& operator/=(const GenericVec2& rhs);
 
 	T* data();
 	const T* data() const;
@@ -122,6 +124,20 @@ GenericVec2<T>& GenericVec2<T>::operator/= (T rhs)
 {
 	x /= rhs;
 	y /= rhs;
+	return *this;
+}
+
+template<typename T>
+GenericVec2<T> GenericVec2<T>::operator/ (const GenericVec2& rhs) const
+{
+	return GenericVec2(x / rhs.x, y / rhs.y);
+}
+
+template<typename T>
+GenericVec2<T>& GenericVec2<T>::operator/= (const GenericVec2& rhs)
+{
+	x /= rhs.x;
+	y /= rhs.y;
 	return *this;
 }
 

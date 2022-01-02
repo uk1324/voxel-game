@@ -25,15 +25,15 @@ public:
 	GenericMat4<T> removedTranslation() const;
 	void removeTranslation();
 	void setTranslation(const Vec3& translation);
-	void scale(const Vec3& scale);
 
 	T* data();
 	const T* data() const;
 
 public:
-	//static GenericMat4<T> scale(const Vec3& scale);
+	static GenericMat4<T> scale(const Vec3& scale);
 	static GenericMat4<T> translation(const Vec3& translation);
 	static GenericMat4<T> perspective(T fov, T aspectRatio, T nearZ, T farZ);
+	static GenericMat4<T> orthographic(GenericVec3<T> min, GenericVec3<T> max);
 	static GenericMat4<T> lookAt(GenericVec3<T> pos, GenericVec3<T> target, GenericVec3<T> up);
 
 public:
@@ -168,22 +168,30 @@ void GenericMat4<T>::setTranslation(const Vec3& translation)
 }
 
 template<typename T>
-void GenericMat4<T>::scale(const Vec3& scale)
+GenericMat4<T> GenericMat4<T>::scale(const Vec3& scale)
 {
-	operator()(0, 0) *= scale.x;
-	operator()(1, 0) *= scale.x;
-	operator()(2, 0) *= scale.x;
-	operator()(3, 0) *= scale.x;
-	
-	operator()(0, 1) *= scale.y;
-	operator()(1, 1) *= scale.y;
-	operator()(2, 1) *= scale.y;
-	operator()(3, 1) *= scale.y;
-	
-	operator()(0, 2) *= scale.z;
-	operator()(1, 2) *= scale.z;
-	operator()(2, 2) *= scale.z;
-	operator()(3, 2) *= scale.z;
+	Mat4 mat;
+
+	mat.set(0, 0, scale.x);
+	mat.set(1, 1, scale.y);
+	mat.set(2, 2, scale.z);
+	mat.set(3, 3, 1);
+
+	//operator()(0, 0) *= scale.x;
+	//operator()(1, 0) *= scale.x;
+	//operator()(2, 0) *= scale.x;
+	//operator()(3, 0) *= scale.x;
+	//
+	//operator()(0, 1) *= scale.y;
+	//operator()(1, 1) *= scale.y;
+	//operator()(2, 1) *= scale.y;
+	//operator()(3, 1) *= scale.y;
+	//
+	//operator()(0, 2) *= scale.z;
+	//operator()(1, 2) *= scale.z;
+	//operator()(2, 2) *= scale.z;
+	//operator()(3, 2) *= scale.z;
+	return mat;
 }
 
 template<typename T>
@@ -239,6 +247,19 @@ GenericMat4<T> GenericMat4<T>::perspective(T fov, T aspectRatio, T nearZ, T farZ
 	//mat(3, 2) = (2 * far * near) / (near - far);
 	//mat(2, 3) = 1.0f;
 
+
+	return mat;
+}
+
+template<typename T>
+GenericMat4<T> GenericMat4<T>::orthographic(GenericVec3<T> min, GenericVec3<T> max)
+{
+	GenericMat4<T> mat;
+
+	mat(0, 0) = 2 / (max.x - min.x);
+	mat(1, 1) = 2 / (max.y - min.y);
+	mat(2, 2) = 2 / (max.z - min.z);
+	mat(3, 3) = 1;
 
 	return mat;
 }

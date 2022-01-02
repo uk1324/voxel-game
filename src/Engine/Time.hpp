@@ -7,8 +7,8 @@ class Time
 public:
 	Time();
 
-	float deltaTime();
-	uint64_t currentTick();
+	float deltaTime() const;
+	uint64_t currentTick() const;
 
 	static double currentTime();
 

@@ -19,9 +19,9 @@ public:
 	void registerKeyboardButton(std::string name, KeyCode key);
 	void registerMouseButton(std::string name, MouseButton button);
 
-	bool isButtonDown(const std::string name);
-	bool isButtonUp(const std::string name);
-	bool isButtonHeld(const std::string name);
+	bool isButtonDown(const std::string name) const;
+	bool isButtonUp(const std::string name) const;
+	bool isButtonHeld(const std::string name) const;
 
 	const Vec2& mousePos() const;
 	const Vec2& lastMousePos() const;

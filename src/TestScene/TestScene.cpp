@@ -4,7 +4,6 @@
 #include <Engine/Graphics/Drawing.hpp>
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>
-#include <Game/Systems/PlayerMovementComponent.hpp>
 
 #include <iostream>
 
@@ -16,6 +15,7 @@ struct Acceleration
 TestScene::TestScene(Engine& engine)
     : Scene(engine, 100)
     , cameraSystem(90.0f, 0.1f, 1000.0f)
+    , playerMovementSystem(*this)
 {
     registerInputActions();
     registerComponents();
@@ -118,7 +118,8 @@ void TestScene::setupGraphics()
     engine.window().hideCursor();
 
     /*Gfx::setClearColor(Color(0.52f, 0.80f, 0.92f, 1.0f));*/
-    Gfx::setClearColor(Color(0, 0, 0, 1.0f));
+    glClearColor(0, 0, 0, 1.0f);
+    //Gfx::setClearColor(Color(0, 0, 0, 1.0f));
 }
 
 void TestScene::updateCamera()

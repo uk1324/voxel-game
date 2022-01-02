@@ -22,12 +22,12 @@ public:
 
 	void drawCube(const Vec3& pos, const Vec3& scale, const Vec3& color);
 	void drawPoint(const Vec3& pos, float size, const Vec3& color);
+	void drawLine(const Vec3& startPos, const Vec3& endPos, const Vec3& color);
 
 private:
 	Gfx::CubeMap m_skyboxTexture;
 	Gfx::ShaderProgram m_skyboxShader;
 
-	Gfx::TextureArray m_blockTextureArray;
 	Gfx::ShaderProgram m_chunkShader;
 
 	Gfx::ShaderProgram m_squareShader;
@@ -46,6 +46,9 @@ private:
 
 	Gfx::VertexArray m_pointVao;
 	Gfx::VertexBuffer m_pointVbo;
+
+	Gfx::VertexArray m_LineVao;
+	Gfx::VertexBuffer m_LineVbo;
 
 	struct Cube
 	{
@@ -66,13 +69,12 @@ private:
 
 	std::vector<Point> m_pointsToDraw;
 
-};
+	struct Line
+	{
+		Vec3 startPos;
+		Vec3 scale;
+		Vec3 color;
+	};
 
-struct Debug
-{
-public:
-	static void drawCube(const Vec3& pos, const Vec3& scale = Vec3(1, 1, 1), const Vec3& color = Vec3(1, 0, 0));
-	static void drawPoint(const Vec3& pos, float size = 10.0f, const Vec3& color = Vec3(1, 0, 0));
-
-	static RenderingSystem* renderingSystem;
+	std::vector<Line> m_linesToDraw;
 };

@@ -1,251 +1,285 @@
 #include <Game/PhysicsSystem.hpp>
 #include <Game/Components/Position.hpp>
 
-
-#include <Game/Rendering/RenderingSystem.hpp>
-
 PhysicsSystem::PhysicsSystem(Scene& scene)
 {
 	scene.entityManager.registerComponent<PhysicsVelocity>();
 	scene.entityManager.registerComponent<PhysicsAabbCollider>();
+	scene.entityManager.registerComponent<Grounded>();
 }
 
-#include <iostream>
-
-void PhysicsSystem::update(EntityManager& entityManger, const ChunkSystem& chunkSystem)
+void PhysicsSystem::update(const Time& time, EntityManager& entityManager, const ChunkSystem& chunkSystem)
 {
-	for (auto& [entity, velocityComponent] : entityManger.getComponents<PhysicsVelocity>())
+	for (auto& [entity, velocityComponent] : entityManager.getComponents<PhysicsVelocity>())
 	{
-		Vec3& vel = velocityComponent.value;
-		Vec3& pos = entityManger.entityGetComponent<Position>(entity).value;
+		Vec3& entityVel = velocityComponent.value;
+		Vec3& entityPos = entityManager.entityGetComponent<Position>(entity).value;
+		bool& isEntityGrounded = entityManager.entityGetComponent<Grounded>(entity).value;
+		const PhysicsAabbCollider& collider = entityManager.entityGetComponent<PhysicsAabbCollider>(entity);
 
-		vel = Vec3(0, -0.05, 0);
-		pos += vel;
+		entityVel.y -= gravity * time.deltaTime();
+
+		entityVel.y *= 0.98;
+		if (isEntityGrounded)
+		{
+			entityVel.x *= 0.85;
+			entityVel.z *= 0.85;
+		}
+		else
+		{
+			entityVel.x *= 0.98;
+			entityVel.z *= 0.98;
+		}
+
+		isEntityGrounded = false;
+		Vec3 movement = entityVel;
+		// Doing collsion 3 times so the sliding collision response on one axis doesn't allow to go through blocks.
+		for (int i = 0; i < 3; i++)
+		{
+			TerrainCollision collision = aabbVsTerrainCollision(chunkSystem, entityPos + collider.centerOffset, collider.halfSize, entityVel);
+
+			static constexpr float EPSILON = 0.01f;
+			// Subtracting epsilon to move the player right before the collision.
+			entityPos += movement * (collision.entryTime - EPSILON);
+
+			float remainingTime = 1.0f - collision.entryTime;
+			// If all movement was resolved.
+			if (remainingTime <= 0.0f)
+				break;
+
+			movement *= remainingTime;
+
+			if (collision.normal.y == 1.0f)
+			{
+				isEntityGrounded = true;
+			}
+
+			if (collision.normal.x != 0.0f)
+			{
+				entityVel.x = 0.0f;
+				movement.x = 0.0f;
+			}
+			else if (collision.normal.y != 0.0f)
+			{
+				entityVel.y = 0.0f;
+				movement.y = 0.0f;
+			}
+			else if (collision.normal.z != 0.0f)
+			{
+				entityVel.z = 0.0f;
+				movement.z = 0.0f;
+			}
+		}
+	}
+}
+
+PhysicsSystem::TerrainCollision PhysicsSystem::aabbVsTerrainCollision(const ChunkSystem& chunkSystem, const Vec3& pos, const Vec3& halfSize, Vec3 vel)
+{
+	TerrainCollision result;
+	result.entryTime = 1.0f;
+	result.normal = Vec3(0.0f);
+
+	Vec3 newPos = pos + vel;
+
+	Vec3 collisionAreaMin;
+	Vec3 collisionAreaMax;
+
+	if (pos.x < newPos.x)
+	{
+		collisionAreaMin.x = pos.x;
+		collisionAreaMax.x = newPos.x;
+	}
+	else
+	{
+		collisionAreaMin.x = newPos.x;
+		collisionAreaMax.x = pos.x;
 	}
 
-	for (const auto& [entity, collider] : entityManger.getComponents<PhysicsAabbCollider>())
+	if (pos.y < newPos.y)
 	{
-		Vec3& entityPos = entityManger.entityGetComponent<Position>(entity).value;
-		Vec3& entityVel = entityManger.entityGetComponent<PhysicsVelocity>(entity).value;
-		const Vec3 pos = entityManger.entityGetComponent<Position>(entity).value + collider.centerOffset;
-		//const Vec3 vel = entityManger.entityGetComponent<Veloc>(entity).value + collider.centerOffset;
+		collisionAreaMin.y = pos.y;
+		collisionAreaMax.y = newPos.y;
+	}
+	else
+	{
+		collisionAreaMin.y = newPos.y;
+		collisionAreaMax.y = pos.y;
+	}
 
-		const Vec3 halfSize = collider.size / 2.0f;
+	if (pos.z < newPos.z)
+	{
+		collisionAreaMin.z = pos.z;
+		collisionAreaMax.z = newPos.z;
+	}
+	else
+	{
+		collisionAreaMin.z = newPos.z;
+		collisionAreaMax.z = pos.z;
+	}
 
-		const Vec3I voxelPos = pos;
-		const Vec3I start = voxelPos - Vec3(5, 5, 5);
-		const Vec3I end = voxelPos + Vec3(5, 5, 5);
+	collisionAreaMin -= halfSize;
+	collisionAreaMax += halfSize;
+	collisionAreaMin.apply(floor);
+	collisionAreaMax.apply(ceil);
 
-		for (float z = start.z; z < end.z; z += Block::SIZE)
+	for (float z = collisionAreaMin.z; z < collisionAreaMax.z; z++)
+	{
+		for (float y = collisionAreaMin.y; y < collisionAreaMax.y; y++)
 		{
-			for (float y = start.y; y < end.y; y += Block::SIZE)
+			for (float x = collisionAreaMin.x; x < collisionAreaMax.x; x++)
 			{
-				for (float x = start.x; x < end.x; x += Block::SIZE)
+				if (chunkSystem.get(x, y, z).isSolid()
+					// Disable collision if collider is already inside the block.
+					&& (isBlockVsAabbCollision(Vec3(x, y, z), pos, halfSize) == false))
 				{
-					//std::cout << Vec3(x, y, z) << '\n';
-					if (chunkSystem.get(x, y, z) != BlockType::Air)
+					Vec3 entryDistance;
+					Vec3 exitDistance;
+
+					if (vel.x > 0)
 					{
-						//std::cout << Vec3(x, y, z) << '\n';
-
-						Debug::drawCube(Vec3(x, y, z) + Vec3(Block::SIZE) / 2);
-						
-
-						auto isCollision = [](const ChunkSystem& a, const Vec3& pos, const Vec3& halfSize, float x, float y, float z)
-						{
-							const bool xCollision = (pos.x - halfSize.x < x + Block::SIZE) && (pos.x + halfSize.x > x);
-							const bool yCollision = (pos.y - halfSize.y < y + Block::SIZE) && (pos.y + halfSize.y > y);
-							const bool zCollision = (pos.z - halfSize.z < z + Block::SIZE) && (pos.z + halfSize.z > z);
-							return a.get(x, y, z) != BlockType::Air && xCollision && yCollision && zCollision;
-						};
-
-						const bool xCollision = (pos.x - halfSize.x < x + Block::SIZE) && (pos.x + halfSize.x > x);
-						const bool yCollision = (pos.y - halfSize.y < y + Block::SIZE) && (pos.y + halfSize.y > y);
-						const bool zCollision = (pos.z - halfSize.z < z + Block::SIZE) && (pos.z + halfSize.z > z);
-
-						const float yPosDistance = abs((pos.y - halfSize.y) - (y + Block::SIZE));
-						const float yNegDistance = abs((pos.y + halfSize.y) - y);
-
-						const Vec3 posDistance = Vec3((pos - halfSize) - (Vec3(x, y, z) + Vec3(Block::SIZE))).applied(abs);
-						const Vec3 negDistance = Vec3((pos + halfSize) - Vec3(x, y, z)).applied(abs); 
-
-						//Debug::drawPoint(entityPos);
-
-						const std::vector<float> distance = {
-							posDistance.x,
-							posDistance.y,	
-							posDistance.z,
-							negDistance.x,
-							negDistance.y,
-							negDistance.z
-						};
-
-						size_t minIndex = 126126126120;
-						float min = std::numeric_limits<float>::infinity();
-
-						enum class Distance
-						{
-							PosX,
-							PosY,
-							PosZ,
-							NegX,
-							NegY,
-							NegZ,
-						};
-
-						const std::vector<bool (*)(const ChunkSystem&, float, float, float)> a = {
-							[](const ChunkSystem& c, float x, float y, float z) -> bool { return c.get(x + 1, y, z) == BlockType::Air; },
-							[](const ChunkSystem& c, float x, float y, float z) -> bool { return c.get(x, y + 1, z) == BlockType::Air; },
-							[](const ChunkSystem& c, float x, float y, float z) -> bool { return c.get(x, y, z + 1) == BlockType::Air; },
-							[](const ChunkSystem& c, float x, float y, float z) -> bool { return c.get(x - 1, y, z) == BlockType::Air; },
-							[](const ChunkSystem& c, float x, float y, float z) -> bool { return c.get(x, y - 1, z) == BlockType::Air; },
-							[](const ChunkSystem& c, float x, float y, float z) -> bool { return c.get(x, y, z - 1) == BlockType::Air; },
-						};
-
-						std::vector<size_t> minIndices;
-
-						for (size_t i = 0; i < distance.size(); i++)
-						{
-							bool yes = true;
-
-							switch (static_cast<Distance>(i))
-							{
-								case Distance::PosX:
-									for (float y = start.y; y < end.y; y++)
-									{
-										if (isCollision(chunkSystem, pos, halfSize - Vec3(0.05), x + 1, y, z))
-										{
-											yes = false;
-										}
-									}
-
-									break;
-								case Distance::PosY:
-									break;
-								case Distance::PosZ:
-									for (float y = start.y; y < end.y; y++)
-									{
-										if (isCollision(chunkSystem, pos, halfSize - Vec3(0.05), x, y, z + 1))
-										{
-											Debug::drawCube(Vec3(x, y, z + 1) + Vec3(0.5), Vec3(1), Vec3(0, 0, 1));
-											yes = false;
-										}
-									}
-									break;
-								case Distance::NegX:
-									for (float y = start.y; y < end.y; y++)
-									{
-										if (isCollision(chunkSystem, pos, halfSize - Vec3(0.05), x - 1, y, z))
-										{
-											yes = false;
-										}
-									}
-									break;
-								case Distance::NegY:
-									break;
-								case Distance::NegZ:
-									for (float y = start.y; y < end.y; y++)
-									{
-										if (isCollision(chunkSystem, pos, halfSize - Vec3(0.05), x, y, z - 1))
-										{
-											yes = false;
-										}
-									}
-									break;
-							}
-							//yes = true;
-							if (distance[i] < min && a[i](chunkSystem, x, y, z) && yes)
-							{
-								minIndex = i;
-								min = distance[i];
-							}
-						}
-
-						if (minIndex == 126126126120)
-						{
-							continue;
-						}
-
-						if (min > 0.3)
-						{
-							continue;
-						}
-
-						auto isAlmostEqual = [](float x, float y)
-						{
-							return (std::abs(x - y) < 0.01 * std::max(std::abs(x), std::abs(y)));
-						};
-
-						std::vector<size_t> distIndices;
-
-						for (size_t i = 0; i < distance.size(); i++)
-						{
-							if (isAlmostEqual(min, distance[i]))
-							{
-								distIndices.push_back(i);
-							}
-						}
-
-
-						if (xCollision && yCollision && zCollision)
-						{
-							for (size_t d : distIndices)
-							{
-								switch (static_cast<Distance>(d))
-								{
-								case Distance::PosX:
-									//if (chunkSystem.get(x + 1, y, z) != BlockType::Air)
-								{
-									entityPos.x = x + Block::SIZE + halfSize.x - collider.centerOffset.x;
-									entityVel.x = 0;
-								}
-								break;
-
-								case Distance::PosY:
-									//if (chunkSystem.get(x, y + 1, z) != BlockType::Air)
-								{
-									entityPos.y = y + Block::SIZE + halfSize.y - collider.centerOffset.y;
-									entityVel.y = 0;
-								}
-								break;
-
-								case Distance::PosZ:
-									//if (chunkSystem.get(x, y, z + 1) != BlockType::Air)
-								{
-									entityPos.z = z + Block::SIZE + halfSize.z - collider.centerOffset.z;
-									entityVel.z = 0;
-								}
-								break;
-
-								case Distance::NegX:
-									//if (chunkSystem.get(x - 1, y, z) != BlockType::Air)
-								{
-									entityPos.x = x - halfSize.x - collider.centerOffset.x;
-									entityVel.x = 0;
-								}
-								break;
-
-								case Distance::NegY:
-									//if (chunkSystem.get(x, y - 1, z) != BlockType::Air)
-								{
-									entityPos.y = y - halfSize.y - collider.centerOffset.y;
-									entityVel.y = 0;
-								}
-								break;
-
-								case Distance::NegZ:
-									//if (chunkSystem.get(x, y, z - 1) != BlockType::Air)
-								{
-									entityPos.z = z - halfSize.z - collider.centerOffset.z;
-									entityVel.z = 0;
-								}
-								break;
-								}
-							}
-						}
+						entryDistance.x = x - (pos.x + halfSize.x);
+						exitDistance.x = (x + Block::SIZE) - (pos.x - halfSize.x);
 					}
+					else
+					{
+						entryDistance.x = (x + Block::SIZE) - (pos.x - halfSize.x);
+						exitDistance.x = x - (pos.x + halfSize.x);
+					}
+
+					if (vel.y > 0)
+					{
+						entryDistance.y = y - (pos.y + halfSize.y);
+						exitDistance.y = (y + Block::SIZE) - (pos.y - halfSize.y);
+					}
+					else
+					{
+						entryDistance.y = (y + Block::SIZE) - (pos.y - halfSize.y);
+						exitDistance.y = y - (pos.y + halfSize.y);
+					}
+
+					if (vel.z > 0)
+					{
+						entryDistance.z = z - (pos.z + halfSize.z);
+						exitDistance.z = (z + Block::SIZE) - (pos.z - halfSize.z);
+					}
+					else
+					{
+						entryDistance.z = (z + Block::SIZE) - (pos.z - halfSize.z);
+						exitDistance.z = z - (pos.z + halfSize.z);
+					}
+
+					Vec3 entryTime;
+					Vec3 exitTime;
+
+					if (vel.x == 0.0f)
+					{
+						entryTime.x = -std::numeric_limits<float>::infinity();
+						exitTime.x = std::numeric_limits<float>::infinity();
+					}
+					else
+					{
+						entryTime.x = entryDistance.x / vel.x;
+						exitTime.x = exitDistance.x / vel.x;
+					}
+
+					if (vel.y == 0.0f)
+					{
+						entryTime.y = -std::numeric_limits<float>::infinity();
+						exitTime.y = std::numeric_limits<float>::infinity();
+					}
+					else
+					{
+						entryTime.y = entryDistance.y / vel.y;
+						exitTime.y = exitDistance.y / vel.y;
+					}
+
+					if (vel.z == 0.0f)
+					{
+						entryTime.z = -std::numeric_limits<float>::infinity();
+						exitTime.z = std::numeric_limits<float>::infinity();
+					}
+					else
+					{
+						entryTime.z = entryDistance.z / vel.z;
+						exitTime.z = exitDistance.z / vel.z;
+					}
+
+					// Finding max entry to find the most movement possible before collision on any axis.
+					float entry = std::max(entryTime.x, std::max(entryTime.y, entryTime.z));
+					float exit = std::min(exitTime.x, std::min(exitTime.y, exitTime.z));
+
+					// No collision
+					if ((entry > exit) 
+						|| ((entryTime.x < 0.0f) && (entryTime.y < 0.0f) && (entryTime.z < 0.0f)) 
+						|| (entryTime.x > 1.0f)
+						|| (entryTime.y > 1.0f)
+						|| (entryTime.z > 1.0f)
+					// Closer collision already found.
+						|| (entry > result.entryTime))
+					{
+						continue;
+					}
+					else
+					{
+						result.entryTime = entry;
+						// This just finds the max entryTime again. Could optimize this.
+						if (entryTime.x > entryTime.y && entryTime.x > entryTime.z)
+						{
+							if (entryDistance.x < 0.0f)
+							{
+								result.normal.x = 1.0f;
+								result.normal.y = 0.0f;
+								result.normal.z = 0.0f;
+							}
+							else
+							{
+								result.normal.x = -1.0f;
+								result.normal.y = 0.0f;
+								result.normal.z = 0.0f;
+							}
+						}
+						else if (entryTime.y > entryTime.x && entryTime.y > entryTime.z)
+						{
+							if (entryDistance.y < 0.0f)
+							{
+								result.normal.x = 0.0f;
+								result.normal.y = 1.0f;
+								result.normal.z = 0.0f;
+							}
+							else
+							{
+								result.normal.x = 0.0f;
+								result.normal.y = -1.0f;
+								result.normal.z = 0.0f;
+							}
+						}
+						else
+						{
+							if (entryDistance.z < 0.0f)
+							{
+								result.normal.x = 0.0f;
+								result.normal.y = 0.0f;
+								result.normal.z = 1.0f;
+							}
+							else
+							{
+								result.normal.x = 0.0f;
+								result.normal.y = 0.0f;
+								result.normal.z = -1.0f;
+							}
+						}
+					}				
 				}
 			}
 		}
-		Debug::drawCube(entityPos + collider.centerOffset, collider.size, Vec3(0, 1, 0));
 	}
+
+	return result;
+}
+
+bool PhysicsSystem::isBlockVsAabbCollision(const Vec3& blockPos, const Vec3& pos, const Vec3& halfSize)
+{
+	return (pos.x - halfSize.x < blockPos.x + Block::SIZE) && (pos.x + halfSize.x > blockPos.x)
+		&& (pos.y - halfSize.y < blockPos.y + Block::SIZE) && (pos.y + halfSize.y > blockPos.y)
+		&& (pos.z - halfSize.z < blockPos.z + Block::SIZE) && (pos.z + halfSize.z > blockPos.z);
 }
