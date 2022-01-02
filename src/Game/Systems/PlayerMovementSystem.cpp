@@ -4,8 +4,6 @@
 #include <Game/PhysicsSystem.hpp>
 #include <Math/Angles.hpp>
 
-#include <imgui.h>
-
 PlayerMovementSystem::PlayerMovementSystem(Scene& scene)
 {
 	scene.entityManager.registerComponent<PlayerMovementComponent>();
@@ -87,10 +85,6 @@ void PlayerMovementSystem::update(Scene& scene, Entity& player)
 	//	movementDirection += Vec3::down;
 	//}
 
-	ImGui::Begin("jump");
-	ImGui::SliderFloat("jump force", &jumpForce, 0, 100);
-	ImGui::End();
-
 	movementDirection.normalize();
 
 	const bool isEntityGrounded = entityManager.entityGetComponent<Grounded>(player).value;
@@ -130,10 +124,4 @@ void PlayerMovementSystem::update(Scene& scene, Entity& player)
 			playerVel *= 1.2;
 		playerVel += Vec3::up * jumpForce * scene.time.deltaTime();
 	}
-
-	ImGui::Begin("velocity");
-	ImGui::Text("%f", Vec2(playerVel.x, playerVel.z).length());
-	ImGui::End();
-
-
 }

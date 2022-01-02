@@ -43,17 +43,23 @@ void ChunkSystem::addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, s
 }
 
 // To swap texture rotation 
+// 0 = vec2(0, 0) // bottom left
+// 1 = vec2(1, 0) // bottom right
+// 2 = vec2(0, 1) // top left
+// 3 = vec2(1, 1) // top right
 // 90deg swap 0 with 3 or 2 with 1
 // 180 swap 0 with 3 and 2 with 1
+// to flip upside down swap 0 with 2 and 1 with 3
+// to mirror swap 0 with 1 and 2 with 3
 void ChunkSystem::addCubeTop(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
-	addVertex(vertices, x, y + 1, z, block, 0);
-	addVertex(vertices, x + 1, y + 1, z + 1, block, 3);
-	addVertex(vertices, x, y + 1, z + 1, block, 2);
+	addVertex(vertices, x, y + 1, z, block, 3);
+	addVertex(vertices, x + 1, y + 1, z + 1, block, 0);
+	addVertex(vertices, x, y + 1, z + 1, block, 1);
 
-	addVertex(vertices, x, y + 1, z, block, 0);
-	addVertex(vertices, x + 1, y + 1, z, block, 1);
-	addVertex(vertices, x + 1, y + 1, z + 1, block, 3);
+	addVertex(vertices, x, y + 1, z, block, 3);
+	addVertex(vertices, x + 1, y + 1, z, block, 2);
+	addVertex(vertices, x + 1, y + 1, z + 1, block, 0);
 }
 
 void ChunkSystem::addCubeBottom(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
@@ -69,13 +75,13 @@ void ChunkSystem::addCubeBottom(Block block, std::vector<GLuint>& vertices, size
 
 void ChunkSystem::addCubeLeft(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
-	addVertex(vertices, x, y, z, block, 3);
-	addVertex(vertices, x, y + 1, z, block, 1);
-	addVertex(vertices, x, y, z + 1, block, 2);
+	addVertex(vertices, x, y, z, block, 2);
+	addVertex(vertices, x, y + 1, z, block, 0);
+	addVertex(vertices, x, y, z + 1, block, 3);
 
-	addVertex(vertices, x, y, z + 1, block, 2);
-	addVertex(vertices, x, y + 1, z, block, 1);
-	addVertex(vertices, x, y + 1, z + 1, block, 0);
+	addVertex(vertices, x, y, z + 1, block, 3);
+	addVertex(vertices, x, y + 1, z, block, 0);
+	addVertex(vertices, x, y + 1, z + 1, block, 1);
 }
 
 void ChunkSystem::addCubeRight(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
@@ -102,13 +108,13 @@ void ChunkSystem::addCubeFront(Block block, std::vector<GLuint>& vertices, size_
 
 void ChunkSystem::addCubeBack(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
-	addVertex(vertices, x, y, z + 1, block, 3);
-	addVertex(vertices, x, y + 1, z + 1, block, 1);
-	addVertex(vertices, x + 1, y + 1, z + 1, block, 0);
+	addVertex(vertices, x, y, z + 1, block, 2);
+	addVertex(vertices, x, y + 1, z + 1, block, 0);
+	addVertex(vertices, x + 1, y + 1, z + 1, block, 1);
 
-	addVertex(vertices, x, y, z + 1, block, 3);
-	addVertex(vertices, x + 1, y + 1, z + 1, block, 0);
-	addVertex(vertices, x + 1, y, z + 1, block, 2);
+	addVertex(vertices, x, y, z + 1, block, 2);
+	addVertex(vertices, x + 1, y + 1, z + 1, block, 1);
+	addVertex(vertices, x + 1, y, z + 1, block, 3);
 }
 
 bool ChunkSystem::isInBounds(size_t x, size_t y, size_t z)

@@ -57,6 +57,17 @@ BlockData::BlockData(const std::string_view path)
 		1,
 	};
 
+	blocks[static_cast<size_t>(BlockType::Debug) - 1] = {
+		getTextureIndex("assets/textures/blocks/top.png"),
+		getTextureIndex("assets/textures/blocks/bottom.png"),
+		getTextureIndex("assets/textures/blocks/left.png"),
+		getTextureIndex("assets/textures/blocks/right.png"),
+		getTextureIndex("assets/textures/blocks/front.png"),
+		getTextureIndex("assets/textures/blocks/back.png"),
+		0.85,
+		1,
+	};
+
 	textureArray = Gfx::TextureArray(16, 16, std::vector<std::string_view>(texturesNames.begin(), texturesNames.end()));
 
 	
@@ -80,6 +91,12 @@ BlockData::BlockData(const std::string_view path)
 }
 
 BlockData::Entry& BlockData::operator[](BlockType type)
+{
+	ASSERT(type != BlockType::Air);
+	return blocks[static_cast<size_t>(type) - 1];
+}
+
+const BlockData::Entry& BlockData::operator[](BlockType type) const
 {
 	ASSERT(type != BlockType::Air);
 	return blocks[static_cast<size_t>(type) - 1];;

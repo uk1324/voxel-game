@@ -46,6 +46,7 @@ public:
 	};
 
 	Entry& operator[](BlockType type);
+	const Entry& operator[](BlockType type) const;
 
 public:
 

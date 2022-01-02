@@ -2,6 +2,8 @@
 #include <Engine/Engine.hpp>
 #include <chrono>
 
+#include <Game/Inventory/Inventory.hpp>
+
 #include <string>
 
 #include <Engine/Graphics/GraphicsPrimitives.hpp>
@@ -84,6 +86,8 @@ void GameScene::update()
         m_chunkSystem
     );
 
+    m_inventory.render(m_chunkSystem.blockData, input, static_cast<float>(windowSize.x), static_cast<float>(windowSize.y));
+
     m_chunkSystem.update(entityManager.entityGetComponent<Position>(m_player).value);
 
     m_playerMovementSystem.update(*this, m_player);
@@ -139,7 +143,7 @@ void GameScene::update()
             {
                 //points.push_back(current_voxel);
                 Block b;
-                b.type = BlockType::Stone;
+                b.type = BlockType::Debug;
                 //chunkSystem.set(current_voxel.x, current_voxel.y, current_voxel.z, b);
                 Vec3 current_voxel;
                 try

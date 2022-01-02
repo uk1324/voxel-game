@@ -34,7 +34,8 @@ namespace Gfx
 		void setVec3(std::string_view name, const Vec3& vec);
 		void setVec3I(std::string_view name, const Vec3I& vec);
 		void setMat4(std::string_view name, const Mat4& mat);
-		void setInt(std::string_view name, int value);
+		void setInt(std::string_view name, int32_t value);
+		void setUnsignedInt(std::string_view name, uint32_t value);
 		void setTexture(std::string_view name, int value);
 		void setFloat(std::string_view name, float value);
 
