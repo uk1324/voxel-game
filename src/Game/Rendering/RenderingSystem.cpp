@@ -54,6 +54,9 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	glEnable(GL_PROGRAM_POINT_SIZE);
 	//glEnable(GL_CULL_FACE);
 	Debug::renderingSystem = this;
+
+	glEnable(GL_BLEND);
+
 }
 
 #include <Engine/Graphics/GraphicsPrimitives.hpp>
@@ -100,13 +103,11 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 	glFrontFace(GL_CCW);  
 	glDepthMask(GL_FALSE); 
 	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 	glFrontFace(GL_CW);
 	glDepthMask(GL_TRUE);
 
 	// Crosshair
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	m_squareShader.use();
 	m_squareTrianglesVao.bind();
 	glActiveTexture(GL_TEXTURE0);
@@ -114,9 +115,9 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 	m_squareShader.setTexture("txt", 0);
 	m_squareShader.setVec2("viewportSize", Vec2(width, height));
 	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glDisable(GL_BLEND);
+	//glDisable(GL_BLEND);
 	
-	glLineWidth(2);
+	// glLineWidth(2);
 	m_cubeLinesVao.bind();
 	m_debugShader.use();
 	m_debugShader.setMat4("view", view);
