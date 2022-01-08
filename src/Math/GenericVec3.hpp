@@ -10,7 +10,7 @@ public:
 	explicit GenericVec3(T all);
 	GenericVec3(T x, T y, T z);
 	template<typename U>
-	GenericVec3(const GenericVec3<U>& other);
+	explicit GenericVec3(const GenericVec3<U>& other);
 
 	float length() const;
 	float lengthSquared() const;
@@ -93,9 +93,9 @@ GenericVec3<T>::GenericVec3(T x, T y, T z)
 template<typename T>
 template<typename U>
 GenericVec3<T>::GenericVec3(const GenericVec3<U>& other)
-	: x(T(other.x))
-	, y(T(other.y))
-	, z(T(other.z))
+	: x(static_cast<T>(other.x))
+	, y(static_cast<T>(other.y))
+	, z(static_cast<T>(other.z))
 {}
 
 template<typename T>

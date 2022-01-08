@@ -21,6 +21,7 @@ public:
 	GenericVec3<T> operator* (const GenericVec3<T>& vec) const;
 	GenericMat4<T> operator* (T scalar) const;
 	GenericMat4<T> operator* (const GenericMat4<T> mat) const;
+	GenericMat4<T>& operator*= (const GenericMat4<T> mat);
 
 	GenericMat4<T> removedTranslation() const;
 	void removeTranslation();
@@ -141,6 +142,13 @@ GenericMat4<T> GenericMat4<T>::operator* (const GenericMat4<T> mat) const
 		}
 	}
 	return m;
+}
+
+template<typename T>
+GenericMat4<T>& GenericMat4<T>::operator*= (const GenericMat4<T> mat)
+{
+	*this = *this * mat;
+	return *this;
 }
 
 template<typename T>

@@ -22,6 +22,8 @@ GameScene::GameScene(Engine& engine)
     , m_renderingSystem(*this)
     , m_playerMovementSystem(*this)
     , m_physicsSystem(*this)
+    , m_inventorySystem(*this)
+    , m_inventory(9 * 4)
 {
     Debug::init(input, m_renderingSystem);
 
@@ -37,13 +39,12 @@ GameScene::GameScene(Engine& engine)
 
     input.registerKeyboardButton("exit", KeyCode::X);
     input.registerKeyboardButton("test", KeyCode::F);
-    input.registerKeyboardButton("test1", KeyCode::E);
+    //input.registerKeyboardButton("test1", KeyCode::E);
     input.registerMouseButton("attack", MouseButton::Left);
     input.registerMouseButton("use", MouseButton::Right);
 
     input.registerKeyboardButton("pause", KeyCode::Escape);
 
-    m_isCursorShown = false;
     engine.window().hideCursor();
 
     PhysicsAabbCollider collider;
@@ -69,12 +70,23 @@ void GameScene::update()
 
     if (input.isButtonDown("pause"))
     {
-        if (m_isCursorShown)
+        if (m_isGamePaused)
             engine.window().hideCursor();
         else
             engine.window().showCursor();
-        m_isCursorShown = !m_isCursorShown;
+        m_isGamePaused = !m_isGamePaused;
     }
+
+    //if (input.isButtonDown("inventoryOpen"))
+    //{
+    //    m_isInventoryOpen = !m_isInventoryOpen;
+    //    m_inventorySystem.isInventoryOpen = m_isInventoryOpen;
+
+    //    if (m_isInventoryOpen)
+    //        engine.window().showCursor();
+    //    else
+    //        engine.window().hideCursor();
+    //}
 
     const Vec3 playerPos = entityManager.entityGetComponent<Position>(m_player).value;
     const Quat playerRot = entityManager.entityGetComponent<Rotation>(m_player).value;
@@ -85,22 +97,28 @@ void GameScene::update()
         entityManager,
         m_chunkSystem
     );
-
-    m_inventory.render(m_chunkSystem.blockData, input, static_cast<float>(windowSize.x), static_cast<float>(windowSize.y));
+    m_inventorySystem.render(m_inventory, itemData, m_chunkSystem.blockData, Vec2(windowSize));
 
     m_chunkSystem.update(entityManager.entityGetComponent<Position>(m_player).value);
 
-    m_playerMovementSystem.update(*this, m_player);
+    Opt<ItemStack> droppedItem = m_inventorySystem.update(m_inventory, engine.window(), input, itemData);
+    if (droppedItem.has_value())
+    {
+        std::cout << "dropped : " << droppedItem.value().count << '\n';
+    }
+
+    if (m_inventorySystem.isInventoryOpen == false)
+    {
+        m_playerMovementSystem.update(*this, m_player);
+    }
 
     m_physicsSystem.update(time, entityManager, m_chunkSystem);
 
-    for (auto point : points)
-    {
-        Debug::drawCube(Vec3(point) + Vec3(0.5), Vec3(1), Vec3(0, 0, 1));
-    }
-
-
-    Debug::drawLine(rayStart, rayEnd);
+    //for (auto point : points)
+    //{
+    //    Debug::drawCube(Vec3(point) + Vec3(0.5), Vec3(1), Vec3(0, 0, 1));
+    //}
+    //Debug::drawLine(rayStart, rayEnd);
 
     if (input.isButtonDown("use"))
     {
@@ -136,19 +154,19 @@ void GameScene::update()
         if (dz > 0) tMaxZ = tDeltaZ * FRAC1(z1); else tMaxZ = tDeltaZ * FRAC0(z1);
         voxel.z = floor(z1);
         points.clear();
-        points.push_back(voxel);
+        points.push_back(Vec3I(voxel));
 
         while (true) {
             if (m_chunkSystem.get(voxel.x, voxel.y, voxel.z) != BlockType::Air)
             {
                 //points.push_back(current_voxel);
                 Block b;
-                b.type = BlockType::Debug;
+                b.type = BlockType::Cobblestone;
                 //chunkSystem.set(current_voxel.x, current_voxel.y, current_voxel.z, b);
                 Vec3 current_voxel;
                 try
                 {
-                    current_voxel = points.at(points.size() - 2);
+                    current_voxel = Vec3(points.at(points.size() - 2));
                     if (m_chunkSystem.get(current_voxel.x, current_voxel.y, current_voxel.z).type == BlockType::Air)
                     {
                         m_chunkSystem.set(current_voxel.x, current_voxel.y, current_voxel.z, b);
@@ -181,7 +199,7 @@ void GameScene::update()
                     tMaxZ += tDeltaZ;
                 }
             }
-            points.push_back(voxel);
+            points.push_back(Vec3I(voxel));
             if (tMaxX > 1 && tMaxY > 1 && tMaxZ > 1) break;
             // process voxel here
         }
@@ -223,7 +241,7 @@ void GameScene::update()
         if (dz > 0) tMaxZ = tDeltaZ * FRAC1(z1); else tMaxZ = tDeltaZ * FRAC0(z1);
         voxel.z = floor(z1);
         points.clear();
-        points.push_back(voxel);
+        points.push_back(Vec3I(voxel));
 
         while (true) {
             if (m_chunkSystem.get(voxel.x, voxel.y, voxel.z) != BlockType::Air)
@@ -255,7 +273,7 @@ void GameScene::update()
                     tMaxZ += tDeltaZ;
                 }
             }
-            points.push_back(voxel);
+            points.push_back(Vec3I(voxel));
             if (tMaxX > 1 && tMaxY > 1 && tMaxZ > 1) break;
             // process voxel here
         }

@@ -4,6 +4,7 @@
 #include <Math/Vec2.hpp>
 #include <Math/Vec3.hpp>
 #include <Math/Mat4.hpp>
+#include <Math/Color.hpp>
 
 #include <unordered_map>
 
@@ -38,6 +39,7 @@ namespace Gfx
 		void setUnsignedInt(std::string_view name, uint32_t value);
 		void setTexture(std::string_view name, int value);
 		void setFloat(std::string_view name, float value);
+		void setColor(std::string_view name, const Color& value);
 
 		GLuint handle() const;
 

@@ -9,7 +9,7 @@
 #include <Engine/Graphics/ShaderProgram.hpp>
 #include <Engine/Graphics/VertexArray.hpp>
 #include <Engine/Graphics/TextureArray.hpp>
-#include <Game/Inventory/Inventory.hpp>
+#include <Game/Inventory/InventorySystem.hpp>
 #include <Game/Rendering/RenderingSystem.hpp>
 
 class GameScene : public Scene
@@ -20,15 +20,19 @@ public:
 	void update() override;
 
 	std::vector<Vec3I> points;
+	ItemData itemData;
 	Vec3 rayStart;
 	Vec3 rayEnd;
+
 private:
-	bool m_isCursorShown;
+	bool m_isGamePaused;
 
 private:
 	Entity m_player;
 
 	Inventory m_inventory;
+
+	InventorySystem m_inventorySystem;
 	PlayerMovementSystem m_playerMovementSystem;
 	RenderingSystem m_renderingSystem;
 	ChunkSystem m_chunkSystem;

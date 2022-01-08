@@ -8,7 +8,9 @@ enum class BlockType : uint16_t
 	Stone = 1,
 	Grass = 2,
 	Dirt = 3,
-	Debug = 4,
+	WoodenPlanks = 4,
+	Cobblestone = 5,
+	Debug = 6,
 	Count
 };
 

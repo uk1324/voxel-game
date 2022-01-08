@@ -6,7 +6,7 @@ template<typename T>
 using OwnPtr = std::unique_ptr<T>;
 
 template<typename T>
-using RefPtr = std::shared_ptr<T>;
+using Rc = std::shared_ptr<T>;
 
 template<typename T>
 constexpr auto makeUnique = std::make_unique<T>;

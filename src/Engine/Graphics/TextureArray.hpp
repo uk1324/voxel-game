@@ -14,6 +14,7 @@ namespace Gfx
 	public:
 		TextureArray();
 		TextureArray(size_t width, size_t height, std::vector<std::string_view> textures);
+		TextureArray(size_t width, size_t height, std::string_view texturePath);
 		~TextureArray();
 
 		TextureArray(const TextureArray&) = delete;

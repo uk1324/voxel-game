@@ -82,7 +82,7 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 
 		if (Debug::shouldShowChunkBorders)
 		{
-			Debug::drawCube(chunk->pos * Chunk::SIZE * Block::SIZE + Vec3(Chunk::SIZE) / 2, Vec3(Chunk::SIZE), Vec3(1, 1, 1));
+			Debug::drawCube(Vec3(chunk->pos) * Chunk::SIZE * Block::SIZE + Vec3(Chunk::SIZE) / 2.0, Vec3(Chunk::SIZE), Vec3(1, 1, 1));
 		}
 	} 
 
@@ -112,9 +112,7 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 	m_debugShader.setMat4("projection", projection);
 	for (const Cube& cube : m_cubesToDraw)
 	{
-		Mat4 scale = Mat4::identity;
-		scale.scale(cube.scale);
-		m_debugShader.setMat4("model", scale * Mat4::translation(cube.pos));
+		m_debugShader.setMat4("model", Mat4::scale(cube.scale) * Mat4::translation(cube.pos));
 		m_debugShader.setVec3("color", cube.color);
 		glDrawArrays(GL_LINES, 0, (sizeof(cubeLinesVertices) / (sizeof(float) * 3)));
 	}
@@ -133,9 +131,7 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 	m_LineVao.bind();
 	for (const Line& line : m_linesToDraw)
 	{
-		Mat4 scale = Mat4::identity;
-		scale.scale(line.scale);
-		m_debugShader.setMat4("model", scale * Mat4::translation(line.startPos));
+		m_debugShader.setMat4("model", Mat4::scale(line.scale) * Mat4::translation(line.startPos));
 		m_debugShader.setVec3("color", line.color);
 		glDrawArrays(GL_LINES, 0, (sizeof(lineData) / (sizeof(float) * 3)));
 	}
