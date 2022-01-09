@@ -18,7 +18,7 @@ namespace Lang
 
 		void visitExprStmt(const ExprStmt& stmt) override;
 		void visitPrintStmt(const PrintStmt& stmt) override;
-		void visitVariableDeclarationStmt(const VariableDeclarationStmt& stmt) override;
+		void visitLetStmt(const LetStmt& stmt) override;
 
 	private:
 		void toJson(const OwnPtr<Expr>& expr);

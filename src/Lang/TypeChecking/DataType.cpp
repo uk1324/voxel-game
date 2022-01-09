@@ -20,5 +20,6 @@ const char* Lang::dataTypeTypeToString(DataTypeType type)
 	case DataTypeType::Float: return "Float";
 	default:
 		ASSERT_NOT_REACHED();
+		return "";
 	}
 }

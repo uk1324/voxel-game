@@ -15,7 +15,8 @@ public:
 	~InputManager();
 
 	void update();
-
+	
+	// Can only map a single action to a single key.
 	void registerKeyboardButton(std::string name, KeyCode key);
 	void registerMouseButton(std::string name, MouseButton button);
 
@@ -25,6 +26,7 @@ public:
 
 	const Vec2& mousePos() const;
 	const Vec2& lastMousePos() const;
+	float scrollOffset() const;
 
 private:
 	// Have to use this because you cannot convert a capturing lambda to a function pointer
@@ -33,6 +35,7 @@ private:
 	static void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static void mouseMoveCallback(GLFWwindow* window, double mouseX, double mouseY);
 	static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+	static void mouseScrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
 private:
 	Window& m_window;
@@ -49,4 +52,5 @@ private:
 
 	Vec2 m_mousePos;
 	Vec2 m_lastMousePos;
+	float m_scrollOffset;
 };

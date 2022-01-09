@@ -1,7 +1,3 @@
-#include "AstJsonifier.hpp"
-#include "AstJsonifier.hpp"
-#include "AstJsonifier.hpp"
-#include "AstJsonifier.hpp"
 #include <Lang/Debug/AstJsonifier.hpp>
 
 #include <string>
@@ -74,7 +70,7 @@ void AstJsonifier::visitPrintStmt(const PrintStmt& stmt)
 	RETURN(node);
 }
 
-void AstJsonifier::visitVariableDeclarationStmt(const VariableDeclarationStmt& stmt)
+void AstJsonifier::visitLetStmt(const LetStmt& stmt)
 {
 }
 

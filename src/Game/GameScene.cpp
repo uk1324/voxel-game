@@ -1,3 +1,4 @@
+#include "GameScene.hpp"
 #include <Game/GameScene.hpp>
 #include <Engine/Engine.hpp>
 #include <chrono>
@@ -22,8 +23,14 @@ GameScene::GameScene(Engine& engine)
     , m_renderingSystem(*this)
     , m_playerMovementSystem(*this)
     , m_physicsSystem(*this)
+    , m_inventorySystem(*this)
+    , m_inventory(9 * 4)
+    , m_isGamePaused(false)
 {
     Debug::init(input, m_renderingSystem);
+    engine.window().setPos(Vec2I(600, 400));
+    engine.window().hideCursor();
+    registerInputActions();
 
     entityManager.registerComponent<Position>();
     entityManager.registerComponent<Rotation>();
@@ -33,22 +40,7 @@ GameScene::GameScene(Engine& engine)
     entityManager.entityEmplaceComponent<Rotation>(m_player, Quat::identity);
     entityManager.entityEmplaceComponent<PlayerMovementComponent>(m_player);
 
-    glfwSetWindowPos(engine.window().handle(), 600, 400);
-
-    input.registerKeyboardButton("exit", KeyCode::X);
-    input.registerKeyboardButton("test", KeyCode::F);
-    input.registerKeyboardButton("test1", KeyCode::E);
-    input.registerMouseButton("attack", MouseButton::Left);
-    input.registerMouseButton("use", MouseButton::Right);
-
-    input.registerKeyboardButton("pause", KeyCode::Escape);
-
-    m_isCursorShown = false;
-    engine.window().hideCursor();
-
     PhysicsAabbCollider collider;
-    /*collider.centerOffset = Vec3(0, -(1.62 - 0.5 * (1.875)), 0);
-    collider.size = Vec3(1.875, 1.875, 1.875);*/
     collider.centerOffset = Vec3(0, -(1.62 - 0.5 * (1.875)), 0);
     collider.halfSize = Vec3(0.6, 1.875, 0.6) / 2.0f;
     entityManager.entityEmplaceComponent<PhysicsAabbCollider>(m_player, collider);
@@ -69,11 +61,11 @@ void GameScene::update()
 
     if (input.isButtonDown("pause"))
     {
-        if (m_isCursorShown)
+        if (m_isGamePaused)
             engine.window().hideCursor();
         else
             engine.window().showCursor();
-        m_isCursorShown = !m_isCursorShown;
+        m_isGamePaused = !m_isGamePaused;
     }
 
     const Vec3 playerPos = entityManager.entityGetComponent<Position>(m_player).value;
@@ -85,22 +77,24 @@ void GameScene::update()
         entityManager,
         m_chunkSystem
     );
-
-    m_inventory.render(m_chunkSystem.blockData, input, static_cast<float>(windowSize.x), static_cast<float>(windowSize.y));
+    m_inventorySystem.render(m_inventory, itemData, m_chunkSystem.blockData, Vec2(windowSize));
 
     m_chunkSystem.update(entityManager.entityGetComponent<Position>(m_player).value);
 
-    m_playerMovementSystem.update(*this, m_player);
+    Opt<ItemStack> droppedItem = m_inventorySystem.update(m_inventory, engine.window(), input, itemData);
+
+    if (m_inventorySystem.isInventoryOpen == false)
+    {
+        m_playerMovementSystem.update(m_player, input, time, entityManager);
+    }
 
     m_physicsSystem.update(time, entityManager, m_chunkSystem);
 
-    for (auto point : points)
-    {
-        Debug::drawCube(Vec3(point) + Vec3(0.5), Vec3(1), Vec3(0, 0, 1));
-    }
-
-
-    Debug::drawLine(rayStart, rayEnd);
+    //for (auto point : points)
+    //{
+    //    Debug::drawCube(Vec3(point) + Vec3(0.5), Vec3(1), Vec3(0, 0, 1));
+    //}
+    //Debug::drawLine(rayStart, rayEnd);
 
     if (input.isButtonDown("use"))
     {
@@ -136,19 +130,19 @@ void GameScene::update()
         if (dz > 0) tMaxZ = tDeltaZ * FRAC1(z1); else tMaxZ = tDeltaZ * FRAC0(z1);
         voxel.z = floor(z1);
         points.clear();
-        points.push_back(voxel);
+        points.push_back(Vec3I(voxel));
 
         while (true) {
             if (m_chunkSystem.get(voxel.x, voxel.y, voxel.z) != BlockType::Air)
             {
                 //points.push_back(current_voxel);
                 Block b;
-                b.type = BlockType::Debug;
+                b.type = BlockType::Cobblestone;
                 //chunkSystem.set(current_voxel.x, current_voxel.y, current_voxel.z, b);
                 Vec3 current_voxel;
                 try
                 {
-                    current_voxel = points.at(points.size() - 2);
+                    current_voxel = Vec3(points.at(points.size() - 2));
                     if (m_chunkSystem.get(current_voxel.x, current_voxel.y, current_voxel.z).type == BlockType::Air)
                     {
                         m_chunkSystem.set(current_voxel.x, current_voxel.y, current_voxel.z, b);
@@ -181,7 +175,7 @@ void GameScene::update()
                     tMaxZ += tDeltaZ;
                 }
             }
-            points.push_back(voxel);
+            points.push_back(Vec3I(voxel));
             if (tMaxX > 1 && tMaxY > 1 && tMaxZ > 1) break;
             // process voxel here
         }
@@ -223,7 +217,7 @@ void GameScene::update()
         if (dz > 0) tMaxZ = tDeltaZ * FRAC1(z1); else tMaxZ = tDeltaZ * FRAC0(z1);
         voxel.z = floor(z1);
         points.clear();
-        points.push_back(voxel);
+        points.push_back(Vec3I(voxel));
 
         while (true) {
             if (m_chunkSystem.get(voxel.x, voxel.y, voxel.z) != BlockType::Air)
@@ -255,12 +249,40 @@ void GameScene::update()
                     tMaxZ += tDeltaZ;
                 }
             }
-            points.push_back(voxel);
+            points.push_back(Vec3I(voxel));
             if (tMaxX > 1 && tMaxY > 1 && tMaxZ > 1) break;
             // process voxel here
         }
     }
 
     auto end = std::chrono::high_resolution_clock::now();
-    glfwSetWindowTitle(engine.window().handle(), (std::string("frame time: ") + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count())).c_str());
+    std::string title = std::string("frame time: ") + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+    engine.window().setTitle(title.c_str());
+}
+
+void GameScene::registerInputActions()
+{
+    input.registerKeyboardButton("exit", KeyCode::X);
+    input.registerKeyboardButton("pause", KeyCode::Escape);
+
+    input.registerMouseButton("attack", MouseButton::Left);
+    input.registerMouseButton("use", MouseButton::Right);
+
+    input.registerKeyboardButton("forward", KeyCode::W);
+    input.registerKeyboardButton("back", KeyCode::S);
+    input.registerKeyboardButton("left", KeyCode::A);
+    input.registerKeyboardButton("right", KeyCode::D);
+    input.registerKeyboardButton("jump", KeyCode::Space);
+    input.registerKeyboardButton("crouch", KeyCode::LeftShift);
+
+    input.registerKeyboardButton("inventoryOpen", KeyCode::E);
+    input.registerKeyboardButton("hotbar0", KeyCode::Alpha1);
+    input.registerKeyboardButton("hotbar1", KeyCode::Alpha2);
+    input.registerKeyboardButton("hotbar2", KeyCode::Alpha3);
+    input.registerKeyboardButton("hotbar3", KeyCode::Alpha4);
+    input.registerKeyboardButton("hotbar4", KeyCode::Alpha5);
+    input.registerKeyboardButton("hotbar5", KeyCode::Alpha6);
+    input.registerKeyboardButton("hotbar6", KeyCode::Alpha7);
+    input.registerKeyboardButton("hotbar7", KeyCode::Alpha8);
+    input.registerKeyboardButton("hotbar8", KeyCode::Alpha9);
 }

@@ -1,28 +1,26 @@
-#pragma once
+#pragma once 
 
-// Later split inventory renering and data
+#include <Game/Item/ItemStack.hpp>
+#include <Game/Item/ItemData.hpp>
+#include <Utils/Opt.hpp>
 
-#include <Engine/Graphics/VertexArray.hpp>
-#include <Engine/Graphics/ShaderProgram.hpp>
-#include <Engine/Graphics/Texture.hpp>
-#include <Engine/Input/InputManager.hpp>
-#include <Game/Blocks/BlockData.hpp>
+#include <vector>
 
 class Inventory
 {
-public:
-	Inventory();
+private:
+	using Container = std::vector<Opt<ItemStack>>;
 
-	void render(const BlockData& blockData, const InputManager& input, float width, float height);
+public:
+	Inventory(size_t size);
+
+	Opt<ItemStack> tryAdd(const ItemData& itemData, const ItemStack& itemStack);
+
+	Opt<ItemStack>& operator[](size_t index);
+	const Opt<ItemStack>& operator[](size_t index) const;
+
+	size_t size() const;
 
 private:
-	Gfx::VertexArray m_squareVao;
-	Gfx::VertexBuffer m_squareVbo;
-	Gfx::VertexArray m_cubeTrianglesVao;
-	Gfx::VertexBuffer m_cubeTrianglesVbo;
-
-	Gfx::ShaderProgram m_uiShader;
-	Gfx::ShaderProgram m_3dItemShader;
-
-	Gfx::Texture m_inventoryCellTexture;
+	Container m_data;
 };

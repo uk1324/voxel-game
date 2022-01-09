@@ -16,6 +16,7 @@ namespace Lang
 
 		// Symbols
 		Semicolon,
+		Colon,
 		LeftParen,
 		RightParen,
 

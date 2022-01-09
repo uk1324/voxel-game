@@ -1,142 +1,83 @@
 #include <Game/Inventory/Inventory.hpp>
-#include <Math/Angles.hpp>
-#include <Math/Quat.hpp>
 
-static const float squareTrianglesVertices[] = {
-	// vertexPos  textureCoord
-	-1.0f,  1.0F, 0.0f, 1.0f,
-	 1.0f, -1.0f, 1.0f, 0.0f,
-	-1.0f, -1.0f, 0.0f, 0.0f,
-	-1.0f,  1.0f, 0.0f, 1.0f,
-	 1.0f,  1.0f, 1.0f, 1.0f,
-	 1.0f, -1.0f, 1.0f, 0.0f,
-};
-
-static const float cubeTriangleVertices[] = {
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0,
-	 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0,
-	 0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0,
-	 0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0,
-	-0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 0,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0,
-
-	-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1,
-	 0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 1,
-	 0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1,
-	 0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1,
-	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1,
-	-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1,
-
-	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 2,
-	-0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 2,
-	-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 2,
-	-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 2,
-	-0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 2,
-	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 2,
-
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 3,
-	 0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 3,
-	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 3,
-	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 3,
-	 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 3,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 3,
-
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 4,
-	 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 4,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 4,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 4,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 4,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 4,
-
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 5,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 5,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 5,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 5,
-	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 5,
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 5,
-};
-
-//static constexpr float squareTriagnelVertexSize;
-
-#include <iostream>
-
-Inventory::Inventory()
-	: m_squareVbo(squareTrianglesVertices, sizeof(squareTrianglesVertices))
-	, m_cubeTrianglesVbo(cubeTriangleVertices, sizeof(cubeTriangleVertices))
-	, m_uiShader("src/Game/Inventory/uiShader.vert", "src/Game/Inventory/uiShader.frag")
-	, m_3dItemShader("src/Game/Inventory/3dItem.vert", "src/Game/Inventory/3dItem.frag")
-	, m_inventoryCellTexture("assets/textures/ui/inventory_cell.png")
+Inventory::Inventory(size_t size)
+	: m_data(size)
 {
-	m_squareVao.bind();
-	m_squareVbo.bind();
-	Gfx::VertexArray::setAttribute(0, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 2, 0, sizeof(float) * 4, false));
-	Gfx::VertexArray::setAttribute(1, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 2, sizeof(float) * 2, sizeof(float) * 4, false));
 
-	m_cubeTrianglesVao.bind();
-	m_cubeTrianglesVbo.bind();
-	Gfx::VertexArray::setAttribute(0, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 3, 0, sizeof(float) * 6, false));
-	Gfx::VertexArray::setAttribute(1, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 2, sizeof(float) * 3, sizeof(float) * 6, false));
-	Gfx::VertexArray::setAttribute(2, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 1, sizeof(float) * 5, sizeof(float) * 6, false));
+	for (auto& item : m_data)
+	{
+		if (rand() % 3 == 0)
+		{
+			item = std::nullopt;
+		}
+		else
+		{
+			item = ItemStack(static_cast<ItemType>(rand() % (static_cast<size_t>(ItemType::Count) - 1)), rand() % 11 + 1);
+		}
+	}
+
+	m_data[0] = ItemStack(ItemType::DiamondSword, 1);
+	m_data[1] = ItemStack(ItemType::DiamondSword, 11);
+	m_data[2] = ItemStack(ItemType::DiamondSword, 111);
 }
 
-void Inventory::render(const BlockData& blockData, const InputManager& input, float width, float height)
+Opt<ItemStack> Inventory::tryAdd(const ItemData& itemData, const ItemStack& itemStack)
 {
-	Vec2 mousePos = input.mousePos();
-	mousePos /= Vec2(width, height) * 0.5;
-	mousePos -= Vec2(1, 1);
-	mousePos.y = -mousePos.y; 
+	Opt<size_t> firstEmptySlot;
+	 
+	auto stackSize = itemStack.count;
 
-	m_squareVao.bind();
-	m_uiShader.use();
-	m_inventoryCellTexture.bind();
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glActiveTexture(GL_TEXTURE0);
-	Vec2 size(0.1f / width * height, 0.1f); 
-	Vec2 position(0.0f, -1.0f + size.y);
-	size.x *= 9;
-	Vec2 textureScale(9, 1);
-	m_uiShader.setTexture("textureSampler", 0);
-	m_uiShader.setVec2("offset", position);
-	m_uiShader.setVec2("scale", size);
-	m_uiShader.setVec2("textureCoordScale", textureScale);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glDisable(GL_BLEND);
+	for (size_t i = 0; i < size(); i++)
+	{
+		if (m_data[i].has_value())
+		{
+			ItemStack& stack = m_data[i].value();
+			if (stack.item == itemStack.item)
+			{
+				auto availableSpace = itemData[stack.item].maxStackSize - stack.count;
+				if (availableSpace > 0) // Check to prevent bugs if there are more items than maxStackSize.
+				{
+					if (availableSpace < stackSize)
+					{
+						stackSize -= availableSpace;
+						stack.count += availableSpace;
+					}
+					else
+					{
+						stack.count += stackSize;
+						return std::nullopt;
+					}
+				}
+			}
+		}
+		else if (firstEmptySlot.has_value() == false)
+		{
+			firstEmptySlot = i;
+		}
+	}
 
-	glClear(GL_DEPTH_BUFFER_BIT);
+	if (firstEmptySlot.has_value())
+	{
+		m_data[firstEmptySlot.value()] = itemStack;
+		return std::nullopt;
+	}
+	else
+	{
+		return ItemStack(itemStack.item, stackSize);
+	}
+}
 
-	glActiveTexture(GL_TEXTURE0);
-	blockData.textureArray.bind();
-	m_3dItemShader.setTexture("textureArraySampler", 0);
-	m_3dItemShader.use();
-	Quat rotation = Quat(degToRad(-35.264), Vec3::xAxis) * Quat(degToRad(cos(glfwGetTime()) * 180), Vec3::yAxis);
-	//Quat rotation = Quat(degToRad(-35.264), Vec3::xAxis) * Quat(degToRad(-45.0f), Vec3::yAxis);
-	Mat4 mat = Mat4::identity;
+Opt<ItemStack>& Inventory::operator[](size_t index)
+{
+	return m_data[index];
+}
 
-	mat = mat * Mat4::scale(Vec3(height * 0.05));
-	mat = mat * rotation.rotationMatrix();
-	mat = mat * Mat4::orthographic(Vec3(0, 0, 0.0f), Vec3(width, height, 1000.0f));
-	mat = mat * Mat4::translation(Vec3(position.x, position.y, 0));
+const Opt<ItemStack>& Inventory::operator[](size_t index) const
+{
+	return m_data[index];
+}
 
-	m_3dItemShader.setMat4("projection", mat);
-
-	//m_3dItemShader.setMat4("projection",
-	//	rotation.rotationMatrix() 
-	//	* Mat4::scale(Vec3(height * 0.05))
-	//	* Mat4::translation(Vec3(position.x, position.y, 0))
-	//	* Mat4::orthographic(Vec3(0, 0, 0.0f), Vec3(width, height, 1000.0f))
-	//);
-	m_cubeTrianglesVao.bind();
-	// front = 0
-	// back = 1
-	// bottom = 4
-	// top = 5
-
-	m_3dItemShader.setUnsignedInt("faceTextureIndex[0]", blockData[BlockType::Debug].frontTextureIndex);
-	m_3dItemShader.setUnsignedInt("faceTextureIndex[1]", blockData[BlockType::Debug].backTextureIndex);
-	m_3dItemShader.setUnsignedInt("faceTextureIndex[2]", blockData[BlockType::Debug].rightTextureIndex);
-	m_3dItemShader.setUnsignedInt("faceTextureIndex[3]", blockData[BlockType::Debug].leftTextureIndex);
-	m_3dItemShader.setUnsignedInt("faceTextureIndex[4]", blockData[BlockType::Debug].bottomTextureIndex);
-	m_3dItemShader.setUnsignedInt("faceTextureIndex[5]", blockData[BlockType::Debug].topTextureIndex);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+size_t Inventory::size() const
+{
+	return m_data.size();
 }

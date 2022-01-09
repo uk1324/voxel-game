@@ -7,12 +7,10 @@
 #include <Engine/Graphics/VertexArray.hpp>
 
 #include <unordered_map>
+#include <optional>
 
 struct ChunkData
 {
-	//size_t vertexCount;
-	//size_t offset;
-	//size_t count;
 	Chunk blocks;
 	size_t vertexCount;
 	// Make this const
@@ -42,6 +40,8 @@ public:
 
 	void set(int32_t x, int32_t y, int32_t z, Block block);
 	Block get(int32_t x, int32_t y, int32_t z) const;
+	std::optional<Chunk&> get(const Vec3I& pos);
+	std::optional<const Chunk&> get(const Vec3I& pos) const;
 
 	void remesh();
 
@@ -49,9 +49,19 @@ private:
 	void initializeChunk(Chunk& chunk, const Vec3I& pos);	
 	void meshChunk(ChunkData& chunk);
 
+	std::vector<uint32_t>& meshFromChunk(Chunk& chunk);
+	void addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex);
+	void addCubeTop(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
+	void addCubeBottom(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
+	void addCubeLeft(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
+	void addCubeRight(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
+	void addCubeFront(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
+	void addCubeBack(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
+	bool isInBounds(size_t x, size_t y, size_t z);
+
 public:
-	static constexpr int32_t VERTICAL_RENDER_DISTANCE = 1;
-	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 1;
+	static constexpr int32_t VERTICAL_RENDER_DISTANCE = 3;
+	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 3;
 	static constexpr int32_t CHUNKS_IN_RENDER_DISTANCE = (2 * VERTICAL_RENDER_DISTANCE + 1) * (2 * HORIZONTAL_RENDER_DISTANCE + 1) * (2 * HORIZONTAL_RENDER_DISTANCE + 1);
 	static constexpr size_t VERTEX_DATA_PER_CHUNK_BYTE_SIZE = Chunk::SIZE_CUBED * 6 * 3 * 2 * 4;
 	static constexpr size_t VERTEX_DATA_BYTE_SIZE = CHUNKS_IN_RENDER_DISTANCE * VERTEX_DATA_PER_CHUNK_BYTE_SIZE;
@@ -74,16 +84,6 @@ public:
 	std::vector<ChunkData*> m_freeChunks;
 	std::vector<ChunkData*> m_chunksToGenerate;
 	std::vector<ChunkData*> m_chunksToDraw;
-
-	void addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex);
-	void addCubeTop(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
-	void addCubeBottom(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
-	void addCubeLeft(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
-	void addCubeRight(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
-	void addCubeFront(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
-	void addCubeBack(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
-	bool isInBounds(size_t x, size_t y, size_t z);
-	std::vector<uint32_t>& meshFromChunk(Chunk& chunk);
 
 	BlockData blockData;
 };

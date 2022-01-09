@@ -6,33 +6,9 @@
 #include <string_view>
 #include <vector>
 
-/*
-	BlockData file structure
-
-	[
-		{
-			textures: {
-				top,
-				bottom,
-				left,
-				right,
-				front,
-				back
-			},
-			friction,
-			walkSpeed
-		}
-	]
-
-*/
-
 class BlockData
 {
 public:
-	BlockData(const std::string_view path);
-
-public:
-
 	struct Entry
 	{
 		uint32_t topTextureIndex;
@@ -43,10 +19,16 @@ public:
 		uint32_t backTextureIndex;
 		float friction;
 		float walkSpeed;
+		bool isSolid;
 	};
+
+public:
+	BlockData();
 
 	Entry& operator[](BlockType type);
 	const Entry& operator[](BlockType type) const;
+
+	void set(BlockType block, Entry&& entry);
 
 public:
 

@@ -1,4 +1,5 @@
 #include "ShaderProgram.hpp"
+#include "ShaderProgram.hpp"
 #include <Engine/Graphics/ShaderProgram.hpp>
 #include <Log/Log.hpp>
 
@@ -99,6 +100,11 @@ void ShaderProgram::setTexture(std::string_view name, int value)
 void ShaderProgram::setFloat(std::string_view name, float value)
 {
 	glProgramUniform1f(m_handle, getUniformLocation(name.data()), value);
+}
+
+void ShaderProgram::setColor(std::string_view name, const Color& value)
+{
+	glProgramUniform4fv(m_handle, getUniformLocation(name.data()), 1, value.data());
 }
 
 GLuint ShaderProgram::handle() const

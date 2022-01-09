@@ -22,6 +22,8 @@ public:
 	void update();
 	void close();
 
+	void setTitle(const char* title);
+	void setPos(Vec2I pos);
 	void hideCursor();
 	void showCursor();
 

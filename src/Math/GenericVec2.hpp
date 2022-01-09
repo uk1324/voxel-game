@@ -7,8 +7,10 @@ struct GenericVec2
 {
 public:
 	GenericVec2();
+	explicit GenericVec2(T all);
+	template<typename U>
+	explicit GenericVec2(const GenericVec2<U>& other);
 	GenericVec2(T x, T y);
-
 	float length();
 
 	bool operator== (const GenericVec2& rhs) const;
@@ -19,10 +21,15 @@ public:
 	GenericVec2& operator-=(const GenericVec2& rhs);
 	GenericVec2 operator*(T rhs) const;
 	GenericVec2& operator*=(T rhs);
+	GenericVec2 operator*(const GenericVec2<T>& rhs);
 	GenericVec2 operator/(T rhs) const;
 	GenericVec2& operator/=(T rhs);
 	GenericVec2 operator/(const GenericVec2& rhs) const;
 	GenericVec2& operator/=(const GenericVec2& rhs);
+	GenericVec2 operator-() const;
+
+	GenericVec2 negatedX() const;
+	GenericVec2 negatedY() const;
 
 	T* data();
 	const T* data() const;
@@ -45,6 +52,19 @@ template<typename T>
 GenericVec2<T>::GenericVec2()
 	: x(0)
 	, y(0)
+{}
+
+template<typename T>
+GenericVec2<T>::GenericVec2(T all)
+	: x(all)
+	, y(all)
+{}
+
+template<typename T>
+template<typename U>
+GenericVec2<T>::GenericVec2(const GenericVec2<U>& other)
+	: x(static_cast<T>(other.x))
+	, y(static_cast<T>(other.y))
 {}
 
 template<typename T>
@@ -114,6 +134,12 @@ GenericVec2<T>& GenericVec2<T>::operator*= (T rhs)
 }
 
 template<typename T>
+GenericVec2<T> GenericVec2<T>::operator*(const GenericVec2<T>& rhs)
+{
+	return Vec2(x * rhs.x, y * rhs.y);
+}
+
+template<typename T>
 GenericVec2<T> GenericVec2<T>::operator/ (T rhs) const
 {
 	return GenericVec2(x / rhs, y / rhs);
@@ -139,6 +165,24 @@ GenericVec2<T>& GenericVec2<T>::operator/= (const GenericVec2& rhs)
 	x /= rhs.x;
 	y /= rhs.y;
 	return *this;
+}
+
+template<typename T>
+GenericVec2<T> GenericVec2<T>::operator-() const
+{
+	return GenericVec2<T>(-x, -y);
+}
+
+template<typename T>
+GenericVec2<T> GenericVec2<T>::negatedX() const
+{
+	return GenericVec2<T>(-x, y);
+}
+
+template<typename T>
+GenericVec2<T> GenericVec2<T>::negatedY() const
+{
+	return GenericVec2<T>(x, -y);
 }
 
 template<typename T>

@@ -5,11 +5,13 @@ InputManager* InputManager::self = nullptr;
 
 InputManager::InputManager(Window& window)
 	: m_window(window)
+	, m_scrollOffset(0.0f)
 {
 	InputManager::self = this;
 	glfwSetKeyCallback(window.handle(), InputManager::keyboardCallback);
 	glfwSetCursorPosCallback(window.handle(), InputManager::mouseMoveCallback);
 	glfwSetMouseButtonCallback(window.handle(), InputManager::mouseButtonCallback);
+	glfwSetScrollCallback(window.handle(), InputManager::mouseScrollCallback);
 }
 
 InputManager::~InputManager()
@@ -28,12 +30,14 @@ void InputManager::update()
 		isUp = false;
 
 	m_lastMousePos = m_mousePos;
+	m_scrollOffset = 0.0f;
 
 	glfwPollEvents();
 }
 
 void InputManager::registerKeyboardButton(std::string name, KeyCode key)
 {
+	ASSERT(m_keyToAction.find(key) == m_keyToAction.end() && "can't map single keyboard button to multiple actions");
 	m_isButtonDown[name] = false;
 	m_isButtonUp[name] = false;
 	m_isButtonHeld[name] = false;
@@ -42,6 +46,7 @@ void InputManager::registerKeyboardButton(std::string name, KeyCode key)
 
 void InputManager::registerMouseButton(std::string name, MouseButton button)
 {
+	ASSERT(m_mouseButtonToAction.find(button) == m_mouseButtonToAction.end() && "can't map single mouse button to multiple actions");
 	m_isButtonDown[name] = false;
 	m_isButtonUp[name] = false;
 	m_isButtonHeld[name] = false;
@@ -71,6 +76,11 @@ const Vec2& InputManager::mousePos() const
 const Vec2& InputManager::lastMousePos() const
 {
 	return m_lastMousePos;
+}
+
+float InputManager::scrollOffset() const
+{
+	return m_scrollOffset;
 }
 
 void InputManager::keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -112,4 +122,9 @@ void InputManager::mouseButtonCallback(GLFWwindow* window, int button, int actio
 			InputManager::self->m_isButtonHeld[value->second] = false;
 		}
 	}
+}
+
+void InputManager::mouseScrollCallback(GLFWwindow* window, double xOffset, double yOffset)
+{
+	InputManager::self->m_scrollOffset = yOffset;
 }

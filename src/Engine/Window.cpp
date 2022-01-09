@@ -54,6 +54,16 @@ void Window::close()
 	glfwSetWindowShouldClose(m_handle, true);
 }
 
+void Window::setTitle(const char* title)
+{
+	glfwSetWindowTitle(m_handle, title);
+}
+
+void Window::setPos(Vec2I pos)
+{
+	glfwSetWindowPos(m_handle, pos.x, pos.y);
+}
+
 void Window::hideCursor()
 {
 	glfwSetInputMode(m_handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);

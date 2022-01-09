@@ -2,7 +2,7 @@
 
 #include <Lang/Ast/Stmt/ExprStmt.hpp>
 #include <Lang/Ast/Stmt/PrintStmt.hpp>
-#include <Lang/Ast/Stmt/VariableDeclarationStmt.hpp>
+#include <Lang/Ast/Stmt/LetStmt.hpp>
 
 namespace Lang
 {
@@ -11,7 +11,7 @@ namespace Lang
 	public:
 		 virtual void visitExprStmt(const ExprStmt& expr) = 0;
 		 virtual void visitPrintStmt(const PrintStmt& expr) = 0;
-		 virtual void visitVariableDeclarationStmt(const VariableDeclarationStmt& expr) = 0;
+		 virtual void visitLetStmt(const LetStmt& expr) = 0;
 	};
 
 	class NonConstStmtVisitor
@@ -19,6 +19,6 @@ namespace Lang
 	public:
 		virtual void visitExprStmt(ExprStmt& expr) = 0;
 		virtual void visitPrintStmt(PrintStmt& expr) = 0;
-		virtual void visitVariableDeclarationStmt(VariableDeclarationStmt& expr) = 0;
+		virtual void visitLetStmt(LetStmt& expr) = 0;
 	};
 }
