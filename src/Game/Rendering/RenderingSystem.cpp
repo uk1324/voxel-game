@@ -104,8 +104,20 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 	//glEnable(GL_DEPTH_TEST);
 	glFrontFace(GL_CW);
 	glDepthMask(GL_TRUE);
+
+	// Crosshair
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	m_squareShader.use();
+	m_squareTrianglesVao.bind();
+	glActiveTexture(GL_TEXTURE0);
+	m_crosshairTexture.bind();
+	m_squareShader.setTexture("txt", 0);
+	m_squareShader.setVec2("viewportSize", Vec2(width, height));
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDisable(GL_BLEND);
 	
-	// glLineWidth(2);
+	glLineWidth(2);
 	m_cubeLinesVao.bind();
 	m_debugShader.use();
 	m_debugShader.setMat4("view", view);
