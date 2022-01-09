@@ -88,17 +88,6 @@ InventorySystem::InventorySystem(Scene& scene)
 	Gfx::VertexArray::setAttribute(0, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 3, 0, sizeof(float) * 6, false));
 	Gfx::VertexArray::setAttribute(1, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 2, sizeof(float) * 3, sizeof(float) * 6, false));
 	Gfx::VertexArray::setAttribute(2, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 1, sizeof(float) * 5, sizeof(float) * 6, false));
-
-	scene.input.registerKeyboardButton("hotbar0", KeyCode::Alpha1);
-	scene.input.registerKeyboardButton("hotbar1", KeyCode::Alpha2);
-	scene.input.registerKeyboardButton("hotbar2", KeyCode::Alpha3);
-	scene.input.registerKeyboardButton("hotbar3", KeyCode::Alpha4);
-	scene.input.registerKeyboardButton("hotbar4", KeyCode::Alpha5);
-	scene.input.registerKeyboardButton("hotbar5", KeyCode::Alpha6);
-	scene.input.registerKeyboardButton("hotbar6", KeyCode::Alpha7);
-	scene.input.registerKeyboardButton("hotbar7", KeyCode::Alpha8);
-	scene.input.registerKeyboardButton("hotbar8", KeyCode::Alpha9);
-	scene.input.registerKeyboardButton("inventoryOpen", KeyCode::E);
 }
 
 Opt<ItemStack> InventorySystem::update(Inventory& inventory, Window& window, const InputManager& input, const ItemData& itemData)
@@ -123,110 +112,12 @@ Opt<ItemStack> InventorySystem::update(Inventory& inventory, Window& window, con
 	m_cursorPos = pixelScreenPosToUiScreenPos(input.mousePos());
 	m_selectedInventorySlot = getInventoryItemAt(m_cursorPos);
 
-	//std::optional<ItemStack> droppedItem;
+	Opt<ItemStack> droppedItem;
 
-	//if (input.isButtonDown("attack"))
-	//{
-	//	if (m_selectedInventorySlot.has_value())
-	//	{
-	//		std::optional<ItemStack>& selectedInventorySlot = inventory[m_selectedInventorySlot.value()];
-	//		if (m_heldItem.has_value() && selectedInventorySlot.has_value())
-	//		{
-	//			ItemStack& selected = selectedInventorySlot.value();
-	//			ItemStack& held = m_heldItem.value();
-	//			if (selected.item == held.item)
-	//			{
-	//				auto availableSpace = itemData[held.item].maxStackSize - selected.count;
-	//				if (held.count > availableSpace)
-	//				{
-	//					held.count -= availableSpace;
-	//					selected.count += availableSpace;
-	//				}
-	//				else
-	//				{
-	//					selected.count += held.count;
-	//					m_heldItem = std::nullopt;
-	//				}
-	//			}
-	//			else
-	//			{
-	//				std::swap(selectedInventorySlot, m_heldItem);
-	//			}
-	//		}
-	//		else
-	//		{
-	//			std::swap(selectedInventorySlot, m_heldItem);
-	//		}
-	//	}
-	//	else
-	//	{
-	//		droppedItem = std::move(m_heldItem);
-	//		m_heldItem = std::nullopt;
-	//	}
-	//}
-
-	//if (input.isButtonDown("use"))
-	//{
-	//	if (m_selectedInventorySlot.has_value())
-	//	{
-	//		std::optional<ItemStack>& selectedInventorySlot = inventory[m_selectedInventorySlot.value()];
-	//		if (m_heldItem.has_value())
-	//		{
-	//			if (selectedInventorySlot.has_value())
-	//			{
-	//				ItemStack& selected = selectedInventorySlot.value();
-	//				if (selected.item == m_heldItem.value().item)
-	//				{
-	//					if ((itemData[selected.item].maxStackSize - selected.count) >= 1)
-	//					{
-	//						m_heldItem.value().count -= 1;
-	//						if (m_heldItem.value().count == 0)
-	//						{
-	//							m_heldItem = std::nullopt;
-	//						}
-	//						selected.count += 1;
-	//					}
-	//				}
-	//				else
-	//				{
-	//					std::swap(selectedInventorySlot, m_heldItem);
-	//				}
-	//			}
-	//			else
-	//			{
-	//				selectedInventorySlot = ItemStack(m_heldItem.value().item, 1);
-	//				m_heldItem.value().count -= 1;
-	//				if (m_heldItem.value().count == 0)
-	//				{
-	//					m_heldItem = std::nullopt;
-	//				}
-	//			}
-	//		}
-	//		else
-	//		{
-	//			if (selectedInventorySlot.has_value())
-	//			{
-	//				ItemStack& selected = selectedInventorySlot.value();
-	//				auto halfItems = selectedInventorySlot.value().count / 2;
-
-	//				m_heldItem = ItemStack(selected.item, selected.count - halfItems);
-	//				selected.count = halfItems;
-
-	//				if (selected.count == 0)
-	//				{
-	//					selectedInventorySlot = std::nullopt;
-	//				}
-	//			}
-	//		}
-	//	}
-	//	else
-	//	{
-	//		droppedItem = std::move(m_heldItem);
-	//		m_heldItem = std::nullopt;
-	//	}
-	//}
-
-	Opt<ItemStack> droppedItem = handleInput(inventory, input, itemData);
+	if (isInventoryOpen)
+	{
+		droppedItem = handleInput(inventory, input, itemData);
+	}
 
 	if (input.isButtonDown("inventoryOpen"))
 	{
@@ -297,7 +188,7 @@ Opt<ItemStack> InventorySystem::handleInput(Inventory& inventory, const InputMan
 			return std::nullopt;
 		}
 		
-		auto availableSpace = itemData[held.item].maxStackSize - selected.count;
+		const auto availableSpace = itemData[held.item].maxStackSize - selected.count;
 		if (held.count > availableSpace)
 		{
 			held.count -= availableSpace;
@@ -328,7 +219,7 @@ Opt<ItemStack> InventorySystem::handleInput(Inventory& inventory, const InputMan
 			if (selectedInventorySlot.has_value())
 			{
 				ItemStack& selected = selectedInventorySlot.value();
-				auto halfItems = selectedInventorySlot.value().count / 2;
+				auto halfItems = selected.count / 2;
 
 				m_heldItem = ItemStack(selected.item, selected.count - halfItems);
 				selected.count = halfItems;
@@ -435,7 +326,7 @@ void InventorySystem::drawHotbar(const Inventory& inventory, const BlockData& bl
 	for (size_t i = 0; i < HOTBAR_ELEMENT_COUNT; i++)
 	{
 		const Opt<ItemStack>& optItem = inventory[i];
-		if (optItem.has_value() && optItem.value().count > 1)
+		if (optItem.has_value() && ((optItem.value().count > 1) || (optItem.value().count <= 0)))
 		{
 			const Vec2 offset = Vec2(ITEM_COUNT_OFFSET_X_CELL_SIZE_PERCENT_Y, ITEM_COUNT_OFFSET_Y_CELL_SIZE_PERCENT_Y) * Vec2(yPercentToXPercent(HOTBAR_CELL_SCREEN_SIZE_Y_PERCENT), HOTBAR_CELL_SCREEN_SIZE_Y_PERCENT);
 			drawTextJustifiedRight(std::to_string(optItem.value().count), getHotbarSlotPos(i) + offset, HOTBAR_CELL_SCREEN_SIZE_Y_PERCENT / 3.0f);
@@ -504,7 +395,7 @@ void InventorySystem::drawInventory(const Inventory& inventory, const BlockData&
 	for (size_t i = 0; i < inventory.size(); i++)
 	{
 		const Opt<ItemStack>& optItem = inventory[i];
-		if (optItem.has_value() && optItem.value().count > 1)
+		if (optItem.has_value() && ((optItem.value().count > 1) || (optItem.value().count <= 0)))
 		{
 			const Vec2 offset = Vec2(ITEM_COUNT_OFFSET_X_CELL_SIZE_PERCENT_Y, ITEM_COUNT_OFFSET_Y_CELL_SIZE_PERCENT_Y) * Vec2(yPercentToXPercent(HOTBAR_CELL_SCREEN_SIZE_Y_PERCENT), HOTBAR_CELL_SCREEN_SIZE_Y_PERCENT);
 			drawTextJustifiedRight(std::to_string(optItem.value().count), getInventorySlotPos(i) + offset, HOTBAR_CELL_SCREEN_SIZE_Y_PERCENT / 3.0f);
@@ -542,7 +433,7 @@ void InventorySystem::drawInventory(const Inventory& inventory, const BlockData&
 		}
 
 		glDisable(GL_DEPTH_TEST);
-		if (heldItem.count > 1)
+		if ((heldItem.count > 1) || (heldItem.count <= 0))
 		{
 			setupDrawText();
 			const Vec2 offset = Vec2(ITEM_COUNT_OFFSET_X_CELL_SIZE_PERCENT_Y, ITEM_COUNT_OFFSET_Y_CELL_SIZE_PERCENT_Y) * Vec2(yPercentToXPercent(HOTBAR_CELL_SCREEN_SIZE_Y_PERCENT), HOTBAR_CELL_SCREEN_SIZE_Y_PERCENT);

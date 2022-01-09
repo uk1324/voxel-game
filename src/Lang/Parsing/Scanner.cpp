@@ -43,6 +43,7 @@ Token Scanner::token()
 		case '=': return makeToken(TokenType::Equals);
 		case '(': return makeToken(TokenType::LeftParen);
 		case ')': return makeToken(TokenType::RightParen);
+		case ':': return makeToken(TokenType::Colon);
 
 		default:
 			if (isDigit(c))
@@ -74,7 +75,7 @@ Token Scanner::keywordOrIdentifier()
 	while (isAlnum(peek()))
 		advance();
 
-	Token token = makeToken(TokenType::Identifier);
+	auto token = makeToken(TokenType::Identifier);
 
 	auto keyword = keywords.find(token.text);
 

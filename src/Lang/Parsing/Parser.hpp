@@ -39,13 +39,13 @@ namespace Lang
 		OwnPtr<Stmt> stmt();
 		OwnPtr<Stmt> exprStmt();
 		OwnPtr<Stmt> printStmt();
+		OwnPtr<Stmt> letStmt();
 
 		OwnPtr<Expr> expr();
-		
 		OwnPtr<Expr> factor();
-		
-
 		OwnPtr<Expr> primary();
+
+		DataType parseDataType();
 
 		const Token& peek() const;
 		const Token& peekPrevious() const;

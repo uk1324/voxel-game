@@ -1,3 +1,4 @@
+#include "GameScene.hpp"
 #include <Game/GameScene.hpp>
 #include <Engine/Engine.hpp>
 #include <chrono>
@@ -24,8 +25,12 @@ GameScene::GameScene(Engine& engine)
     , m_physicsSystem(*this)
     , m_inventorySystem(*this)
     , m_inventory(9 * 4)
+    , m_isGamePaused(false)
 {
     Debug::init(input, m_renderingSystem);
+    engine.window().setPos(Vec2I(600, 400));
+    engine.window().hideCursor();
+    registerInputActions();
 
     entityManager.registerComponent<Position>();
     entityManager.registerComponent<Rotation>();
@@ -35,21 +40,7 @@ GameScene::GameScene(Engine& engine)
     entityManager.entityEmplaceComponent<Rotation>(m_player, Quat::identity);
     entityManager.entityEmplaceComponent<PlayerMovementComponent>(m_player);
 
-    glfwSetWindowPos(engine.window().handle(), 600, 400);
-
-    input.registerKeyboardButton("exit", KeyCode::X);
-    input.registerKeyboardButton("test", KeyCode::F);
-    //input.registerKeyboardButton("test1", KeyCode::E);
-    input.registerMouseButton("attack", MouseButton::Left);
-    input.registerMouseButton("use", MouseButton::Right);
-
-    input.registerKeyboardButton("pause", KeyCode::Escape);
-
-    engine.window().hideCursor();
-
     PhysicsAabbCollider collider;
-    /*collider.centerOffset = Vec3(0, -(1.62 - 0.5 * (1.875)), 0);
-    collider.size = Vec3(1.875, 1.875, 1.875);*/
     collider.centerOffset = Vec3(0, -(1.62 - 0.5 * (1.875)), 0);
     collider.halfSize = Vec3(0.6, 1.875, 0.6) / 2.0f;
     entityManager.entityEmplaceComponent<PhysicsAabbCollider>(m_player, collider);
@@ -77,17 +68,6 @@ void GameScene::update()
         m_isGamePaused = !m_isGamePaused;
     }
 
-    //if (input.isButtonDown("inventoryOpen"))
-    //{
-    //    m_isInventoryOpen = !m_isInventoryOpen;
-    //    m_inventorySystem.isInventoryOpen = m_isInventoryOpen;
-
-    //    if (m_isInventoryOpen)
-    //        engine.window().showCursor();
-    //    else
-    //        engine.window().hideCursor();
-    //}
-
     const Vec3 playerPos = entityManager.entityGetComponent<Position>(m_player).value;
     const Quat playerRot = entityManager.entityGetComponent<Rotation>(m_player).value;
     const Vec2I windowSize = engine.window().getWindowSize();
@@ -102,14 +82,10 @@ void GameScene::update()
     m_chunkSystem.update(entityManager.entityGetComponent<Position>(m_player).value);
 
     Opt<ItemStack> droppedItem = m_inventorySystem.update(m_inventory, engine.window(), input, itemData);
-    if (droppedItem.has_value())
-    {
-        std::cout << "dropped : " << droppedItem.value().count << '\n';
-    }
 
     if (m_inventorySystem.isInventoryOpen == false)
     {
-        m_playerMovementSystem.update(*this, m_player);
+        m_playerMovementSystem.update(m_player, input, time, entityManager);
     }
 
     m_physicsSystem.update(time, entityManager, m_chunkSystem);
@@ -280,5 +256,33 @@ void GameScene::update()
     }
 
     auto end = std::chrono::high_resolution_clock::now();
-    glfwSetWindowTitle(engine.window().handle(), (std::string("frame time: ") + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count())).c_str());
+    std::string title = std::string("frame time: ") + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+    engine.window().setTitle(title.c_str());
+}
+
+void GameScene::registerInputActions()
+{
+    input.registerKeyboardButton("exit", KeyCode::X);
+    input.registerKeyboardButton("pause", KeyCode::Escape);
+
+    input.registerMouseButton("attack", MouseButton::Left);
+    input.registerMouseButton("use", MouseButton::Right);
+
+    input.registerKeyboardButton("forward", KeyCode::W);
+    input.registerKeyboardButton("back", KeyCode::S);
+    input.registerKeyboardButton("left", KeyCode::A);
+    input.registerKeyboardButton("right", KeyCode::D);
+    input.registerKeyboardButton("jump", KeyCode::Space);
+    input.registerKeyboardButton("crouch", KeyCode::LeftShift);
+
+    input.registerKeyboardButton("inventoryOpen", KeyCode::E);
+    input.registerKeyboardButton("hotbar0", KeyCode::Alpha1);
+    input.registerKeyboardButton("hotbar1", KeyCode::Alpha2);
+    input.registerKeyboardButton("hotbar2", KeyCode::Alpha3);
+    input.registerKeyboardButton("hotbar3", KeyCode::Alpha4);
+    input.registerKeyboardButton("hotbar4", KeyCode::Alpha5);
+    input.registerKeyboardButton("hotbar5", KeyCode::Alpha6);
+    input.registerKeyboardButton("hotbar6", KeyCode::Alpha7);
+    input.registerKeyboardButton("hotbar7", KeyCode::Alpha8);
+    input.registerKeyboardButton("hotbar8", KeyCode::Alpha9);
 }

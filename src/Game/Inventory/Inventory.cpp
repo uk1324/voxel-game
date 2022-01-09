@@ -12,7 +12,7 @@ Inventory::Inventory(size_t size)
 		}
 		else
 		{
-			item = ItemStack(static_cast<ItemType>(rand() % (static_cast<size_t>(ItemType::Count) - 1)), rand() % 11);
+			item = ItemStack(static_cast<ItemType>(rand() % (static_cast<size_t>(ItemType::Count) - 1)), rand() % 11 + 1);
 		}
 	}
 

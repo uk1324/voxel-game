@@ -3,6 +3,7 @@
 #include <Lang/Ast/Expr/IntConstantExpr.hpp>
 #include <Lang/Ast/Stmt/ExprStmt.hpp>
 #include <Lang/Ast/Stmt/PrintStmt.hpp>
+#include <Lang/Ast/Stmt/LetStmt.hpp>
 #include <Utils/Assertions.hpp>
 #include <Utils/TerminalColors.hpp>
 
@@ -117,6 +118,32 @@ OwnPtr<Stmt> Parser::printStmt()
 	return stmt;
 }
 
+OwnPtr<Stmt> Parser::letStmt()
+{
+	const auto start = peekPrevious().start;
+
+	expect(TokenType::Identifier, "expected variable name");
+	DataType dataType;
+	if (match(TokenType::Colon))
+	{
+		dataType = parseDataType();
+	}
+	else
+	{
+		dataType.type = DataTypeType::Unspecified;
+	}
+
+	if (match(TokenType::Semicolon))
+	{
+		//std::make_unique<LetStmt>(std::move(expression), start, peek().end);
+	}
+
+
+	const auto end = peek().end;
+
+	return std::make_unique<LetStmt>(start, peek().end);
+}
+
 OwnPtr<Expr> Parser::expr()
 {
 	return factor();
@@ -145,7 +172,23 @@ OwnPtr<Expr> Parser::primary()
 		return std::make_unique<IntConstantExpr>(peekPrevious(), peekPrevious().start, peekPrevious().end);
 	}
 
+	// TODO: Check if this error location is good or should it maybe be token.
 	throw ParsingError("expected primary expression", peek().start, peek().start);
+}
+
+DataType Parser::parseDataType()
+{
+	if (match(TokenType::Int))
+	{
+		return DataType(DataTypeType::Int);
+	}
+	if (match(TokenType::Float))
+	{
+		return DataType(DataTypeType::Float);
+	}
+
+	// TODO: Check if this error location is good.
+	throw ParsingError("expected data type name", peek().start, peek().start);
 }
 
 const Token& Parser::peek() const

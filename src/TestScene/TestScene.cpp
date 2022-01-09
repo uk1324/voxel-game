@@ -70,7 +70,7 @@ void TestScene::update()
         position += acceleration.value;
     }
 
-    playerMovementSystem.update(*this, player);
+    //playerMovementSystem.update(*this, player);
     updateCamera();
 
     renderingSystem.update(entityManager, player, cameraSystem.view(), cameraSystem.projection());

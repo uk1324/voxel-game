@@ -19,13 +19,16 @@ public:
 		uint32_t backTextureIndex;
 		float friction;
 		float walkSpeed;
+		bool isSolid;
 	};
 
 public:
-	BlockData(const std::string_view path);
+	BlockData();
 
 	Entry& operator[](BlockType type);
 	const Entry& operator[](BlockType type) const;
+
+	void set(BlockType block, Entry&& entry);
 
 public:
 

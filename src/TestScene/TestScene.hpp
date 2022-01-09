@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Game/Systems/PlayerMovementSystem.hpp>
+#include <Game/Player/PlayerMovementSystem.hpp>
 #include <Game/Systems/CameraSystem.hpp>
 #include <TestScene/RenderingSystem.hpp>
 #include <Engine/Graphics/ShaderProgram.hpp>

@@ -41,9 +41,9 @@ ItemData::ItemData()
 		return entry;
 	};
 
-#define ITEM_TEXTURES_PATH "assets/textures/items/"
+#define PATH "assets/textures/items/"
 
-	set(ItemType::DiamondSword, itemEntry("Diamond sword", ITEM_TEXTURES_PATH "diamond_sword.png", 1));
+	set(ItemType::DiamondSword, itemEntry("Diamond sword", PATH "diamond_sword.png", 1));
 	set(ItemType::Stone, blockEntry("Stone", BlockType::Stone, 64));
 	set(ItemType::Grass, blockEntry("Grass", BlockType::Grass, 64));
 	set(ItemType::Dirt, blockEntry("Dirt", BlockType::Dirt, 64));

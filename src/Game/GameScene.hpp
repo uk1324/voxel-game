@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Game/PhysicsSystem.hpp>
-#include <Game/Systems/PlayerMovementSystem.hpp>
+#include <Game/Player/PlayerMovementSystem.hpp>
 #include <Game/Systems/CameraSystem.hpp>
 #include <Game/Blocks/ChunkSystem.hpp>
 #include <Game/Blocks/Chunk.hpp>
@@ -23,6 +23,9 @@ public:
 	ItemData itemData;
 	Vec3 rayStart;
 	Vec3 rayEnd;
+
+private:
+	void registerInputActions();
 
 private:
 	bool m_isGamePaused;

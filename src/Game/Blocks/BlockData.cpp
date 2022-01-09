@@ -2,7 +2,7 @@
 #include <Utils/FileIo.hpp>
 #include <Utils/Assertions.hpp>
 
-BlockData::BlockData(const std::string_view path)
+BlockData::BlockData()
 {
 	std::vector<std::string> texturesNames;
 	std::unordered_map<std::string, uint32_t> textureNameToIndex;
@@ -20,79 +20,112 @@ BlockData::BlockData(const std::string_view path)
 		return textureIndex->second;
 	};
 	
-	blocks.resize(static_cast<size_t>(BlockType::Count));
-	for (size_t i = 0; i < static_cast<size_t>(BlockType::Count); i++)
+	auto entry = [getTextureIndex]
+	(
+		std::string top,
+		std::string bottom,
+		std::string left,
+		std::string right,
+		std::string front,
+		std::string back,
+		float friction,
+		float walkSpeed,
+		bool isSolid
+	)
 	{
-		blocks[i] = {
-			getTextureIndex("assets/textures/blocks/dirt.png"),
-			getTextureIndex("assets/textures/blocks/dirt.png"),
-			getTextureIndex("assets/textures/blocks/dirt.png"),
-			getTextureIndex("assets/textures/blocks/dirt.png"),
-			getTextureIndex("assets/textures/blocks/dirt.png"),
-			getTextureIndex("assets/textures/blocks/dirt.png"),
-			0.85,
-			1,
-		};
-	}
-
-	blocks[static_cast<size_t>(BlockType::Stone) - 1] = {
-		getTextureIndex("assets/textures/blocks/stone.png"),
-		getTextureIndex("assets/textures/blocks/stone.png"),
-		getTextureIndex("assets/textures/blocks/stone.png"),
-		getTextureIndex("assets/textures/blocks/stone.png"),
-		getTextureIndex("assets/textures/blocks/stone.png"),
-		getTextureIndex("assets/textures/blocks/stone.png"),
-		0.85,
-		1,
+		Entry entry;
+		entry.topTextureIndex = getTextureIndex(top);
+		entry.bottomTextureIndex = getTextureIndex(bottom);
+		entry.leftTextureIndex = getTextureIndex(left);
+		entry.rightTextureIndex = getTextureIndex(right);
+		entry.frontTextureIndex = getTextureIndex(front);
+		entry.backTextureIndex = getTextureIndex(back);
+		entry.friction = friction;
+		entry.walkSpeed = walkSpeed;
+		entry.isSolid = isSolid;
+		return entry;
 	};
 
-	blocks[static_cast<size_t>(BlockType::Grass) - 1] = {
-		getTextureIndex("assets/textures/blocks/grass.png"),
-		getTextureIndex("assets/textures/blocks/dirt.png"),
-		getTextureIndex("assets/textures/blocks/grass_side.png"),
-		getTextureIndex("assets/textures/blocks/grass_side.png"),
-		getTextureIndex("assets/textures/blocks/grass_side.png"),
-		getTextureIndex("assets/textures/blocks/grass_side.png"),
-		0.85,
-		1,
-	};
+	blocks.resize(static_cast<size_t>(BlockType::Count));
 
-	blocks[static_cast<size_t>(BlockType::WoodenPlanks) - 1] = {
-		getTextureIndex("assets/textures/blocks/wooden_planks.png"),
-		getTextureIndex("assets/textures/blocks/wooden_planks.png"),
-		getTextureIndex("assets/textures/blocks/wooden_planks.png"),
-		getTextureIndex("assets/textures/blocks/wooden_planks.png"),
-		getTextureIndex("assets/textures/blocks/wooden_planks.png"),
-		getTextureIndex("assets/textures/blocks/wooden_planks.png"),
-		0.85,
-		1,
-	};
+#define PATH "assets/textures/blocks/"
 
-	blocks[static_cast<size_t>(BlockType::Cobblestone) - 1] = {
-		getTextureIndex("assets/textures/blocks/cobblestone.png"),
-		getTextureIndex("assets/textures/blocks/cobblestone.png"),
-		getTextureIndex("assets/textures/blocks/cobblestone.png"),
-		getTextureIndex("assets/textures/blocks/cobblestone.png"),
-		getTextureIndex("assets/textures/blocks/cobblestone.png"),
-		getTextureIndex("assets/textures/blocks/cobblestone.png"),
+	set(BlockType::Stone, entry(
+		PATH "stone.png",
+		PATH "stone.png",
+		PATH "stone.png",
+		PATH "stone.png",
+		PATH "stone.png",
+		PATH "stone.png",
 		0.85,
 		1,
-	};
+		true
+	));
 
-	blocks[static_cast<size_t>(BlockType::Debug) - 1] = {
-		getTextureIndex("assets/textures/blocks/top.png"),
-		getTextureIndex("assets/textures/blocks/bottom.png"),
-		getTextureIndex("assets/textures/blocks/left.png"),
-		getTextureIndex("assets/textures/blocks/right.png"),
-		getTextureIndex("assets/textures/blocks/front.png"),
-		getTextureIndex("assets/textures/blocks/back.png"),
+	set(BlockType::Grass, entry(
+		PATH "grass.png",
+		PATH "dirt.png",
+		PATH "grass_side.png",
+		PATH "grass_side.png",
+		PATH "grass_side.png",
+		PATH "grass_side.png",
 		0.85,
 		1,
-	};
+		true
+	));
+
+	set(BlockType::Dirt, entry(
+		PATH "dirt.png",
+		PATH "dirt.png",
+		PATH "dirt.png",
+		PATH "dirt.png",
+		PATH "dirt.png",
+		PATH "dirt.png",
+		0.85,
+		1,
+		true
+	));
+
+	set(BlockType::WoodenPlanks, entry(
+		PATH "wooden_planks.png",
+		PATH "wooden_planks.png",
+		PATH "wooden_planks.png",
+		PATH "wooden_planks.png",
+		PATH "wooden_planks.png",
+		PATH "wooden_planks.png",
+		0.85,
+		1,
+		true
+	));
+
+	set(BlockType::Cobblestone, entry(
+		PATH "cobblestone.png",
+		PATH "cobblestone.png",
+		PATH "cobblestone.png",
+		PATH "cobblestone.png",
+		PATH "cobblestone.png",
+		PATH "cobblestone.png",
+		0.85,
+		1,
+		true
+	));
+
+	set(BlockType::Debug, entry(
+		PATH "top.png",
+		PATH "bottom.png",
+		PATH "left.png",
+		PATH "right.png",
+		PATH "front.png",
+		PATH "back.png",
+		0.85,
+		1,
+		false
+	));
 
 	textureArray = Gfx::TextureArray(16, 16, std::vector<std::string_view>(texturesNames.begin(), texturesNames.end()));
 }
 
+// Functions subtract 1 to skip BlockType::Air.
 BlockData::Entry& BlockData::operator[](BlockType type)
 {
 	ASSERT(type != BlockType::Air);
@@ -102,5 +135,10 @@ BlockData::Entry& BlockData::operator[](BlockType type)
 const BlockData::Entry& BlockData::operator[](BlockType type) const
 {
 	ASSERT(type != BlockType::Air);
-	return blocks[static_cast<size_t>(type) - 1];;
+	return blocks[static_cast<size_t>(type) - 1];
+}
+
+void BlockData::set(BlockType block, Entry&& entry)
+{
+	blocks[static_cast<size_t>(block) - 1] = std::forward<Entry>(entry);
 }
