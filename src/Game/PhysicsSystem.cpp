@@ -8,6 +8,8 @@ PhysicsSystem::PhysicsSystem(Scene& scene)
 	scene.entityManager.registerComponent<Grounded>();
 }
 
+// Prevent from getting into unloaded chunks or stop player if is inside unloaded chunks idk.
+
 void PhysicsSystem::update(const Time& time, EntityManager& entityManager, const ChunkSystem& chunkSystem)
 {
 	for (auto& [entity, velocityComponent] : entityManager.getComponents<PhysicsVelocity>())
@@ -128,7 +130,8 @@ PhysicsSystem::TerrainCollision PhysicsSystem::aabbVsTerrainCollision(const Chun
 		{
 			for (float x = collisionAreaMin.x; x < collisionAreaMax.x; x++)
 			{
-				if (chunkSystem.get(x, y, z).isSolid()
+				auto optBlock = chunkSystem.tryGetBlock(Vec3I(x, y, z));
+				if (optBlock.has_value() && optBlock->isSolid()
 					// Disable collision if collider is already inside the block.
 					&& (isBlockVsAabbCollision(Vec3(x, y, z), pos, halfSize) == false))
 				{

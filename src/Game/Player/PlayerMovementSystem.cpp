@@ -68,6 +68,11 @@ void PlayerMovementSystem::update(Entity& player, const InputManager& input, con
 		playerVel += (rotationX * movementDirection) * airSpeedMultiplier * time.deltaTime();
 	}
 
+	if (input.isButtonDown("test"))
+	{
+		playerVel *= 3.0f;
+	}
+
 	bool isJumpBuffered = true;
 	if (input.isButtonDown("jump"))
 	{

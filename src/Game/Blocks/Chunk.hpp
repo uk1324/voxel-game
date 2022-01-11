@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Game/Blocks/Block.hpp>
+#include <Math/Vec3.hpp>
 
 // TODO: Find what order of axis is good for iteration
 
@@ -12,7 +13,9 @@ public:
 	Block& operator() (size_t x, size_t y, size_t z);
 	Block operator() (size_t x, size_t y, size_t z) const;
 	Block get(size_t x, size_t y, size_t z) const;
-	Block set(size_t x, size_t y, size_t z, Block value);
+	Block get(const Vec3I& pos) const;
+	void set(size_t x, size_t y, size_t z, Block value);
+	void set(const Vec3I& pos, Block value);
 
 public:
 	static constexpr int32_t SIZE = 16;

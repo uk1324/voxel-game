@@ -1,7 +1,8 @@
 #include <Game/Blocks/ChunkSystem.hpp>
 #include <Utils/Assertions.hpp>
-
 #include <glad/glad.h>
+
+#include <unordered_set>
 
 ChunkSystem::ChunkSystem()
 // lastPos is infinity so all the chunks get generated at the start
@@ -123,6 +124,22 @@ bool ChunkSystem::isInBounds(size_t x, size_t y, size_t z)
 		&& ((z >= 0) && (z < Chunk::SIZE));
 }
 
+ChunkSystem::Pos ChunkSystem::posToChunkPosAndPosInChunk(const Vec3& pos)
+{
+	Pos block;
+	block.chunkPos = Vec3I((pos / Chunk::SIZE).applied(floor));
+	block.posInChunk = Vec3I(pos.applied(floor) - Vec3(block.chunkPos * Chunk::SIZE));
+	return block;
+}
+
+ChunkSystem::Pos ChunkSystem::posToChunkPosAndPosInChunk(const Vec3I& pos)
+{
+	Pos block;
+	block.chunkPos = Vec3I((Vec3(pos) / Chunk::SIZE).applied(floor));
+	block.posInChunk = Vec3I(Vec3(pos).applied(floor) - Vec3(block.chunkPos * Chunk::SIZE));
+	return block;
+}
+
 std::vector<uint32_t>& ChunkSystem::meshFromChunk(Chunk& chunk)
 {
 	static std::vector<uint32_t> vertices(16 * 16 * 16 * 6 * 3);
@@ -169,9 +186,6 @@ std::vector<uint32_t>& ChunkSystem::meshFromChunk(Chunk& chunk)
 
 	return vertices;
 }
-
-#include <iostream>
-#include <unordered_set>
 
 void ChunkSystem::update(const Vec3& loadPos)
 {
@@ -283,151 +297,142 @@ void ChunkSystem::update(const Vec3& loadPos)
 	); 
 }
 
-void ChunkSystem::set(int32_t x, int32_t y, int32_t z, Block block)
+void ChunkSystem::trySetBlock(const Vec3I& blockPos, Block block)
 {
-	Vec3I chunkPos(floor(float(x) / Chunk::SIZE), floor(float(y) / Chunk::SIZE), floor(float(z) / Chunk::SIZE));
-	Vec3I posInChunk(x - chunkPos.x * Chunk::SIZE, y - chunkPos.y * Chunk::SIZE, z - chunkPos.z * Chunk::SIZE);
-	ASSERT(posInChunk.x >= 0 && posInChunk.y >= 0 && posInChunk.z >= 0);
-	std::cout << chunkPos << ' ' << posInChunk << '\n';
-	ChunkData& chunk = *m_chunks[chunkPos];
+	const auto pos = posToChunkPosAndPosInChunk(blockPos);
 
-	auto find = [this](const Vec3I& chunkPos) -> ChunkData&
-	{
-		auto a = m_chunks.find(chunkPos);
-		//auto a =std::find_if(m_chunksToDraw.begin(), m_chunksToDraw.end(), [&chunkPos, this](ChunkData* a) { if (a->pos == chunkPos) { m_freeChunks.push_back(a); return true; } else return false; });
-		ASSERT(a != m_chunks.end());
-		return *a->second;
-	};
+	auto optChunk = tryGet(pos.chunkPos);
+	if (optChunk.has_value() == false)
+		return;
+	ChunkData& chunk = *optChunk.value();
 
-	//for (block)
-
-	chunk.blocks.set(posInChunk.x, posInChunk.y, posInChunk.z, block);
-	auto& a = find(chunkPos);
-	ASSERT(&a == &chunk); 
-	//remesh();
+	chunk.blocks.set(pos.posInChunk, block);
 	meshChunk(chunk);
+	remeshChunksAround(pos);
+}
 
+Opt<Block> ChunkSystem::tryGetBlock(const Vec3I& blockPos) const
+{
+	const auto pos = posToChunkPosAndPosInChunk(blockPos);
 
-	//std::cout << "pos: " << Vec3I(x, y, z) << " | " << "chunkPos: " << chunkPos << " | " << "posInChunk: " << posInChunk << '\n';
+	const auto optChunk = tryGet(pos.chunkPos);
+	if (optChunk.has_value() == false)
+		return std::nullopt;
+
+	return optChunk.value()->blocks.get(pos.posInChunk);
+}
+
+Opt<ChunkData*> ChunkSystem::tryGet(const Vec3I& pos)
+{
+	auto chunk = m_chunks.find(pos);
+	if (chunk == m_chunks.end())
+		return std::nullopt;
+	return chunk->second;
+}
+
+Opt<const ChunkData*> ChunkSystem::tryGet(const Vec3I& pos) const
+{
+	auto chunk = m_chunks.find(pos);
+	if (chunk == m_chunks.end())
+		return std::nullopt;
+	return chunk->second;
+}
+
+void ChunkSystem::remeshChunksAround(const Pos& pos)
+{
+	const auto& [chunkPos, posInChunk] = pos;
+
 	if (posInChunk.x >= 0)
 	{
 		if (posInChunk.x == 0)
 		{
-			//ASSERT_NOT_REACHED();
-			meshChunk(find(chunkPos + Vec3I(-1, 0, 0)));
-		} 
-		if (posInChunk.x == Chunk::SIZE - 1)
+			auto chunk = tryGet(pos.chunkPos + Vec3I(-1, 0, 0));
+			if (chunk.has_value())
+				meshChunk(*chunk.value());
+		}
+		if (pos.posInChunk.x == Chunk::SIZE - 1)
 		{
-			//ASSERT_NOT_REACHED();
-			meshChunk(find(chunkPos + Vec3I(1, 0, 0)));
+			auto chunk = tryGet(pos.chunkPos + Vec3I(1, 0, 0));
+			if (chunk.has_value())
+				meshChunk(*chunk.value());
 		}
 	}
 	else
 	{
-		//ASSERT_NOT_REACHED();
-		if (posInChunk.x == -(int32_t(Chunk::SIZE) - 1))
+		if (posInChunk.x == (-static_cast<int32_t>(Chunk::SIZE) - 1))
 		{
-			meshChunk(find(chunkPos + Vec3I(-1, 0, 0)));
+			auto chunk = tryGet(pos.chunkPos + Vec3I(-1, 0, 0));
+			if (chunk.has_value())
+				meshChunk(*chunk.value());
 		}
 		if (posInChunk.x == -1)
 		{
-			meshChunk(find(chunkPos + Vec3I(1, 0, 0)));
+			auto chunk = tryGet(pos.chunkPos + Vec3I(1, 0, 0));
+			if (chunk.has_value())
+				meshChunk(*chunk.value());
 		}
 	}
-	
+
 	if (posInChunk.y >= 0)
 	{
 		if (posInChunk.y == 0)
 		{
-			//ASSERT_NOT_REACHED();
-			//std::cout << "c\n";
-			meshChunk(find(chunkPos + Vec3I(0, -1, 0)));
+			auto chunk = tryGet(pos.chunkPos + Vec3I(0, -1, 0));
+			if (chunk.has_value())
+				meshChunk(*chunk.value());
 		}
 		if (posInChunk.y == Chunk::SIZE - 1)
 		{
-			//ASSERT_NOT_REACHED();
-			//std::cout << "d\n";
-			meshChunk(find(chunkPos + Vec3I(0, 1, 0)));
+			auto chunk = tryGet(pos.chunkPos + Vec3I(0, 1, 0));
+			if (chunk.has_value())
+				meshChunk(*chunk.value());
 		}
 	}
 	else
 	{
-		//ASSERT_NOT_REACHED();
-		if (posInChunk.y == -(int32_t(Chunk::SIZE) - 1))
+		if (posInChunk.y == (-static_cast<int32_t>(Chunk::SIZE) - 1))
 		{
-			meshChunk(find(chunkPos + Vec3I(-1, 0, 0)));
+			auto chunk = tryGet(pos.chunkPos + Vec3I(-1, 0, 0));
+			if (chunk.has_value())
+				meshChunk(*chunk.value());
 		}
 		if (posInChunk.y == -1)
 		{
-			meshChunk(find(chunkPos + Vec3I(1, 0, 0)));
+			auto chunk = tryGet(pos.chunkPos + Vec3I(1, 0, 0));
+			if (chunk.has_value())
+				meshChunk(*chunk.value());
 		}
 	}
 	if (posInChunk.z >= 0)
 	{
 		if (posInChunk.z == 0)
 		{
-			//std::cout << "e\n";
-			//ASSERT_NOT_REACHED();
-			meshChunk(find(chunkPos + Vec3I(0, 0, -1)));
+			auto chunk = tryGet(pos.chunkPos + Vec3I(0, 0, -1));
+			if (chunk.has_value())
+				meshChunk(*chunk.value());
 		}
 		if (posInChunk.z == Chunk::SIZE - 1)
 		{
-			//ASSERT_NOT_REACHED();
-			//std::cout << "f\n";
-			meshChunk(find(chunkPos + Vec3I(0, 0, 1)));
+			auto chunk = tryGet(pos.chunkPos + Vec3I(0, 0, 1));
+			if (chunk.has_value())
+				meshChunk(*chunk.value());
 		}
 	}
 	else
 	{
-		//ASSERT_NOT_REACHED();
-		if (posInChunk.z == -(int32_t(Chunk::SIZE) - 1))
+		if (posInChunk.z == -(static_cast<int32_t>(Chunk::SIZE) - 1))
 		{
-			meshChunk(find(chunkPos + Vec3I(-1, 0, 0)));
+			auto chunk = tryGet(pos.chunkPos + Vec3I(-1, 0, 0));
+			if (chunk.has_value())
+				meshChunk(*chunk.value());
 		}
 		if (posInChunk.z == -1)
 		{
-			meshChunk(find(chunkPos + Vec3I(1, 0, 0)));
+			auto chunk = tryGet(pos.chunkPos + Vec3I(1, 0, 0));
+			if (chunk.has_value())
+				meshChunk(*chunk.value());
 		}
 	}
-
-
-}
-
-Block ChunkSystem::get(int32_t x, int32_t y, int32_t z) const
-{
-	Vec3I chunkPos(floor(float(x) / Chunk::SIZE), floor(float(y) / Chunk::SIZE), floor(float(z) / Chunk::SIZE));
-	Vec3I posInChunk(x - chunkPos.x * Chunk::SIZE, y - chunkPos.y * Chunk::SIZE, z - chunkPos.z * Chunk::SIZE);
-	//if (posInChunk)
-	//if (posInChunk.x < 0)
-	//{
-	//	posInChunk.x += Chunk::SIZE;
-	//}
-	//if (posInChunk.y < 0)
-	//{
-	//	posInChunk.y += Chunk::SIZE;
-	//}
-	//if (posInChunk.z < 0)
-	//{
-	//	posInChunk.z += Chunk::SIZE;
-	//}
-
-	auto it = m_chunks.find(chunkPos);
-	if (it == m_chunks.end())
-		return BlockType::Air;
-
-	/*if (it->second->blocks.get(posInChunk.x, posInChunk.y, posInChunk.z).isSolid())
-		std::cout << "get: " << chunkPos << ' ' << posInChunk << '\n';*/
-
-	return it->second->blocks.get(posInChunk.x, posInChunk.y, posInChunk.z);
-}
-
-void ChunkSystem::remesh()
-{
-	meshChunk(*m_chunks[Vec3I(62, 1, 62)]);
-	//for (auto chunk : m_chunksToDraw)
-	//{
-	//	meshChunk(*chunk);
-	//}
 }
 
 void ChunkSystem::initializeChunk(Chunk& chunk, const Vec3I& pos)
@@ -494,9 +499,6 @@ void ChunkSystem::initializeChunk(Chunk& chunk, const Vec3I& pos)
 void ChunkSystem::meshChunk(ChunkData& chunk)
 {
 	const std::vector<uint32_t>& vertices = meshFromChunk(chunk.blocks);
-	//std::cout << vertices.size() << ' ' << chunk.vboByteOffset << '\n';
-	//std::cout << "meshing chunk: " << chunk.pos << '\n';
-	//std::cout << "meshing: " << chunk.pos << '\n';
 	chunk.vertexCount = vertices.size();
 	m_vbo.bind();
 	m_vbo.setData(chunk.vboByteOffset, vertices.data(), vertices.size() * sizeof(uint32_t));

@@ -2,9 +2,7 @@
 
 #include <Game/PhysicsSystem.hpp>
 #include <Game/Player/PlayerMovementSystem.hpp>
-#include <Game/Systems/CameraSystem.hpp>
-#include <Game/Blocks/ChunkSystem.hpp>
-#include <Game/Blocks/Chunk.hpp>
+#include <Game/Blocks/BlockSystem.hpp>
 #include <Engine/Scene.hpp>
 #include <Engine/Graphics/ShaderProgram.hpp>
 #include <Engine/Graphics/VertexArray.hpp>
@@ -38,6 +36,6 @@ private:
 	InventorySystem m_inventorySystem;
 	PlayerMovementSystem m_playerMovementSystem;
 	RenderingSystem m_renderingSystem;
-	ChunkSystem m_chunkSystem;
 	PhysicsSystem m_physicsSystem;
+	BlockSystem m_blockSystem;
 };

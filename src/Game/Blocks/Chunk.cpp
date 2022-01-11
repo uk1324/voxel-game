@@ -21,7 +21,17 @@ Block Chunk::get(size_t x, size_t y, size_t z) const
 	return operator()(x, y, z);
 }
 
-Block Chunk::set(size_t x, size_t y, size_t z, Block value)
+Block Chunk::get(const Vec3I& pos) const
 {
-	return operator()(x, y, z) = value;
+	return operator()(pos.x, pos.y, pos.z);
+}
+
+void Chunk::set(size_t x, size_t y, size_t z, Block value)
+{
+	operator()(x, y, z) = value;
+}
+
+void Chunk::set(const Vec3I& pos, Block value)
+{
+	operator()(pos.x, pos.y, pos.z) = value;
 }

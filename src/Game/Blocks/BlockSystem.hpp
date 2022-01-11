@@ -4,15 +4,25 @@
 class BlockSystem
 {
 public:
+	struct RaycastHit
+	{
+	public:
+		Vec3I blockPos;
+		// nullopt if the blockPos == startPos
+		Opt<Vec3I> entryNormal;
+	};
+
+public:
 	BlockSystem();
 
-	void update();
+	Opt<Block> tryGet(const Vec3I& blockPos) const;
+	void trySet(const Vec3I& blockPos, Block block);
 
-	Opt<Block> tryGet(Vec3I blockPos) const;
-	void trySet(Vec3I blockPos, BlockType type);
+	bool isSolid(Vec3I& blockPos);
+
+	Opt<RaycastHit> raycast(const Vec3& start, const Vec3& end);
 
 public:
 	ChunkSystem chunkSystem;
-
 	BlockData blockData;
 };

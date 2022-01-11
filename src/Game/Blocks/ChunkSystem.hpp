@@ -5,15 +5,14 @@
 #include <Game/Blocks/BlockData.hpp>
 #include "PerlinNoise.hpp"
 #include <Engine/Graphics/VertexArray.hpp>
+#include <Utils/Opt.hpp>
 
 #include <unordered_map>
-#include <optional>
 
 struct ChunkData
 {
 	Chunk blocks;
 	size_t vertexCount;
-	// Make this const
 	size_t vboByteOffset;
 	Vec3I pos;
 };
@@ -34,16 +33,23 @@ using namespace siv;
 class ChunkSystem
 {
 public:
+	struct Pos
+	{
+		Vec3I chunkPos;
+		Vec3I posInChunk;
+	};
+
+public:
 	ChunkSystem();
 
 	void update(const Vec3& loadPos);
 
-	void set(int32_t x, int32_t y, int32_t z, Block block);
-	Block get(int32_t x, int32_t y, int32_t z) const;
-	std::optional<Chunk&> get(const Vec3I& pos);
-	std::optional<const Chunk&> get(const Vec3I& pos) const;
+	void trySetBlock(const Vec3I& blockPos, Block block);
+	Opt<Block> tryGetBlock(const Vec3I& blockPos) const;
+	Opt<ChunkData*> tryGet(const Vec3I& pos);
+	Opt<const ChunkData*> tryGet(const Vec3I& pos) const;
 
-	void remesh();
+	void remeshChunksAround(const Pos& pos);
 
 private:
 	void initializeChunk(Chunk& chunk, const Vec3I& pos);	
@@ -58,6 +64,10 @@ private:
 	void addCubeFront(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
 	void addCubeBack(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
 	bool isInBounds(size_t x, size_t y, size_t z);
+
+public:
+	static Pos posToChunkPosAndPosInChunk(const Vec3& pos);
+	static Pos posToChunkPosAndPosInChunk(const Vec3I& pos);
 
 public:
 	static constexpr int32_t VERTICAL_RENDER_DISTANCE = 3;
