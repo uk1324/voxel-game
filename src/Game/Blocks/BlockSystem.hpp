@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Game/Blocks/ChunkSystem.hpp>
 #include <Utils/Opt.hpp>
 

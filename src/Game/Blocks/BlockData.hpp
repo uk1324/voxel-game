@@ -37,6 +37,6 @@ public:
 	Gfx::TextureArray textureArray;
 
 private:
-	static constexpr float DEFAULT_BLOCK_FRICTION = 0.85;
+	static constexpr float DEFAULT_BLOCK_FRICTION = 0.85f;
 
 };

@@ -4,6 +4,7 @@
 #include <Game/Blocks/Chunk.hpp>
 #include <Game/Blocks/BlockData.hpp>
 #include "PerlinNoise.hpp"
+#include <Game/Blocks/WorldGen.hpp>
 #include <Engine/Graphics/VertexArray.hpp>
 #include <Utils/Opt.hpp>
 
@@ -81,6 +82,8 @@ private:
 
 public:
 	PerlinNoise noise;
+
+	WorldGen m_worldGen;
 
 	Gfx::VertexArray m_vao;
 	Gfx::VertexBuffer m_vbo;

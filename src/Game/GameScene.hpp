@@ -2,6 +2,7 @@
 
 #include <Game/PhysicsSystem.hpp>
 #include <Game/Player/PlayerMovementSystem.hpp>
+#include <Game/Player/PlayerInteracationSystem.hpp>
 #include <Game/Blocks/BlockSystem.hpp>
 #include <Engine/Scene.hpp>
 #include <Engine/Graphics/ShaderProgram.hpp>
@@ -35,6 +36,7 @@ private:
 
 	InventorySystem m_inventorySystem;
 	PlayerMovementSystem m_playerMovementSystem;
+	PlayerInteractionSystem m_playerInteractionSystem;
 	RenderingSystem m_renderingSystem;
 	PhysicsSystem m_physicsSystem;
 	BlockSystem m_blockSystem;

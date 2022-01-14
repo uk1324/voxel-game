@@ -18,9 +18,9 @@ uint64_t Time::currentTick() const
 	return m_currentTick;
 }
 
-double Time::currentTime()
+float Time::currentTime()
 {
-	return glfwGetTime();
+	return static_cast<float>(glfwGetTime());
 }
 
 void Time::update()

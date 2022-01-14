@@ -122,6 +122,7 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 	m_debugShader.use();
 	m_debugShader.setMat4("view", view);
 	m_debugShader.setMat4("projection", projection);
+
 	for (const Cube& cube : m_cubesToDraw)
 	{
 		m_debugShader.setMat4("model", Mat4::scale(cube.scale) * Mat4::translation(cube.pos));

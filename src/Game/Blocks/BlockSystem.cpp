@@ -97,6 +97,8 @@ Opt<BlockSystem::RaycastHit> BlockSystem::raycast(const Vec3& start, const Vec3&
             return result;
         }
 
+        lastBlockPos = currentBlockPos;
+
         if (tMaxX < tMaxY)
         {
             if (tMaxX < tMaxZ)
@@ -123,7 +125,6 @@ Opt<BlockSystem::RaycastHit> BlockSystem::raycast(const Vec3& start, const Vec3&
                 tMaxZ += tDeltaZ;
             }
         }
-        lastBlockPos = currentBlockPos;
 
         if ((tMaxX > 1) && (tMaxY > 1) && (tMaxZ > 1))
             return std::nullopt;

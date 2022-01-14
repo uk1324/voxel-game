@@ -11,6 +11,7 @@ ChunkSystem::ChunkSystem()
 	// Preallocating all the vertex data isn't a good idea for open worlds because a lot of space if taken up by empty chunks
 	// but it makes sense for cave worlds where the render distance is smaller.
 	, m_vbo(VERTEX_DATA_BYTE_SIZE)
+	, m_worldGen(0)
 {
 	m_chunkPool.resize(CHUNKS_IN_RENDER_DISTANCE);
 	m_freeChunks.reserve(CHUNKS_IN_RENDER_DISTANCE);
@@ -199,7 +200,8 @@ void ChunkSystem::update(const Vec3& loadPos)
 	{
 		ChunkData& chunk = *m_chunksToGenerate.back();
 	
-		initializeChunk(chunk.blocks, chunk.pos);
+		//m_worldGen.generateChunk(chunk.blocks, chunk.pos);
+		m_worldGen.generateChunk(chunk.blocks, chunk.pos);
 		meshChunk(chunk);
 		m_chunksToDraw.push_back(&chunk);
 		m_chunks[chunk.pos] = &chunk;
