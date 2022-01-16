@@ -1,9 +1,11 @@
 #pragma once
 
 #include <Game/Blocks/Chunk.hpp>
+#include <Game/Blocks/PerlinNoise.hpp>
 
-#include <random>
 #include <array>
+
+#include <imgui.h>
 
 class WorldGen
 {
@@ -12,30 +14,22 @@ public:
 
 	void generateChunk(Chunk& chunk, const Vec3I& chunkPos);
 
-private:
-	float randomFloat();
-	float valueAt(int32_t x);
-	float valueAt(int32_t x, int32_t y);
-	float noiseAt(float x);
-	float noiseAt(float x, float y);
+	void updateTools();
 
 private:
-	template<typename T>
-	T lerp(T a, T b, float t);
+	float heightMapScale = 0.05f;
+	float heightMapAmplitude = 25.0f;
+	int heightMapOctaves = 4;
+	float heightMapOctaveLacunarity = 0.5f;
+	float heightMapOctavePersitence = 0.5f;
+
+	float noiseScale = 0.05f;
+	int   noiseOctaves = 4;
+	float noiseOctaveLacunarity = 0.5f;
+	float noiseOctavePersitence = 0.5f;
+	float noiseValueScale = 1.0f;
+
 
 private:
-	static constexpr size_t VALUES_WIDTH = 16;
-	static constexpr size_t VALUES_HEIGHT = 16;
-
-private:
-	std::array<float, VALUES_WIDTH * VALUES_HEIGHT> m_values;
-
-	std::minstd_rand0 m_randomGenerator;
-	std::uniform_real_distribution<float> m_randomDistribution;
+	PerlinNoise m_noise;
 };
-
-template<typename T>
-inline T WorldGen::lerp(T a, T b, float t)
-{
-	return (a * (T(1) - t)) + (b * t);
-}

@@ -46,6 +46,8 @@ GameScene::GameScene(Engine& engine)
     entityManager.entityEmplaceComponent<PhysicsAabbCollider>(m_player, collider);
     entityManager.entityEmplaceComponent<PhysicsVelocity>(m_player, PhysicsVelocity{ Vec3(0, 0, 0) });
     entityManager.entityEmplaceComponent<Grounded>(m_player, Grounded{ false });
+
+    input.registerKeyboardButton("testtest", KeyCode::T);
 }
 
 void GameScene::update()
@@ -78,6 +80,14 @@ void GameScene::update()
         m_blockSystem.chunkSystem
     );
     m_inventorySystem.render(m_inventory, itemData, m_blockSystem.blockData, Vec2(windowSize));
+
+    m_blockSystem.chunkSystem.m_worldGen.updateTools();
+
+    if (input.isButtonDown("testtest"))
+    {
+        m_blockSystem.chunkSystem.regenerateAll();
+        std::cout << "playerPos: " << playerPos << '\n';
+    }
 
     m_blockSystem.chunkSystem.update(entityManager.entityGetComponent<Position>(m_player).value);
 

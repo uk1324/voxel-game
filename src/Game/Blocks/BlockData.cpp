@@ -110,6 +110,18 @@ BlockData::BlockData()
 		true
 	));
 
+	set(BlockType::Water, entry(
+		PATH "water.png",
+		PATH "water.png",
+		PATH "water.png",
+		PATH "water.png",
+		PATH "water.png",
+		PATH "water.png",
+		0.85,
+		1,
+		true
+	));
+
 	set(BlockType::Debug, entry(
 		PATH "top.png",
 		PATH "bottom.png",

@@ -1,3 +1,4 @@
+#include "ChunkSystem.hpp"
 #include <Game/Blocks/ChunkSystem.hpp>
 #include <Utils/Assertions.hpp>
 #include <glad/glad.h>
@@ -7,7 +8,6 @@
 ChunkSystem::ChunkSystem()
 // lastPos is infinity so all the chunks get generated at the start
 	: m_lastChunkPos(Vec3I(std::numeric_limits<int32_t>::infinity(), 0, 0))
-	, noise()
 	// Preallocating all the vertex data isn't a good idea for open worlds because a lot of space if taken up by empty chunks
 	// but it makes sense for cave worlds where the render distance is smaller.
 	, m_vbo(VERTEX_DATA_BYTE_SIZE)
@@ -213,8 +213,20 @@ void ChunkSystem::update(const Vec3& loadPos)
 	if (chunkPos == m_lastChunkPos)
 	{
 		m_lastChunkPos = chunkPos;
-		return;
+		if (shouldRegenerateAll == false)
+			return;
 	}
+	if (shouldRegenerateAll)
+	{
+		for (auto chunk : m_chunksToDraw)
+		{
+			m_freeChunks.push_back(chunk);
+		}
+		m_chunksToDraw.clear();
+		m_chunks.clear();
+		shouldRegenerateAll = false;
+	}
+
 	m_lastChunkPos = chunkPos;
 
 	auto isChunkOutOfRenderDistance = [&chunkPos](const Vec3I& pos)
@@ -437,65 +449,9 @@ void ChunkSystem::remeshChunksAround(const Pos& pos)
 	}
 }
 
-void ChunkSystem::initializeChunk(Chunk& chunk, const Vec3I& pos)
+void ChunkSystem::regenerateAll()
 {
-	for (size_t z = 0; z < Chunk::SIZE; z++)
-	{ 
-		for (size_t x = 0; x < Chunk::SIZE; x++)
-		{
-			double value = noise.accumulatedOctaveNoise2D_0_1((x + pos.x * 16.0) / 256.0, (z + pos.z * 16.0) / 256.0, 8) * 50;
-			//double value = 0.2;
-			double input = (rand() % 256) / 256.0;
-
-			size_t highest = 0;
-			for (size_t y = 0; y < Chunk::SIZE; y++)
-			{
-				//double value = noise.accumulatedOctaveNoise3D_0_1((x + pos.x * 16.0) / 20.0, (y + pos.y * 16.0) / 20.0, (z + pos.z * 16.0) / 20.0, 8);
-				//if (x == 8 && y == 8 && z == 8)
-				//{
-				//	chunk.operator()(x, y, z) = BlockType::Grass2;
-				//}
-				if (value > 0.4)
-				{
-					chunk.operator()(x, y, z) = BlockType::Stone;
-				}
-				if ((y + pos.y * Chunk::SIZE) < value)
-				{
-					if ((y + pos.y * Chunk::SIZE + 1) > value)
-					{
-						chunk.operator()(x, y, z) = BlockType::Grass;
-						continue;
-					}
-					//chunk->operator()(x, y, z) = static_cast<BlockType>((rand() % 3) + 1);
-					/*chunk->operator()(x, y, z) = static_cast<BlockType>((y % 3) + 1);*/
-					int realY = y + pos.y * Chunk::SIZE;
-					if (realY > 30)
-					{
-						chunk.operator()(x, y, z) = BlockType::Stone;
-					}
-					else if (realY < 30 && realY > 25)
-					{
-						if (rand() % 2 == 0)
-						{
-							chunk.operator()(x, y, z) = BlockType::Stone;
-						}
-						else
-						{
-							chunk.operator()(x, y, z) = BlockType::Dirt;
-						}
-					}
-					else
-					{
-						chunk.operator()(x, y, z) = BlockType::Dirt;
-					}
-				}
-				else
-				{
-					chunk.operator()(x, y, z) = BlockType::Air;
-				}
-			}
-		}
-	}
+	shouldRegenerateAll = true;
 }
 
 void ChunkSystem::meshChunk(ChunkData& chunk)

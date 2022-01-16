@@ -107,6 +107,77 @@
 
 // TODO: Add array index functions to Json::Value
 
+#include <fstream>
+
+#include <Image/Image32.hpp>
+
+#include <Math/Interpolation.hpp>
+
+
+typedef struct RgbColor
+{
+	unsigned char r;
+	unsigned char g;
+	unsigned char b;
+} RgbColor;
+
+typedef struct HsvColor
+{
+	unsigned char h;
+	unsigned char s;
+	unsigned char v;
+} HsvColor;
+
+RgbColor HsvToRgb(HsvColor hsv)
+{
+	RgbColor rgb;
+	unsigned char region, remainder, p, q, t;
+
+	if (hsv.s == 0)
+	{
+		rgb.r = hsv.v;
+		rgb.g = hsv.v;
+		rgb.b = hsv.v;
+		return rgb;
+	}
+
+	region = hsv.h / 43;
+	remainder = (hsv.h - (region * 43)) * 6;
+
+	p = (hsv.v * (255 - hsv.s)) >> 8;
+	q = (hsv.v * (255 - ((hsv.s * remainder) >> 8))) >> 8;
+	t = (hsv.v * (255 - ((hsv.s * (255 - remainder)) >> 8))) >> 8;
+
+	switch (region)
+	{
+	case 0:
+		rgb.r = hsv.v; rgb.g = t; rgb.b = p;
+		break;
+	case 1:
+		rgb.r = q; rgb.g = hsv.v; rgb.b = p;
+		break;
+	case 2:
+		rgb.r = p; rgb.g = hsv.v; rgb.b = t;
+		break;
+	case 3:
+		rgb.r = p; rgb.g = q; rgb.b = hsv.v;
+		break;
+	case 4:
+		rgb.r = t; rgb.g = p; rgb.b = hsv.v;
+		break;
+	default:
+		rgb.r = hsv.v; rgb.g = p; rgb.b = q;
+		break;
+	}
+
+	return rgb;
+}
+
+float easeInOutQuint(float x)
+{
+	return x < 0.5 ? 16 * x * x * x * x * x : 1 - pow(-2 * x + 2, 5) / 2;
+}
+
 int main()
 {
 	// Add assetPath function to load assets using asset path
@@ -124,6 +195,39 @@ int main()
 	//std::cout << json.jsonify(ast);
 	//return 0;
 
+	//PerlinNoise m_noise(0);
+	//Image32 img1(512, 512);
+	//Image32 img2(512, 512);
+	//Image32 img3(512, 512);
+	//Image32 biomeMap("biome_map.png");
+
+	//for (float x = 0; x < 512; x++)
+	//{
+	//	for (float y = 0; y < 512; y++)
+	//	{
+	//		float heightValue = m_noise.at(Vec3(x, 0.5f, y) / 100);
+	//		float heightValue2 = m_noise.at(Vec3(x + 125, 0.1f, y + 2) / 100);
+	//		float heightValue3 = m_noise.accumulatedOctaveAt(Vec3(x + 8743, 0.4f, y + 122));
+	//		float heightMultiplier = m_noise.at(Vec3((x) * 0.01, 0.5f, (y) * 0.01));
+
+	//		int32_t height = ((heightValue + 1) / 2.0f) * ((heightMultiplier + 1) / 2.0f);
+	//		//img1.set(x, y, Color32(height, height, height));
+	//		int h =  easeInOutQuint((heightValue + 1) / 2.0f) * 255;
+	//		int h2 = easeInOutQuint((heightValue2 + 1) / 2.0f) * 255;
+	//		heightValue3 = ((heightValue3 + 1) / 2.0f);
+
+
+
+	//		//RgbColor c = HsvToRgb(HsvColor{ static_cast<unsigned char>(heightValue * 255), 255, 255});
+	//		img1.set(x, y, biomeMap.get(h, h2));
+
+	//	}
+	//}
+	//img1.saveAsPpm("1.ppm");
+	//system("start ./1.ppm");
+	//img2.saveAsPpm("2.ppm");
+	//img3.saveAsPpm("3.ppm");
+	 //Block so window is destroyed before engine is terminated.
 	{
 		Window window = Engine::init(800, 600, "game");
 		Engine engine(60, window);

@@ -55,6 +55,15 @@ void PlayerMovementSystem::update(Entity& player, const InputManager& input, con
 		movementDirection += Vec3::forward;
 	if (input.isButtonHeld("back"))
 		movementDirection += Vec3::back;
+
+	playerVel = playerRotation * movementDirection * 0.5f;
+
+	if (input.isButtonHeld("jump"))
+		playerVel.y = 0.5;
+	if (input.isButtonHeld("crouch"))
+		playerVel.y = -0.5;
+
+#if 0
 	movementDirection.normalize();
 
 
@@ -99,4 +108,6 @@ void PlayerMovementSystem::update(Entity& player, const InputManager& input, con
 
 		m_lastJumpTime = Time::currentTime();
 	}
+
+#endif // 0
 }

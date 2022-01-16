@@ -23,11 +23,12 @@ float Time::currentTime()
 	return static_cast<float>(glfwGetTime());
 }
 
-void Time::update()
+void Time::update(float deltaTime)
 {
 	// Don't know if I should use the actual delta time or should it be a constant so every program execution is the same.
 	double currentTime = glfwGetTime();
-	m_deltaTime = currentTime - m_lastFrameTime;
+	//m_deltaTime = currentTime - m_lastFrameTime;
+	m_deltaTime = deltaTime;
 	m_lastFrameTime = currentTime;
 
 	m_currentTick++;

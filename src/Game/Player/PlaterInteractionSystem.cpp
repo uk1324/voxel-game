@@ -8,6 +8,7 @@ PlayerInteractionSystem::PlayerInteractionSystem()
 {}
 
 #include <Game/Debug/Debug.hpp>
+#include <iostream>
 
 void PlayerInteractionSystem::update(Entity player, const ItemData& itemData, Opt<ItemStack>& heldItem, const InputManager& input, const EntityManager& entityManager, BlockSystem& blockSystem)
 {
@@ -24,6 +25,7 @@ void PlayerInteractionSystem::update(Entity player, const ItemData& itemData, Op
 	if (input.isButtonDown("attack"))
 	{
 		blockSystem.trySet(raycastHit->blockPos, BlockType::Air);
+		std::cout << "break: " << raycastHit->blockPos << '\n';
 	}
 	else if (input.isButtonDown("use"))
 	{

@@ -39,6 +39,7 @@ void Engine::run(std::unique_ptr<Scene>&& startingScene)
 
 		while (accumulatedTime >= updateTime)
 		{
+			m_time.update(updateTime);
 			update();
 
 			accumulatedTime -= updateTime;
@@ -48,7 +49,6 @@ void Engine::run(std::unique_ptr<Scene>&& startingScene)
 
 void Engine::update()
 {
-	m_time.update();
 	m_currentScene->input.update();
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();

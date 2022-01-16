@@ -12,7 +12,7 @@ public:
 
 	static float currentTime();
 
-	void update();
+	void update(float deltaTime);
 
 private:
 	double m_deltaTime;

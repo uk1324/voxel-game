@@ -3,7 +3,6 @@
 #include <Math/Vec3.hpp>
 #include <Game/Blocks/Chunk.hpp>
 #include <Game/Blocks/BlockData.hpp>
-#include "PerlinNoise.hpp"
 #include <Game/Blocks/WorldGen.hpp>
 #include <Engine/Graphics/VertexArray.hpp>
 #include <Utils/Opt.hpp>
@@ -29,8 +28,6 @@ namespace std {
 	};
 }
 
-using namespace siv;
-
 class ChunkSystem
 {
 public:
@@ -52,9 +49,12 @@ public:
 
 	void remeshChunksAround(const Pos& pos);
 
+	void regenerateAll();
+	bool shouldRegenerateAll = false;
+
 private:
-	void initializeChunk(Chunk& chunk, const Vec3I& pos);	
 	void meshChunk(ChunkData& chunk);
+
 
 	std::vector<uint32_t>& meshFromChunk(Chunk& chunk);
 	void addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex);
@@ -81,8 +81,6 @@ private:
 	using Vertex = uint32_t;
 
 public:
-	PerlinNoise noise;
-
 	WorldGen m_worldGen;
 
 	Gfx::VertexArray m_vao;
