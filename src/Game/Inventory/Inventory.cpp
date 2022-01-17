@@ -16,9 +16,13 @@ Inventory::Inventory(size_t size)
 		}
 	}
 
-	m_data[0] = ItemStack(ItemType::DiamondSword, 1);
+	/*m_data[0] = ItemStack(ItemType::DiamondSword, 1);
 	m_data[1] = ItemStack(ItemType::DiamondSword, 11);
-	m_data[2] = ItemStack(ItemType::DiamondSword, 111);
+	m_data[2] = ItemStack(ItemType::DiamondSword, 111);*/
+	m_data[0] = std::nullopt;
+	m_data[1] = std::nullopt;
+	m_data[2] = ItemStack(ItemType::WoodenPlanks, 12345);
+	m_data[3] = std::nullopt;
 }
 
 Opt<ItemStack> Inventory::tryAdd(const ItemData& itemData, const ItemStack& itemStack)

@@ -37,6 +37,7 @@ GameScene::GameScene(Engine& engine)
 
     m_player = entityManager.createEntity();
     entityManager.entityEmplaceComponent<Position>(m_player, Vec3(0, 40, 0));
+    //entityManager.entityEmplaceComponent<Position>(m_player, Vec3(-31, -7, -237));
     entityManager.entityEmplaceComponent<Rotation>(m_player, Quat::identity);
     entityManager.entityEmplaceComponent<PlayerMovementComponent>(m_player);
 

@@ -24,10 +24,12 @@ private:
 	float heightMapOctavePersitence = 0.5f;
 
 	float noiseScale = 0.05f;
-	int   noiseOctaves = 4;
-	float noiseOctaveLacunarity = 0.5f;
+	int   noiseOctaves = 3;
+	float noiseOctaveLacunarity = 0.652f;
 	float noiseOctavePersitence = 0.5f;
-	float noiseValueScale = 1.0f;
+	float noiseValueScale = 4.312f;
+
+	float hh = 5.0f;
 
 
 private:
