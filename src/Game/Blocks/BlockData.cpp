@@ -122,6 +122,18 @@ BlockData::BlockData()
 		true
 	));
 
+	set(BlockType::Sand, entry(
+		PATH "sand.png",
+		PATH "sand.png",
+		PATH "sand.png",
+		PATH "sand.png",
+		PATH "sand.png",
+		PATH "sand.png",
+		0.85,
+		1,
+		true
+	));
+
 	set(BlockType::Debug, entry(
 		PATH "top.png",
 		PATH "bottom.png",

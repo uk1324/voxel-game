@@ -17,17 +17,20 @@ public:
 	void updateTools();
 
 private:
-	float heightMapScale = 0.05f;
-	float heightMapAmplitude = 25.0f;
-	int heightMapOctaves = 4;
-	float heightMapOctaveLacunarity = 0.5f;
-	float heightMapOctavePersitence = 0.5f;
+	float shapeNoise(const Vec3& p);
 
-	float noiseScale = 0.05f;
-	int   noiseOctaves = 3;
-	float noiseOctaveLacunarity = 0.652f;
+private:
+	float heightMapScale = 0.05f;
+	float heightMapAmplitude = 48.0f;
+	int heightMapOctaves = 4;
+	float heightMapOctaveLacunarity = 0.934f;
+	float heightMapOctavePersitence = 0.191f;
+
+	float noiseScale = 0.031f;
+	int   noiseOctaves = 2;
+	float noiseOctaveLacunarity = 1.179f;
 	float noiseOctavePersitence = 0.5f;
-	float noiseValueScale = 4.312f;
+	float noiseValueScale = 5.000f;
 
 	float hh = 5.0f;
 

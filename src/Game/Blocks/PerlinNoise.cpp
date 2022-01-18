@@ -17,7 +17,7 @@ PerlinNoise::PerlinNoise(uint64_t seed)
 	std::uniform_real_distribution<float> random(0.0f, 1.0f);
 	for (size_t i = 0; i < GRADIENT_TABLE_SIZE; i++)
 	{
-		// This ditributes directions uniformly for some reason idk.
+		// This ditributes direction vectors uniformly.
 		float a = acos(2 * random(randomGenerator) - 1);
 		float b = 2 * random(randomGenerator) * PI<float>;
 		m_gradients[i] = Vec3(
@@ -28,17 +28,56 @@ PerlinNoise::PerlinNoise(uint64_t seed)
 	}
 }
 
+float PerlinNoise::value3d(const Vec3& p)
+{
+    return at(p);
+}
+
+float PerlinNoise::value2d(const Vec2& p)
+{
+    return at(Vec3(p.x, p.y, 0.5f));
+}
+
+#include <Utils/Assertions.hpp>
+
+float PerlinNoise::accumulatedValue3d(const Vec3& point, int octaves, float lacunarity, float persistence)
+{
+    float value = 0.0f;
+    float l = 1.0f;
+    float p = 1.0f;
+    for (int i = 0; i < octaves; i++)
+    {
+        l *= lacunarity;
+        p *= persistence;
+        value += value3d(point * l) * p;
+    }
+    ASSERT(value > -1.0f && value < 1.0f);
+    return value;
+}
+
+float PerlinNoise::accumulatedValue2d(const Vec2& p, int octaves, float lacunarity, float persistence)
+{
+    return accumulatedValue3d(Vec3(p.x, p.y, 0.5f), octaves, lacunarity, persistence);
+}
+
+float PerlinNoise::value3d01(const Vec3& p)
+{
+    return (value3d(p) / + 1.0f) / 2.0f;
+}
+
+float PerlinNoise::value2d01(const Vec2& p)
+{
+    return (value2d(p) / +1.0f) / 2.0f;
+}
+
 int PerlinNoise::hash(int x, int y, int z) const
 {
     return m_permutations[m_permutations[m_permutations[x] + y] + z];
 }
 
-
-// Makes the highs higher and lows lower (look at the graph)
-static float smoothstep(const float& t)
+float PerlinNoise::smoothstep(float t)
 {
-    //return t * t * (3 - 2 * t);
-    return t;
+    return t * t * (3 - 2 * t);
 }
 
 float PerlinNoise::at(const Vec3& p) const
@@ -86,7 +125,7 @@ float PerlinNoise::at(const Vec3& p) const
     Vec3 p011 = Vec3(x0, y1, z1);
     Vec3 p111 = Vec3(x1, y1, z1);
 
-    // linear interpolation
+    // Trilinear interpolation
     float a = lerp(dot(c000, p000), dot(c100, p100), u);
     float b = lerp(dot(c010, p010), dot(c110, p110), u);
     float c = lerp(dot(c001, p001), dot(c101, p101), u);
@@ -96,7 +135,7 @@ float PerlinNoise::at(const Vec3& p) const
     float f = lerp(c, d, v);
 
     float g = lerp(e, f, w);
-    //g = (g + 1) / 2.0f;
+
     return g;
 }
 

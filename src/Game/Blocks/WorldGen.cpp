@@ -51,16 +51,22 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos)
 	{
 		for (int32_t x = 0; x < Chunk::SIZE; x++)
 		{
+			const Vec2 pointXz(x + chunkPos.x * Chunk::SIZE, z + chunkPos.z * Chunk::SIZE);
 			const Vec3 heightPoint = Vec3(x + chunkPos.x * Chunk::SIZE, 0.5, z + chunkPos.z * Chunk::SIZE) * heightMapScale;
+
+			//float heightValue = m_noise.accumulatedValue2d(pointXz, heightMapOctaves, heightMapOctaveLacunarity, heightMapOctavePersitence);
 			float heightValue = 0.0f;
 			float lacunarity = 1.0f;
 			float persistence = 1.0f;
 			for (int i = 1; i <= heightMapOctaves; i++)
 			{
-				heightValue += m_noise.at(heightPoint * lacunarity) * persistence;
+				heightValue += m_noise.value3d(heightPoint * lacunarity) * persistence;
 				lacunarity *= heightMapOctaveLacunarity;
 				persistence *= heightMapOctavePersitence;
 			}
+
+			float heightMultiplier = (m_noise.value3d(heightPoint + Vec3(125, 621, 645)) + 1.0f) / 2.0f;
+			float biomeNoise = (m_noise.value3d((heightPoint + Vec3(1965, 757, 645)) / 5) + 1.0f) / 2.0f;
 
 			for (int32_t y = 0; y < Chunk::SIZE; y++)
 			{
@@ -71,58 +77,34 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos)
 				float hv3 = heightValue;
 				float hv = heightValue;
 
-				float noiseValue = 0.0f;
-				float lacunarity2 = 1.0f;
-				float persistence2 = 1.0f;
-				for (int i = 1; i <= noiseOctaves; i++)
-				{
-					lacunarity2 *= noiseOctaveLacunarity;
-					persistence2 *= noiseOctavePersitence;
-					noiseValue += m_noise.at(pos * noiseScale * lacunarity2) * persistence2;
-				}
-
+				float noiseValue = shapeNoise(pos);
 				hv += noiseValue * noiseValueScale;
-				//hv /= 2.0f;
-				const int32_t height = hv * heightMapAmplitude;
+				const int32_t height = hv * heightMapAmplitude * heightMultiplier;
 
 				if (pos.y <= height)
 				{
-					float noiseValue = 0.0f;
-					float lacunarity2 = 1.0f;
-					float persistence2 = 1.0f;
-					for (int i = 1; i <= noiseOctaves; i++)
-					{
-						lacunarity2 *= noiseOctaveLacunarity;
-						persistence2 *= noiseOctavePersitence;
-						noiseValue += m_noise.at((pos + Vec3(0, 1, 0)) * noiseScale * lacunarity2) * persistence2;
-					}
+					float noiseValue = shapeNoise(pos + Vec3(0, 1, 0));
 
 					hv2 += noiseValue * noiseValueScale;
-					//hv /= 2.0f;
-					const int32_t height = hv2 * heightMapAmplitude;
-
-					//float mountainNoise = m_noise.accumulatedOctaveAt(heightPoint + Vec3(125, 652, 2));
+					const int32_t height = hv2 * heightMapAmplitude * heightMultiplier;
 
 					if (pos.y >= height)
 					{
-						chunk.set(posInChunk, BlockType::Grass);
+						if (biomeNoise > 0.5)
+						{
+							chunk.set(posInChunk, BlockType::Grass);
+						}
+						else
+						{
+							chunk.set(posInChunk, BlockType::Sand);
+						}
 
 					}
 					else
 					{
-						float noiseValue = 0.0f;
-						float lacunarity2 = 1.0f;
-						float persistence2 = 1.0f;
-						for (int i = 1; i <= noiseOctaves; i++)
-						{
-							lacunarity2 *= noiseOctaveLacunarity;
-							persistence2 *= noiseOctavePersitence;
-							noiseValue += m_noise.at((pos + Vec3(0, 4, 0)) * noiseScale * lacunarity2) * persistence2;
-						}
-
+						float noiseValue = shapeNoise(pos + Vec3(0, 4, 0));
 						hv3 += noiseValue * noiseValueScale;
-						//hv /= 2.0f;
-						const int32_t height = hv3 * heightMapAmplitude;
+						const int32_t height = hv3 * heightMapAmplitude * heightMultiplier;
 						
 						if (pos.y + 4 <= height)
 						{
@@ -130,14 +112,21 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos)
 						}
 						else
 						{
-							chunk.set(posInChunk, BlockType::Dirt);
+							if (biomeNoise > 0.5)
+							{
+								chunk.set(posInChunk, BlockType::Dirt);
+							}
+							else
+							{
+								chunk.set(posInChunk, BlockType::Sand);
+							}
 						}
 					}
 				}
-				//else if (pos.y < 0)
-				//{
-				//	chunk.set(posInChunk, BlockType::Water);
-				//}
+				else if (pos.y < 0)
+				{
+					chunk.set(posInChunk, BlockType::Water);
+				}
 				else
 				{
 					chunk.set(posInChunk, BlockType::Air);
@@ -146,3 +135,8 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos)
 		}
 	}
 }	
+
+float WorldGen::shapeNoise(const Vec3& p)
+{
+	return m_noise.accumulatedValue3d(p * noiseScale, noiseOctaves, noiseOctaveLacunarity, noiseOctavePersitence);
+}

@@ -1,4 +1,5 @@
 #include <Image/Image32.hpp>
+#include <Log/Log.hpp>
 #include <stb_image.h>
 
 #include <fstream>
@@ -15,8 +16,50 @@ Image32::Image32(const char* path)
 Image32::Image32(size_t width, size_t height)
 	: m_width(width)
 	, m_height(height)
-	, m_data(reinterpret_cast<uint32_t*>(::operator new(width * height * sizeof(uint32_t))))
+	, m_data(reinterpret_cast<uint32_t*>(allocate(width * height * sizeof(uint32_t))))
 {}
+
+Image32::Image32(const Image32& other)
+	: m_width(other.m_width)
+	, m_height(other.m_height)
+	, m_data(reinterpret_cast<uint32_t*>(allocate(other.m_width * other.m_height * sizeof(uint32_t))))
+{
+	memcpy(m_data, other.m_data, other.m_width * other.m_height * sizeof(uint32_t));
+}
+
+Image32& Image32::operator=(const Image32& other)
+{
+	if (&other == this)
+		return *this;
+
+	stbi_image_free(m_data);
+	m_data = reinterpret_cast<uint32_t*>(allocate(other.m_width * other.m_height * sizeof(uint32_t)));
+	m_width = other.m_width;
+	m_height = other.m_height;
+	memcpy(m_data, other.m_data, other.m_width * other.m_height * sizeof(uint32_t));
+}
+
+Image32::Image32(Image32&& other) noexcept
+	: m_width(other.m_width)
+	, m_height(other.m_height)
+	, m_data(other.m_data)
+{
+	other.m_data = nullptr;
+}
+
+Image32& Image32::operator=(Image32&& other) noexcept
+{
+	m_width = other.m_width;
+	m_height = other.m_height;
+	m_data = other.m_data;
+
+	return *this;
+}
+
+Image32::~Image32()
+{
+	stbi_image_free(m_data);
+}
 
 void Image32::set(size_t x, size_t y, Color32 color)
 {
@@ -56,5 +99,16 @@ void Image32::saveAsPpm(std::string_view path) const
 	{
 		file.write(reinterpret_cast<const char*>(ptr), 3);
 	}
+}
+
+void* Image32::allocate(size_t size)
+{
+	// Using malloc so its compatible with stbi.
+	void* data = malloc(size);
+	if (data == nullptr)
+	{
+		LOG_FATAL("Failed to allocate memory for image");
+	}
+	return data;
 }
 
