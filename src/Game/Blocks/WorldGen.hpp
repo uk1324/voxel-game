@@ -7,6 +7,12 @@
 
 #include <imgui.h>
 
+struct Structure
+{
+	int32_t width, height, depth;
+	Block data[5][7][5];
+};
+
 class WorldGen
 {
 public:
@@ -17,7 +23,18 @@ public:
 	void updateTools();
 
 private:
-	float shapeNoise(const Vec3& p);
+	float overhangNoise(const Vec3& pos);
+	float heightMapNoise(const Vec2& posXz);
+
+	float overhangNoiseLimit();
+	float heightMapNoiseLimit();
+
+	float hash(const Vec2I& vec);
+	std::vector<Vec3I> getTreePositions(const Vec3I& chunkPos);
+	int32_t findGroundY(const Vec2& posXz);
+
+	float maxHeight();
+	float minHeight();
 
 private:
 	float heightMapScale = 0.05f;
@@ -31,9 +48,6 @@ private:
 	float noiseOctaveLacunarity = 1.179f;
 	float noiseOctavePersitence = 0.5f;
 	float noiseValueScale = 5.000f;
-
-	float hh = 5.0f;
-
 
 private:
 	PerlinNoise m_noise;

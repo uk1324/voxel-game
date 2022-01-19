@@ -178,6 +178,13 @@ float easeInOutQuint(float x)
 	return x < 0.5 ? 16 * x * x * x * x * x : 1 - pow(-2 * x + 2, 5) / 2;
 }
 
+float hash(const Vec2I& vec)
+{
+	std::mt19937 gen(vec.x * 1123 + vec.y);
+	std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+	return distribution(gen);
+}
+
 int main()
 {
 	// Add assetPath function to load assets using asset path
@@ -227,7 +234,19 @@ int main()
 	//system("start ./1.ppm");
 	//img2.saveAsPpm("2.ppm");
 	//img3.saveAsPpm("3.ppm");
+	//Image32 image(100, 100);
+
+	//for (float x = 0; x < 100; x++)
+	//{
+	//	for (float y = 0; y < 100; y++)
+	//	{
+	//		int value = hash(Vec2I(x, y)) * 255;
+	//		image.set(x, y, Color32(value, value, value));
+	//	}
+	//}
+	//image.saveAsPpm("4.ppm");
 	 //Block so window is destroyed before engine is terminated.
+	//return 0;
 	{
 		Window window = Engine::init(800, 600, "game");
 		Engine engine(60, window);

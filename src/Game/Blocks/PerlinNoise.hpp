@@ -39,6 +39,8 @@ private:
 	int hash(int x, int y, int z) const;
 
 private:
+	static float accumulatedValueMax(int octaves, float persistence);
+
 	static float smoothstep(float t);
 
 private:

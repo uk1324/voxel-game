@@ -134,6 +134,31 @@ BlockData::BlockData()
 		true
 	));
 
+	set(BlockType::Leaves, entry(
+		PATH "leaves.png",
+		PATH "leaves.png",
+		PATH "leaves.png",
+		PATH "leaves.png",
+		PATH "leaves.png",
+		PATH "leaves.png",
+		0.85,
+		1,
+		true
+	));
+
+
+	set(BlockType::Log, entry(
+		PATH "log_top_bottom.png",
+		PATH "log_top_bottom.png",
+		PATH "log_side.png",
+		PATH "log_side.png",
+		PATH "log_side.png",
+		PATH "log_side.png",
+		0.85,
+		1,
+		true
+	));
+
 	set(BlockType::Debug, entry(
 		PATH "top.png",
 		PATH "bottom.png",

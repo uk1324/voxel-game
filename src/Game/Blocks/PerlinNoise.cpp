@@ -51,7 +51,6 @@ float PerlinNoise::accumulatedValue3d(const Vec3& point, int octaves, float lacu
         p *= persistence;
         value += value3d(point * l) * p;
     }
-    ASSERT(value > -1.0f && value < 1.0f);
     return value;
 }
 
@@ -73,6 +72,12 @@ float PerlinNoise::value2d01(const Vec2& p)
 int PerlinNoise::hash(int x, int y, int z) const
 {
     return m_permutations[m_permutations[m_permutations[x] + y] + z];
+}
+
+float PerlinNoise::accumulatedValueMax(int octaves, float persistence)
+{
+    // Geometric series sum.
+    return persistence * ((1.0f - pow(persistence, octaves)) / (1.0f - persistence));
 }
 
 float PerlinNoise::smoothstep(float t)

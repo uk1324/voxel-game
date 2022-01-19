@@ -12,6 +12,8 @@ enum class BlockType : uint16_t
 	Cobblestone = 5,
 	Water,
 	Sand,
+	Leaves,
+	Log,
 	Debug,
 	Count
 };
