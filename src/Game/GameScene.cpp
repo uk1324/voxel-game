@@ -82,7 +82,7 @@ void GameScene::update()
     );
     m_inventorySystem.render(m_inventory, itemData, m_blockSystem.blockData, Vec2(windowSize));
 
-    m_blockSystem.chunkSystem.m_worldGen.updateTools();
+    m_blockSystem.chunkSystem.m_worldGen.updateDebugConfig();
 
     if (input.isButtonDown("testtest"))
     {
@@ -96,8 +96,11 @@ void GameScene::update()
 
     if (m_inventorySystem.isInventoryOpen == false)
     {
-        m_playerMovementSystem.update(m_player, input, time, entityManager);
-        m_playerInteractionSystem.update(m_player, itemData, m_inventorySystem.heldItem(m_inventory), input, entityManager, m_blockSystem);
+        if (m_isGamePaused == false)
+        {
+            m_playerMovementSystem.update(m_player, input, time, entityManager);
+            m_playerInteractionSystem.update(m_player, itemData, m_inventorySystem.heldItem(m_inventory), input, entityManager, m_blockSystem);
+        }
     }
 
     m_physicsSystem.update(time, entityManager, m_blockSystem.chunkSystem);

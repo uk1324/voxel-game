@@ -91,11 +91,7 @@
 
 // TODO: Add a way to make screenshots
 
-#include <Lang/Parsing/Parser.hpp>
-#include <Lang/Parsing/Scanner.hpp>
-#include <Lang/Compiling/Compiler.hpp>
 #include <Utils/FileIo.hpp>
-#include <Lang/Debug/AstJsonifier.hpp>
 
 #include <iostream>    
 
@@ -178,29 +174,32 @@ float easeInOutQuint(float x)
 	return x < 0.5 ? 16 * x * x * x * x * x : 1 - pow(-2 * x + 2, 5) / 2;
 }
 
-float hash(const Vec2I& vec)
-{
-	std::mt19937 gen(vec.x * 1123 + vec.y);
-	std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-	return distribution(gen);
-}
+//float hash(const Vec2I& vec)
+//{
+//	std::mt19937 gen(vec.x * 1123 + vec.y);
+//	std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+//	return distribution(gen);
+//}
+
+//float hash(const Vec2I& vec)
+//{
+//	// Don't use mt19937_64 it is really slow.
+//	// ranlux24 is pretty fast the chunk generation time is only 0.6 of a millisecond slower than just returing 0.5 which generated.
+//	// no structres.
+//	std::ranlux24_base gen(vec.x * 1123 + vec.y);
+//	std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+//	return distribution(gen);
+//}
+
+
+
+#pragma once
+#include <stdint.h> // for uint32_t and uint64_t
+
+// https://hg.sr.ht/~runevision/random-numbers-testing/browse/Assets/Implementations/HashFunctions/XXHash.cs?rev=tip
 
 int main()
 {
-	// Add assetPath function to load assets using asset path
-
-	//std::string filename = "src/Lang/test.voxl";
-	//std::string source = stringFromFile(filename);
-	//Lang::SourceInfo sourceInfo;
-	//sourceInfo.source = source;
-	//sourceInfo.filename = filename;
-	//Lang::Scanner scanner;
-	//auto tokens = scanner.parse(sourceInfo);
-	//Lang::Parser parser;
-	//auto ast = parser.parse(tokens, sourceInfo);
-	//Lang::AstJsonifier json;
-	//std::cout << json.jsonify(ast);
-	//return 0;
 
 	//PerlinNoise m_noise(0);
 	//Image32 img1(512, 512);
@@ -234,17 +233,36 @@ int main()
 	//system("start ./1.ppm");
 	//img2.saveAsPpm("2.ppm");
 	//img3.saveAsPpm("3.ppm");
-	//Image32 image(100, 100);
+	//PerlinNoise m_noise(0);
+	//int s = 512;
+	//Image32 image(s, s);
 
-	//for (float x = 0; x < 100; x++)
+ //   XXHash64 hash(0);
+
+	//for (float x = 0; x < s; x++)
 	//{
-	//	for (float y = 0; y < 100; y++)
+	//	for (float y = 0; y < s; y++)
 	//	{
-	//		int value = hash(Vec2I(x, y)) * 255;
-	//		image.set(x, y, Color32(value, value, value));
+ //           Vec2I pos(x, y);
+ //           float h = hash.hash(reinterpret_cast<void*>(&pos), sizeof(pos), 6);
+ //           //std::cout << h << '\n';
+ //           int v = h * 2550000;
+
+	//		image.set(x, y, Color32( v, v, v ));
+	//		//float v = m_noise.value2d(Vec2(x / 10.0f, y / 10.0f));
+	//		//if ((abs(v - 0.2)) < 0.05)
+	//		//{
+	//		//	int value = (v + 1.0f) / 2.0f * 255;
+	//		//	image.set(x, y, Color32(value, value, value));
+	//		//}
+	//		//else
+	//		//{
+	//		//	image.set(x, y, Color32(255, 255, 255));
+	//		//}
 	//	}
 	//}
 	//image.saveAsPpm("4.ppm");
+	//system("start 4.ppm");
 	 //Block so window is destroyed before engine is terminated.
 	//return 0;
 	{

@@ -2,53 +2,54 @@
 
 #include <Game/Blocks/Chunk.hpp>
 #include <Game/Blocks/PerlinNoise.hpp>
+#include <Game/Blocks/Structure.hpp>
 
 #include <array>
 
-#include <imgui.h>
-
-struct Structure
-{
-	int32_t width, height, depth;
-	Block data[5][7][5];
-};
 
 class WorldGen
 {
 public:
 	WorldGen(unsigned int seed);
 
-	void generateChunk(Chunk& chunk, const Vec3I& chunkPos);
+	void generateChunk(Chunk& chunk, const Vec3I& chunkPos) const;
 
-	void updateTools();
+	void updateDebugConfig();
 
 private:
-	float overhangNoise(const Vec3& pos);
-	float heightMapNoise(const Vec2& posXz);
+	float overhangNoise(const Vec3& pos) const;
+	float heightMapNoise(const Vec2& posXz) const;
 
-	float overhangNoiseLimit();
-	float heightMapNoiseLimit();
+	float terrainNoise(float heightMapNoiseValue, const Vec3& pos) const;
 
-	float hash(const Vec2I& vec);
-	std::vector<Vec3I> getTreePositions(const Vec3I& chunkPos);
-	int32_t findGroundY(const Vec2& posXz);
+	float hash(const Vec2I& vec) const;
 
-	float maxHeight();
-	float minHeight();
+	std::vector<Structure> getStructures(const Vec3I& chunkPos) const;
+	int32_t findGroundY(const Vec2& posXz) const;
+
+	float maxHeight() const;
+	float minHeight() const;
 
 private:
 	float heightMapScale = 0.05f;
-	float heightMapAmplitude = 48.0f;
 	int heightMapOctaves = 4;
 	float heightMapOctaveLacunarity = 0.934f;
 	float heightMapOctavePersitence = 0.191f;
 
-	float noiseScale = 0.031f;
-	int   noiseOctaves = 2;
-	float noiseOctaveLacunarity = 1.179f;
-	float noiseOctavePersitence = 0.5f;
-	float noiseValueScale = 5.000f;
+	float overhangNoiseScale = 0.031f;
+	int overhangNoiseOctaves = 2;
+	float overhangNoiseOctaveLacunarity = 1.179f;
+	float overhangNoiseOctavePersitence = 0.5f;
+
+	float terrainAmplitude = 144.0f;
+
+	float stoneDepth = 4.0f;
+
+	float treeSpawnChance = 0.01f;
 
 private:
 	PerlinNoise m_noise;
+
+	StructureData m_tree;
+	StructureData m_flower;
 };

@@ -43,6 +43,21 @@ BlockData::BlockData()
 		entry.friction = friction;
 		entry.walkSpeed = walkSpeed;
 		entry.isSolid = isSolid;
+		entry.isDecoration = false;
+		return entry;
+	};
+
+	auto decorationEntry = [getTextureIndex]
+	(
+		std::string texture
+	)
+	{
+		Entry entry;
+		entry.textureIndex = getTextureIndex(texture);
+		/*entry.friction = friction;
+		entry.walkSpeed = walkSpeed;*/
+		entry.isSolid = false;
+		entry.isDecoration = true;
 		return entry;
 	};
 
@@ -158,6 +173,8 @@ BlockData::BlockData()
 		1,
 		true
 	));
+
+	set(BlockType::Flower, decorationEntry(PATH "flower.png"));
 
 	set(BlockType::Debug, entry(
 		PATH "top.png",

@@ -1,4 +1,3 @@
-#include "ChunkSystem.hpp"
 #include <Game/Blocks/ChunkSystem.hpp>
 #include <Utils/Assertions.hpp>
 #include <glad/glad.h>
@@ -12,6 +11,7 @@ ChunkSystem::ChunkSystem()
 	// but it makes sense for cave worlds where the render distance is smaller.
 	, m_vbo(VERTEX_DATA_BYTE_SIZE)
 	, m_worldGen(0)
+	, m_isFinished(false)
 {
 	m_chunkPool.resize(CHUNKS_IN_RENDER_DISTANCE);
 	m_freeChunks.reserve(CHUNKS_IN_RENDER_DISTANCE);
@@ -23,6 +23,14 @@ ChunkSystem::ChunkSystem()
 
 	m_vao.bind();
 	m_vao.setAttribute(0, Gfx::IntBufferLayout(Gfx::ShaderDataType::UnsignedInt, 1, 0, 4));
+
+	m_worldGenerationThread = std::thread(&ChunkSystem::generateChunks, this);
+}
+
+ChunkSystem::~ChunkSystem()
+{
+	m_isFinished.store(true);
+	m_worldGenerationThread.join();
 }
 
 void ChunkSystem::addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex)
@@ -118,6 +126,42 @@ void ChunkSystem::addCubeBack(Block block, std::vector<GLuint>& vertices, size_t
 	addVertex(vertices, x + 1, y, z + 1, block, 3);
 }
 
+void ChunkSystem::meshDecoration(uint32_t textureIndex, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
+{
+	auto a = static_cast<BlockType>(textureIndex);
+	addVertex(vertices, x, y, z, a, 2);
+	addVertex(vertices, x + 1, y, z + 1, a, 3);
+	addVertex(vertices, x + 1, y + 1, z + 1, a, 1);
+
+	addVertex(vertices, x, y, z, a, 2);
+	addVertex(vertices, x, y + 1, z, a, 0);
+	addVertex(vertices, x + 1, y + 1, z + 1, a, 1);
+
+	addVertex(vertices, x + 1, y, z, a, 2);
+	addVertex(vertices, x, y, z + 1, a, 3);
+	addVertex(vertices, x, y + 1, z + 1, a, 1);
+
+	addVertex(vertices, x + 1, y, z, a, 2);
+	addVertex(vertices, x + 1, y + 1, z, a, 0);
+	addVertex(vertices, x, y + 1, z + 1, a, 1);
+
+	addVertex(vertices, x, y, z, a, 2);
+	addVertex(vertices, x + 1, y + 1, z + 1, a, 1);
+	addVertex(vertices, x + 1, y, z + 1, a, 3);
+
+	addVertex(vertices, x, y, z, a, 2);
+	addVertex(vertices, x + 1, y + 1, z + 1, a, 1);
+	addVertex(vertices, x, y + 1, z, a, 0);
+
+	addVertex(vertices, x + 1, y, z, a, 2);
+	addVertex(vertices, x, y + 1, z + 1, a, 1);
+	addVertex(vertices, x, y, z + 1, a, 3);
+
+	addVertex(vertices, x + 1, y, z, a, 2);
+	addVertex(vertices, x, y + 1, z + 1, a, 1);
+	addVertex(vertices, x + 1, y + 1, z, a, 0);
+}
+
 bool ChunkSystem::isInBounds(size_t x, size_t y, size_t z)
 {
 	return ((x >= 0) && (x < Chunk::SIZE))
@@ -156,29 +200,43 @@ std::vector<uint32_t>& ChunkSystem::meshFromChunk(Chunk& chunk)
 				if (chunk(x, y, z).type != BlockType::Air)
 				{
 					Block block = chunk(x, y, z);
-					if (isInBounds(x, y + 1, z) == false || chunk(x, y + 1, z) == BlockType::Air)
+					if (blockData[block.type].isDecoration)
 					{
-						addCubeTop(static_cast<BlockType>(blockData[block.type].topTextureIndex), vertices, x, y, z);
+						meshDecoration(blockData[block.type].textureIndex, vertices, x, y, z);
 					}
-					if (isInBounds(x, y - 1, z) == false || chunk(x, y - 1, z) == BlockType::Air)
+					else
 					{
-						addCubeBottom(static_cast<BlockType>(blockData[block.type].bottomTextureIndex), vertices, x, y, z);
-					}
-					if (isInBounds(x + 1, y, z) == false || chunk(x + 1, y, z) == BlockType::Air)
-					{
-						addCubeRight(static_cast<BlockType>(blockData[block.type].rightTextureIndex), vertices, x, y, z);
-					}
-					if (isInBounds(x - 1, y, z) == false || chunk(x - 1, y, z) == BlockType::Air)
-					{
-						addCubeLeft(static_cast<BlockType>(blockData[block.type].leftTextureIndex), vertices, x, y, z);
-					}
-					if (isInBounds(x, y, z + 1) == false || chunk(x, y, z + 1) == BlockType::Air)
-					{
-						addCubeBack(static_cast<BlockType>(blockData[block.type].backTextureIndex), vertices, x, y, z);
-					}
-					if (isInBounds(x, y, z - 1) == false || chunk(x, y, z - 1) == BlockType::Air)
-					{
-						addCubeFront(static_cast<BlockType>(blockData[block.type].frontTextureIndex), vertices, x, y, z);
+						auto shouldMesh = [this, chunk](int32_t x, int32_t y, int32_t z)
+						{
+							return isInBounds(x, y, z) == false
+								|| chunk(x, y, z).type == BlockType::Air
+								|| blockData[chunk(x, y, z).type].isSolid == false;
+						};
+
+						if (shouldMesh(x, y + 1, z))
+						{
+							addCubeTop(static_cast<BlockType>(blockData[block.type].topTextureIndex), vertices, x, y, z);
+						}
+						if (shouldMesh(x, y - 1, z))
+						{
+							addCubeBottom(static_cast<BlockType>(blockData[block.type].bottomTextureIndex), vertices, x, y, z);
+						}
+						if (shouldMesh(x + 1, y, z))
+						{
+							addCubeRight(static_cast<BlockType>(blockData[block.type].rightTextureIndex), vertices, x, y, z);
+						}
+						if (shouldMesh(x - 1, y, z))
+						{
+							addCubeLeft(static_cast<BlockType>(blockData[block.type].leftTextureIndex), vertices, x, y, z);
+						}
+						if (shouldMesh(x, y, z + 1))
+						{
+							addCubeBack(static_cast<BlockType>(blockData[block.type].backTextureIndex), vertices, x, y, z);
+						}
+						if (shouldMesh(x, y, z - 1))
+						{
+							addCubeFront(static_cast<BlockType>(blockData[block.type].frontTextureIndex), vertices, x, y, z);
+						}
 					}
 				}
 			}
@@ -188,27 +246,23 @@ std::vector<uint32_t>& ChunkSystem::meshFromChunk(Chunk& chunk)
 	return vertices;
 }
 
+#include <iostream>
+
+
 void ChunkSystem::update(const Vec3& loadPos)
 {
-	if (m_chunksToGenerate.size() == CHUNKS_IN_RENDER_DISTANCE)
-	{
-
-	}
-	// generate all
-
-	if (m_chunksToGenerate.size() != 0)
-	{
-		ChunkData& chunk = *m_chunksToGenerate.back();
-	
-		//m_worldGen.generateChunk(chunk.blocks, chunk.pos);
-		m_worldGen.generateChunk(chunk.blocks, chunk.pos);
-		meshChunk(chunk);
-		m_chunksToDraw.push_back(&chunk);
-		m_chunks[chunk.pos] = &chunk;
-		m_chunksToGenerate.pop_back();
-	}
-
 	const Vec3I chunkPos(floor(loadPos.x / Chunk::SIZE), floor(loadPos.y / Chunk::SIZE), floor(loadPos.z / Chunk::SIZE));
+
+	std::lock_guard lock(mutex);
+
+	while (m_generatedChunks.size() > 0)
+	{
+		ChunkData& chunk = *m_generatedChunks.back();
+		m_chunks[chunk.pos] = &chunk;
+		m_chunksToDraw.push_back(&chunk);
+		m_generatedChunks.pop_back();
+		meshChunk(chunk);
+	}
 
 	if (chunkPos == m_lastChunkPos)
 	{
@@ -216,6 +270,7 @@ void ChunkSystem::update(const Vec3& loadPos)
 		if (shouldRegenerateAll == false)
 			return;
 	}
+
 	if (shouldRegenerateAll)
 	{
 		for (auto chunk : m_chunksToDraw)
@@ -454,10 +509,64 @@ void ChunkSystem::regenerateAll()
 	shouldRegenerateAll = true;
 }
 
+
 void ChunkSystem::meshChunk(ChunkData& chunk)
 {
 	const std::vector<uint32_t>& vertices = meshFromChunk(chunk.blocks);
 	chunk.vertexCount = vertices.size();
+	//if (vertices.size() > 0)
+		//std::cout << "test";
 	m_vbo.bind();
 	m_vbo.setData(chunk.vboByteOffset, vertices.data(), vertices.size() * sizeof(uint32_t));
+}
+
+#include <iostream>
+
+double totalChunkGenerated = 0.0f;
+double totalTime = 0.0f;
+
+void ChunkSystem::generateChunks()
+{
+	while (m_isFinished.load() == false)
+	{
+		if (m_chunksToGenerate.size() != 0)
+		{
+			mutex.lock();
+
+			ChunkData *chunk = m_chunksToGenerate.back();
+			const Vec3I chunkPos = chunk->pos;
+
+			mutex.unlock();
+
+			Chunk chunkBlocks;
+			auto start = std::chrono::high_resolution_clock::now();
+			m_worldGen.generateChunk(chunkBlocks, chunkPos);
+			auto end = std::chrono::high_resolution_clock::now();
+			//std::cout << "generated in: " << std::chrono::duration<double>(end - start).count() << '\n';
+			totalTime += std::chrono::duration<double>(end - start).count();
+			totalChunkGenerated++;
+			std::cout << "avg gen time: " << totalTime / totalChunkGenerated << '\n';
+
+			mutex.lock();
+
+			if (std::find(m_chunksToGenerate.begin(), m_chunksToGenerate.end(), chunk) != m_chunksToGenerate.end())
+			{
+				m_chunksToGenerate.erase(
+					std::remove_if(m_chunksToGenerate.begin(), m_chunksToGenerate.end(), [&chunkPos](ChunkData* chunk)
+						{
+							return chunk->pos == chunkPos;
+						}),
+					m_chunksToGenerate.end()
+				);
+				chunk->blocks = chunkBlocks;
+				m_generatedChunks.push_back(chunk);
+			}
+			else
+			{
+				std::cout << "chunk not used\n";
+			}
+
+			mutex.unlock();
+		}
+	}
 }

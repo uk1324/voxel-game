@@ -13,6 +13,7 @@ enum class BlockType : uint16_t
 	Water,
 	Sand,
 	Leaves,
+	Flower,
 	Log,
 	Debug,
 	Count

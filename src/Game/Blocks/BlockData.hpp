@@ -11,15 +11,23 @@ class BlockData
 public:
 	struct Entry
 	{
-		uint32_t topTextureIndex;
-		uint32_t bottomTextureIndex;
-		uint32_t leftTextureIndex;
-		uint32_t rightTextureIndex;
-		uint32_t frontTextureIndex;
-		uint32_t backTextureIndex;
+		union
+		{
+			struct
+			{
+				uint32_t topTextureIndex;
+				uint32_t bottomTextureIndex;
+				uint32_t leftTextureIndex;
+				uint32_t rightTextureIndex;
+				uint32_t frontTextureIndex;
+				uint32_t backTextureIndex;
+			};
+			uint32_t textureIndex;
+		};
 		float friction;
 		float walkSpeed;
 		bool isSolid;
+		bool isDecoration;
 	};
 
 public:

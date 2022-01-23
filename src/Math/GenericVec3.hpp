@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Math/GenericVec2.hpp>
+
 #include <ostream>
 
 template<typename T>
@@ -36,6 +38,8 @@ public:
 	GenericVec3 operator/(T rhs) const;
 	GenericVec3& operator/=(T rhs);
 	GenericVec3 operator-() const;
+
+	GenericVec2<T> xz() const;
 
 	T* data();
 	const T* data() const;
@@ -214,6 +218,12 @@ template<typename T>
 GenericVec3<T> GenericVec3<T>::operator-() const
 {
 	return GenericVec3<T>(-x, -y, -z);
+}
+
+template<typename T>
+GenericVec2<T> GenericVec3<T>::xz() const
+{
+	return GenericVec2<T>(x, z);
 }
 
 template<typename T>

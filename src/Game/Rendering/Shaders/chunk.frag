@@ -15,6 +15,8 @@ void main()
 
 	//vec4 o = tex * clamp((1 - gl_FragCoord.z) * 50, 0, 1);
 	vec4 o = tex;
+	if (o.a == 0)
+		discard;
 	o.a = 1;
 	gl_FragColor = o;
 	//gl_FragColor = tex;

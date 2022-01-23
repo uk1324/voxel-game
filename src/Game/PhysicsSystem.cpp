@@ -131,7 +131,7 @@ PhysicsSystem::TerrainCollision PhysicsSystem::aabbVsTerrainCollision(const Chun
 			for (float x = collisionAreaMin.x; x < collisionAreaMax.x; x++)
 			{
 				auto optBlock = chunkSystem.tryGetBlock(Vec3I(x, y, z));
-				if (optBlock.has_value() && optBlock->isSolid()
+				if (optBlock.has_value() && optBlock->type != BlockType::Air && chunkSystem.blockData[optBlock->type].isSolid
 					// Disable collision if collider is already inside the block.
 					&& (isBlockVsAabbCollision(Vec3(x, y, z), pos, halfSize) == false))
 				{

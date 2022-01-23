@@ -8,6 +8,9 @@
 #include <Utils/Opt.hpp>
 
 #include <unordered_map>
+#include <thread>
+#include <mutex>
+#include <atomic>
 
 struct ChunkData
 {
@@ -39,6 +42,7 @@ public:
 
 public:
 	ChunkSystem();
+	~ChunkSystem();
 
 	void update(const Vec3& loadPos);
 
@@ -55,6 +59,7 @@ public:
 private:
 	void meshChunk(ChunkData& chunk);
 
+	void generateChunks();
 
 	std::vector<uint32_t>& meshFromChunk(Chunk& chunk);
 	void addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex);
@@ -64,6 +69,7 @@ private:
 	void addCubeRight(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
 	void addCubeFront(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
 	void addCubeBack(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
+	void meshDecoration(uint32_t textureIndex, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
 	bool isInBounds(size_t x, size_t y, size_t z);
 
 public:
@@ -94,7 +100,13 @@ public:
 	std::vector<ChunkData> m_chunkPool;
 	std::vector<ChunkData*> m_freeChunks;
 	std::vector<ChunkData*> m_chunksToGenerate;
+	std::vector<ChunkData*> m_generatedChunks;
 	std::vector<ChunkData*> m_chunksToDraw;
+
+	std::mutex mutex;
+
+	std::atomic<bool> m_isFinished;
+	std::thread m_worldGenerationThread;
 
 	BlockData blockData;
 };

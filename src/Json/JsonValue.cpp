@@ -18,6 +18,11 @@ Json::Value Json::Value::emptyArray()
 	return Value(std::initializer_list<IntType>());
 }
 
+Json::Value Json::Value::null()
+{
+	return Json::Value(nullptr);
+}
+
 Json::Value::Value(const StringType& string)
 	: m_type(Type::String)
 	, m_value(string)

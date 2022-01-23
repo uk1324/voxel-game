@@ -48,7 +48,7 @@ RenderingSystem::RenderingSystem(Scene& scene)
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_PROGRAM_POINT_SIZE);
-	//glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 }
 
 #include <Engine/Graphics/GraphicsPrimitives.hpp>
@@ -74,17 +74,22 @@ void RenderingSystem::update(float width, float height, const Vec3& cameraPos, c
 	m_chunkShader.setMat4("camera", view);
 	m_chunkShader.setMat4("projection", projection);
 	m_chunkShader.use();
+	//glEnable(GL_BLEND);
+	//glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	for (const auto& chunk : chunkSystem.m_chunksToDraw)
 	{
 		m_chunkShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE));
 		chunkSystem.m_vao.bind();
-		glDrawArrays(GL_TRIANGLES, chunk->vboByteOffset / sizeof(uint32_t), chunk->vertexCount);
+		if (chunk->vertexCount > 0)
+			glDrawArrays(GL_TRIANGLES, chunk->vboByteOffset / sizeof(uint32_t), chunk->vertexCount);
 
 		if (Debug::shouldShowChunkBorders)
 		{
 			Debug::drawCube(Vec3(chunk->pos) * Chunk::SIZE * Block::SIZE + Vec3(Chunk::SIZE) / 2.0, Vec3(Chunk::SIZE), Vec3(1, 1, 1));
 		}
 	} 
+	//glDisable(GL_BLEND);
 
 	// Skybox
 	// Drawing after everything because is behind everything so less fragments need to be drawn.

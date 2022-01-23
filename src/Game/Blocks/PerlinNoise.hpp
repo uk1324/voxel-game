@@ -18,18 +18,16 @@ class PerlinNoise
 public:
 	PerlinNoise(uint64_t seed);
 
-	float value3d(const Vec3& p);
-	float value2d(const Vec2& p);
+	float value3d(const Vec3& p) const;
+	float value2d(const Vec2& p) const;
 
 	// lacunarity - how much is the input scaled on each octave
 	// persistence - how much is the output scaled on each octave 
-	float accumulatedValue3d(const Vec3& p, int octaves, float lacunarity, float persistence);
-	float accumulatedValue2d(const Vec2& p, int octaves, float lacunarity, float persistence);
+	float accumulatedValue3d(const Vec3& p, int octaves, float lacunarity, float persistence) const;
+	float accumulatedValue2d(const Vec2& p, int octaves, float lacunarity, float persistence) const;
 
-	float value3d01(const Vec3& p);
-	float value2d01(const Vec2& p);
-
-	float accumulatedOctaveAt(const Vec3& p) const;
+	float value3d01(const Vec3& p) const;
+	float value2d01(const Vec2& p) const;
 
 private:
 	// Returns values in range -1 to 1.
@@ -38,9 +36,10 @@ private:
 	// Hash function so there doesn't need to be a large permutation table to get many random points.
 	int hash(int x, int y, int z) const;
 
-private:
+public:
 	static float accumulatedValueMax(int octaves, float persistence);
 
+private:
 	static float smoothstep(float t);
 
 private:

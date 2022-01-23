@@ -23,6 +23,7 @@ namespace Json
 		Value();
 		static Value emptyObject();
 		static Value emptyArray();
+		static Value null();
 
 		Value(const StringType& string);
 		Value(StringType&& string) noexcept;

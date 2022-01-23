@@ -28,19 +28,17 @@ PerlinNoise::PerlinNoise(uint64_t seed)
 	}
 }
 
-float PerlinNoise::value3d(const Vec3& p)
+float PerlinNoise::value3d(const Vec3& p) const
 {
     return at(p);
 }
 
-float PerlinNoise::value2d(const Vec2& p)
+float PerlinNoise::value2d(const Vec2& p) const
 {
     return at(Vec3(p.x, p.y, 0.5f));
 }
 
-#include <Utils/Assertions.hpp>
-
-float PerlinNoise::accumulatedValue3d(const Vec3& point, int octaves, float lacunarity, float persistence)
+float PerlinNoise::accumulatedValue3d(const Vec3& point, int octaves, float lacunarity, float persistence) const
 {
     float value = 0.0f;
     float l = 1.0f;
@@ -49,24 +47,24 @@ float PerlinNoise::accumulatedValue3d(const Vec3& point, int octaves, float lacu
     {
         l *= lacunarity;
         p *= persistence;
-        value += value3d(point * l) * p;
+        value += (value3d(point * l) * p);
     }
     return value;
 }
 
-float PerlinNoise::accumulatedValue2d(const Vec2& p, int octaves, float lacunarity, float persistence)
+float PerlinNoise::accumulatedValue2d(const Vec2& p, int octaves, float lacunarity, float persistence) const
 {
     return accumulatedValue3d(Vec3(p.x, p.y, 0.5f), octaves, lacunarity, persistence);
 }
 
-float PerlinNoise::value3d01(const Vec3& p)
+float PerlinNoise::value3d01(const Vec3& p) const
 {
     return (value3d(p) / + 1.0f) / 2.0f;
 }
 
-float PerlinNoise::value2d01(const Vec2& p)
+float PerlinNoise::value2d01(const Vec2& p) const
 {
-    return (value2d(p) / +1.0f) / 2.0f;
+    return (value2d(p) / + 1.0f) / 2.0f;
 }
 
 int PerlinNoise::hash(int x, int y, int z) const
@@ -142,18 +140,4 @@ float PerlinNoise::at(const Vec3& p) const
     float g = lerp(e, f, w);
 
     return g;
-}
-
-float PerlinNoise::accumulatedOctaveAt(const Vec3& p) const
-{
-    float g = 0.5f;
-    float value = 0.0f;
-    for (size_t i = 1; i <= 4; i++)
-    {
-        value += at(Vec3(
-            p.x * 0.01 * i * 2,
-            p.y * 0.01 * i * 2,
-            p.z * 0.01 * i * 2)) * (g * (2 / i));
-    }
-    return value;
 }
