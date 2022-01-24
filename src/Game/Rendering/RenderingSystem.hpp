@@ -28,7 +28,20 @@ private:
 	Gfx::CubeMap m_skyboxTexture;
 	Gfx::ShaderProgram m_skyboxShader;
 
+	const unsigned int SHADOW_WIDTH = 4024, SHADOW_HEIGHT = 4024;
+
+	unsigned int depthMapFBO;
+	unsigned int depthMap;
+
+
+	Vec3 p;
+	Vec3 d;
 	Gfx::ShaderProgram m_chunkShader;
+	Gfx::ShaderProgram m_chunkShadowShader;
+
+	Gfx::ShaderProgram m_texturedSquareShader;
+	Gfx::VertexArray m_squareTrianglesVao2;
+	Gfx::VertexBuffer m_squareTrianglesVbo2;
 
 	Gfx::ShaderProgram m_squareShader;
 	Gfx::Texture m_crosshairTexture;

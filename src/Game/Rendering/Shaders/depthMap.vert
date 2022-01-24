@@ -3,23 +3,10 @@
 layout (location = 0) in uint vert;
 
 uniform mat4 model;
-uniform mat4 projection;
-uniform mat4 camera;
 uniform mat4 lightSpaceMatrix;
 
 out flat uint texIndex;
 out vec2 texCoord;
-out vec4 FragPosLightSpace;
-//out vec3 normal;
-
-// vec3 normals[6] = {
-// 	vec3(1, 0, 0), // Left
-// 	vec3(-1, 0, 0), // Right
-// 	vec3(0, 1, 0), // Top
-// 	vec3(0, -1, 0), // Bottom
-// 	vec3(0, 0, 1), // Back
-// 	vec3(0, 0, -1) // Front
-// };
 
 vec2 texCoords[4] = {
 	vec2(0, 0),
@@ -50,12 +37,8 @@ void main()
 		(vert & Z_MASK) >> Z_OFFSET
 	);
 
-	// vertexPosition += chunkPos * CHUNK_SIZE;
-
 	texIndex = (vert & TEXTURE_INDEX_MASK) >> TEXTURE_INDEX_OFFSET;
 
-	gl_Position = projection * camera * model * vec4(vertexPosition, 1.0);
+	gl_Position = lightSpaceMatrix * (model * vec4(vertexPosition, 1.0));
 	texCoord = texCoords[(vert & TEXTURE_POS_INDEX_MASK) >> TEXTURE_POS_INDEX_OFFSET];
-	FragPosLightSpace = lightSpaceMatrix * (model * vec4(vertexPosition, 1.0));
-	//normal = normals[normalIndex];
 }

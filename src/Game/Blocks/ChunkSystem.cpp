@@ -545,7 +545,7 @@ void ChunkSystem::generateChunks()
 			//std::cout << "generated in: " << std::chrono::duration<double>(end - start).count() << '\n';
 			totalTime += std::chrono::duration<double>(end - start).count();
 			totalChunkGenerated++;
-			std::cout << "avg gen time: " << totalTime / totalChunkGenerated << '\n';
+			//std::cout << "avg gen time: " << totalTime / totalChunkGenerated << '\n';
 
 			mutex.lock();
 

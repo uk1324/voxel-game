@@ -90,6 +90,7 @@ float cave3 = 0.0;
 
 void WorldGen::updateDebugConfig()
 {
+	return;
 	ImGui::Begin("Cave generation");
 
 	ImGui::SliderFloat("scale", &cave1, 0.0f, 1.0f);
@@ -159,16 +160,27 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos) const
 				const Vec3I posInChunk(x, y, z);
 				const Vec3 pos(posInChunk + chunkPos * Chunk::SIZE);
 
-				if (abs(m_noise.value3d(pos * cave1) - cave3) < cave2)
+				if (pos.y == -5)
 				{
-					chunk.set(posInChunk, BlockType::Air);
+					chunk.set(posInChunk, BlockType::Grass);
 				}
 				else
 				{
-					chunk.set(posInChunk, BlockType::Stone);
+					chunk.set(posInChunk, BlockType::Air);
 				}
 
 				continue;
+
+				//if (abs(m_noise.value3d(pos * cave1) - cave3) < cave2)
+				//{
+				//	chunk.set(posInChunk, BlockType::Air);
+				//}
+				//else
+				//{
+				//	chunk.set(posInChunk, BlockType::Stone);
+				//}
+
+				//continue;
 
 				if (pos.y <= floor(terrainNoise(heightMapNoiseValue, pos)))
 				{
