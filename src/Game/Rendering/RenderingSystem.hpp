@@ -28,11 +28,14 @@ private:
 	Gfx::CubeMap m_skyboxTexture;
 	Gfx::ShaderProgram m_skyboxShader;
 
-	const unsigned int SHADOW_WIDTH = 4024, SHADOW_HEIGHT = 4024;
+	const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
 
 	unsigned int depthMapFBO;
 	unsigned int depthMap;
 
+	float orthoSize = 10.0f;
+	float farPlane = 10.0f;
+	float lightHeight = 0.0;
 
 	Vec3 p;
 	Vec3 d;

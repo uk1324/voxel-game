@@ -50,12 +50,9 @@ void main()
 		(vert & Z_MASK) >> Z_OFFSET
 	);
 
-	// vertexPosition += chunkPos * CHUNK_SIZE;
-
 	texIndex = (vert & TEXTURE_INDEX_MASK) >> TEXTURE_INDEX_OFFSET;
 
 	gl_Position = projection * camera * model * vec4(vertexPosition, 1.0);
 	texCoord = texCoords[(vert & TEXTURE_POS_INDEX_MASK) >> TEXTURE_POS_INDEX_OFFSET];
 	FragPosLightSpace = lightSpaceMatrix * (model * vec4(vertexPosition, 1.0));
-	//normal = normals[normalIndex];
 }

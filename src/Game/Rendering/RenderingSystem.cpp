@@ -76,6 +76,10 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	constexpr float bordercolor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, bordercolor);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
@@ -88,40 +92,171 @@ RenderingSystem::RenderingSystem(Scene& scene)
 #include <iostream>
 #include <imgui.h>
 
+static std::vector<Vec3> getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view)
+{
+	const auto inv = (view * proj).inverse();
+
+	//std::cout << inv << '\n';
+
+	std::vector<Vec3> frustumCorners;
+	for (unsigned int x = 0; x < 2; ++x)
+	{
+		for (unsigned int y = 0; y < 2; ++y)
+		{
+			for (unsigned int z = 0; z < 2; ++z)
+			{
+				// Already do perspective divide inside the multiplication function.
+				const Vec3 pt = inv * Vec3(2.0f * x - 1.0f, 2.0f * y - 1.0f, 2.0f * z - 1.0f);
+
+				frustumCorners.push_back(pt);
+			}
+		}
+	}
+
+	return frustumCorners;
+}
+
 void RenderingSystem::update(float width, float height, const Vec3& cameraPos, const Quat& cameraRot, const EntityManager& entityManger, const ChunkSystem& chunkSystem)
 {
 	static constexpr float fov = degToRad(90.0f);
 	static constexpr float nearZ = 0.1f;
-	static constexpr float farZ = 1000.0f;
+	static float farZ = sqrt(2.0f) * 4 * 16;
 	const Mat4 projection = Mat4::perspective(fov, width / height, nearZ, farZ);
-	const Mat4 view = Mat4::lookAt(cameraPos, cameraPos + (cameraRot * Vec3::forward), Vec3::up);
+	const  Mat4 view = Mat4::lookAt(cameraPos, cameraPos + (cameraRot * Vec3::forward), Vec3::up);
+
+	auto x = getFrustumCornersWorldSpace(projection, view);
+
+	//for (auto a : x)
+	//{
+	//	Debug::drawPoint(a);
+	//}
+
 
 	glViewport(0, 0, width, height);
 	// Not clearing color buffer because a skybox is drawn.
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	// Chunks
-	glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0); 
 	//m_blockTextureArray.bind();
 	chunkSystem.blockData.textureArray.bind();
 	m_chunkShader.setTexture("blockTextureArray", 0);
 
 	ImGui::Begin("asdf");
-	ImGui::SliderFloat("x", &p.x, -10, 10);
-	ImGui::SliderFloat("y", &p.y, -10, 10);
-	ImGui::SliderFloat("z", &p.z, -10, 10);
+	//ImGui::SliderFloat("x", &p.x, -10, 10);
+	//ImGui::SliderFloat("y", &p.y, -10, 10);
+	//ImGui::SliderFloat("z", &p.z, -10, 10);
+	ImGui::SliderFloat("orthoSize", &orthoSize, 10, 100);
+	ImGui::SliderFloat("farPlane", &farPlane, 10, 100);
+	ImGui::SliderFloat("lightHeight", &lightHeight , 0, 100);
+
 	ImGui::End();
 
-	float near_plane = 1.0f, far_plane = 7.5f;
-	auto lightProjection = Mat4::orthographic(Vec3(-10.0f, -10.0f, near_plane), Vec3(10.0f, 10.0f, far_plane));
+	float near_plane = 1.0f;
+	//auto lightProjection = Mat4::orthographic(Vec3(-orthoSize, -orthoSize, near_plane), Vec3(orthoSize, orthoSize, farPlane));
 	
-	auto lightView = Mat4::lookAt(p, Vec3(0.0f, 1.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f));
+	//auto lightView = Mat4::lookAt(p, Vec3(0.0f, 1.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f));
+	//Vec3 o = Vec3(cameraPos.x / (orthoSize * 2), cameraPos.y / (orthoSize * 2), cameraPos.z / (orthoSize * 2));
+	Vec3 o = cameraPos / farPlane;
+	/*auto lightView = Mat4::lookAt(Vec3(-0.5, -lightHeight, -0.2) + o, Vec3(0.0f, 1.0f, 0.0f) + o, Vec3(0.0f, 1.0f, 0.0f));*/
+
+
+	Vec3 center(0, 0, 0);
+	Debug::drawLine(x[0], x[2]);
+	Debug::drawLine(x[0], x[4]);
+	Debug::drawLine(x[2], x[6]);
+	Debug::drawLine(x[4], x[6]);
+
+	Debug::drawLine(x[0], x[1]);
+	Debug::drawLine(x[2], x[3]);
+	Debug::drawLine(x[4], x[5]);
+	Debug::drawLine(x[6], x[7]);
+
+	Debug::drawLine(x[1], x[3]);
+	Debug::drawLine(x[1], x[5]);
+	Debug::drawLine(x[3], x[7]);
+	Debug::drawLine(x[5], x[7]);
+
+
+
+	for (const auto& v : x)
+	{
+		Debug::drawPoint(v);
+		center += v;
+	}
+	center /= x.size();
+
+	const auto lightView = Mat4::lookAt(
+		//center - Vec3(-0.5, 0.5, -0.2).normalized(),
+		center - Vec3(20.0f, 50, 20.0f).normalized(),
+		center,
+		Vec3(0.0f, 1.0f, 0.0f)
+	);
+
+	float minX = std::numeric_limits<float>::max();
+	float maxX = std::numeric_limits<float>::min();
+	float minY = std::numeric_limits<float>::max();
+	float maxY = std::numeric_limits<float>::min();
+	float minZ = std::numeric_limits<float>::max();
+	float maxZ = std::numeric_limits<float>::min();
+	for (const auto& v : x)
+	{
+		const auto trf = lightView * v;
+		/*Debug::drawPoint(trf);*/
+		minX = std::min(minX, trf.x);
+		maxX = std::max(maxX, trf.x);
+		minY = std::min(minY, trf.y);
+		maxY = std::max(maxY, trf.y);
+		minZ = std::min(minZ, trf.z);
+		maxZ = std::max(maxZ, trf.z);
+	}
+
+
+	constexpr float zMult = 1.0f;
+	if (minZ < 0)
+	{
+		minZ *= zMult;
+	}
+	else
+	{
+		minZ /= zMult;
+	}
+	if (maxZ < 0)
+	{
+		maxZ /= zMult;
+	}
+	else
+	{
+		maxZ *= zMult;
+	}
+
+	//minX = -10;
+	//minY = -10;
+	//minZ = -10;
+	//maxX = 10;
+	//maxY = 10;
+	//maxZ = 10;
+
+	Debug::drawCube((Vec3(minX, minY, minZ) + Vec3(maxX, maxY, maxZ)) / 2.0f, Vec3(maxX, maxY, maxZ) - Vec3(minX, minY, minZ));
+
+	const Mat4 lightProjection = Mat4::orthographic(Vec3(minX, minY, minZ), Vec3(maxX, maxY, maxZ));
+
+	//return lightProjection * lightView;
+
+
+	//auto lightView = Mat4::lookAt(Vec3(-0.5, -lightHeight, -0.2) + o, Vec3(0.0f, 1.0f, 0.0f) + o, Vec3(0.0f, 1.0f, 0.0f));
+	//auto lightView = Mat4::lookAt(Vec3(0.0, -lightHeight, -0.0) + o, Vec3(0.01f, 1.0f, 0.01f) + o, Vec3(0.0f, 1.0f, 0.0f));
 	//auto lightView = view;
 
-	Debug::drawCube(p);
-	Debug::drawLine(p, Vec3(0.0f, 1.0f, 0.0f));
 
-	Mat4 lightSpaceMatrix = lightProjection * lightView;
+	/*Debug::drawCube(p);
+	Debug::drawLine(p, Vec3(0.0f, 1.0f, 0.0f));*/
+
+	Mat4 lightSpaceMatrix = lightView * lightProjection;
+	//Mat4 lightSpaceMatrix = lightProjection * lightView;
+
+	//Debug::drawCube(lightSpaceMatrix * Vec3(-10, -10, near_plane));
+	//Debug::drawCube(lightSpaceMatrix * Vec3(10, 10, farPlane));
 
 	m_chunkShadowShader.use();
 	m_chunkShadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);

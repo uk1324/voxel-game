@@ -23,6 +23,9 @@ public:
 	GenericMat4<T> operator* (const GenericMat4<T> mat) const;
 	GenericMat4<T>& operator*= (const GenericMat4<T> mat);
 
+	GenericMat4<T> inverse() const;
+	GenericMat4<T> transpose() const;
+
 	GenericMat4<T> removedTranslation() const;
 	void removeTranslation();
 	void setTranslation(const Vec3& translation);
@@ -149,6 +152,170 @@ GenericMat4<T>& GenericMat4<T>::operator*= (const GenericMat4<T> mat)
 {
 	*this = *this * mat;
 	return *this;
+}
+
+template<typename T>
+GenericMat4<T> GenericMat4<T>::inverse() const
+{
+	T inv[16], det;
+	int i;
+
+	const T* m = data();
+
+	inv[0] = m[5] * m[10] * m[15] -
+		m[5] * m[11] * m[14] -
+		m[9] * m[6] * m[15] +
+		m[9] * m[7] * m[14] +
+		m[13] * m[6] * m[11] -
+		m[13] * m[7] * m[10];
+
+	inv[4] = -m[4] * m[10] * m[15] +
+		m[4] * m[11] * m[14] +
+		m[8] * m[6] * m[15] -
+		m[8] * m[7] * m[14] -
+		m[12] * m[6] * m[11] +
+		m[12] * m[7] * m[10];
+
+	inv[8] = m[4] * m[9] * m[15] -
+		m[4] * m[11] * m[13] -
+		m[8] * m[5] * m[15] +
+		m[8] * m[7] * m[13] +
+		m[12] * m[5] * m[11] -
+		m[12] * m[7] * m[9];
+
+	inv[12] = -m[4] * m[9] * m[14] +
+		m[4] * m[10] * m[13] +
+		m[8] * m[5] * m[14] -
+		m[8] * m[6] * m[13] -
+		m[12] * m[5] * m[10] +
+		m[12] * m[6] * m[9];
+
+	inv[1] = -m[1] * m[10] * m[15] +
+		m[1] * m[11] * m[14] +
+		m[9] * m[2] * m[15] -
+		m[9] * m[3] * m[14] -
+		m[13] * m[2] * m[11] +
+		m[13] * m[3] * m[10];
+
+	inv[5] = m[0] * m[10] * m[15] -
+		m[0] * m[11] * m[14] -
+		m[8] * m[2] * m[15] +
+		m[8] * m[3] * m[14] +
+		m[12] * m[2] * m[11] -
+		m[12] * m[3] * m[10];
+
+	inv[9] = -m[0] * m[9] * m[15] +
+		m[0] * m[11] * m[13] +
+		m[8] * m[1] * m[15] -
+		m[8] * m[3] * m[13] -
+		m[12] * m[1] * m[11] +
+		m[12] * m[3] * m[9];
+
+	inv[13] = m[0] * m[9] * m[14] -
+		m[0] * m[10] * m[13] -
+		m[8] * m[1] * m[14] +
+		m[8] * m[2] * m[13] +
+		m[12] * m[1] * m[10] -
+		m[12] * m[2] * m[9];
+
+	inv[2] = m[1] * m[6] * m[15] -
+		m[1] * m[7] * m[14] -
+		m[5] * m[2] * m[15] +
+		m[5] * m[3] * m[14] +
+		m[13] * m[2] * m[7] -
+		m[13] * m[3] * m[6];
+
+	inv[6] = -m[0] * m[6] * m[15] +
+		m[0] * m[7] * m[14] +
+		m[4] * m[2] * m[15] -
+		m[4] * m[3] * m[14] -
+		m[12] * m[2] * m[7] +
+		m[12] * m[3] * m[6];
+
+	inv[10] = m[0] * m[5] * m[15] -
+		m[0] * m[7] * m[13] -
+		m[4] * m[1] * m[15] +
+		m[4] * m[3] * m[13] +
+		m[12] * m[1] * m[7] -
+		m[12] * m[3] * m[5];
+
+	inv[14] = -m[0] * m[5] * m[14] +
+		m[0] * m[6] * m[13] +
+		m[4] * m[1] * m[14] -
+		m[4] * m[2] * m[13] -
+		m[12] * m[1] * m[6] +
+		m[12] * m[2] * m[5];
+
+	inv[3] = -m[1] * m[6] * m[11] +
+		m[1] * m[7] * m[10] +
+		m[5] * m[2] * m[11] -
+		m[5] * m[3] * m[10] -
+		m[9] * m[2] * m[7] +
+		m[9] * m[3] * m[6];
+
+	inv[7] = m[0] * m[6] * m[11] -
+		m[0] * m[7] * m[10] -
+		m[4] * m[2] * m[11] +
+		m[4] * m[3] * m[10] +
+		m[8] * m[2] * m[7] -
+		m[8] * m[3] * m[6];
+
+	inv[11] = -m[0] * m[5] * m[11] +
+		m[0] * m[7] * m[9] +
+		m[4] * m[1] * m[11] -
+		m[4] * m[3] * m[9] -
+		m[8] * m[1] * m[7] +
+		m[8] * m[3] * m[5];
+
+	inv[15] = m[0] * m[5] * m[10] -
+		m[0] * m[6] * m[9] -
+		m[4] * m[1] * m[10] +
+		m[4] * m[2] * m[9] +
+		m[8] * m[1] * m[6] -
+		m[8] * m[2] * m[5];
+
+	det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
+
+	GenericMat4<T> inverse;
+
+	if (det == 0)
+		return inverse;
+
+	det = 1.0 / det;
+
+
+	for (i = 0; i < 16; i++)
+		inverse.data()[i] = inv[i] * det;
+
+	return inverse;
+}
+
+template<typename T>
+GenericMat4<T> GenericMat4<T>::transpose() const
+{
+	GenericMat4<T> mat;
+
+	mat(0, 0) = get(1, 1);
+	mat(1, 0) = get(0, 1);
+	mat(2, 0) = get(0, 2);
+	mat(3, 0) = get(0, 3);
+
+	mat(0, 1) = get(1, 0);
+	mat(1, 1) = get(1, 1);
+	mat(2, 1) = get(1, 2);
+	mat(3, 1) = get(1, 3);
+
+	mat(0, 2) = get(2, 0);
+	mat(1, 2) = get(2, 1);
+	mat(2, 2) = get(2, 2);
+	mat(3, 2) = get(2, 3);
+
+	mat(0, 3) = get(3, 0);
+	mat(1, 3) = get(3, 1);
+	mat(2, 3) = get(3, 2);
+	mat(3, 3) = get(3, 3);
+
+	return mat;
 }
 
 template<typename T>

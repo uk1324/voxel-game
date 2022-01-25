@@ -97,7 +97,7 @@ void GameScene::update()
 
     if (m_inventorySystem.isInventoryOpen == false)
     {
-        //if (m_isGamePaused == false)
+        if (m_isGamePaused == false)
         {
             m_playerMovementSystem.update(m_player, input, time, entityManager);
             m_playerInteractionSystem.update(m_player, itemData, m_inventorySystem.heldItem(m_inventory), input, entityManager, m_blockSystem);
