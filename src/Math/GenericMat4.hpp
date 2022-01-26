@@ -144,7 +144,38 @@ GenericMat4<T> GenericMat4<T>::operator* (const GenericMat4<T> mat) const
 					+ get(r, 3) * mat(3, c);
 		}
 	}
+	//return m;
+	//m(0, 0) = get(0, 0) * mat.get(0, 0) + get(0, 1) * mat.get(1, 0) + get(0, 2) * mat.get(2, 0) + get(0, 3) * mat.get(3, 0);
+	//m(0, 1) = get(0, 0) * mat.get(0, 1) + get(0, 1) * mat.get(1, 1) + get(0, 2) * mat.get(2, 1) + get(0, 3) * mat.get(3, 1);
+	//m(0, 2) = get(0, 0) * mat.get(0, 2) + get(0, 1) * mat.get(1, 2) + get(0, 2) * mat.get(2, 2) + get(0, 3) * mat.get(3, 2);
+	//m(0, 3) = get(0, 0) * mat.get(0, 3) + get(0, 1) * mat.get(1, 3) + get(0, 2) * mat.get(2, 3) + get(0, 3) * mat.get(3, 3);
+	//m(1, 0) = get(1, 0) * mat.get(0, 0) + get(1, 1) * mat.get(1, 0) + get(1, 2) * mat.get(2, 0) + get(1, 3) * mat.get(3, 0);
+	//m(1, 1) = get(1, 0) * mat.get(0, 1) + get(1, 1) * mat.get(1, 1) + get(1, 2) * mat.get(2, 1) + get(1, 3) * mat.get(3, 1);
+	//m(1, 2) = get(1, 0) * mat.get(0, 2) + get(1, 1) * mat.get(1, 2) + get(1, 2) * mat.get(2, 2) + get(1, 3) * mat.get(3, 2);
+	//m(1, 3) = get(1, 0) * mat.get(0, 3) + get(1, 1) * mat.get(1, 3) + get(1, 2) * mat.get(2, 3) + get(1, 3) * mat.get(3, 3);
+	//m(2, 0) = get(2, 0) * mat.get(0, 0) + get(2, 1) * mat.get(1, 0) + get(2, 2) * mat.get(2, 0) + get(2, 3) * mat.get(3, 0);
+	//m(2, 1) = get(2, 0) * mat.get(0, 1) + get(2, 1) * mat.get(1, 1) + get(2, 2) * mat.get(2, 1) + get(2, 3) * mat.get(3, 1);
+	//m(2, 2) = get(2, 0) * mat.get(0, 2) + get(2, 1) * mat.get(1, 2) + get(2, 2) * mat.get(2, 2) + get(2, 3) * mat.get(3, 2);
+	//m(2, 3) = get(2, 0) * mat.get(0, 3) + get(2, 1) * mat.get(1, 3) + get(2, 2) * mat.get(2, 3) + get(2, 3) * mat.get(3, 3);
+	//m(3, 0) = get(3, 0) * mat.get(0, 0) + get(3, 1) * mat.get(1, 0) + get(3, 2) * mat.get(2, 0) + get(3, 3) * mat.get(3, 0);
+	//m(3, 1) = get(3, 0) * mat.get(0, 1) + get(3, 1) * mat.get(1, 1) + get(3, 2) * mat.get(2, 1) + get(3, 3) * mat.get(3, 1);
+	//m(3, 2) = get(3, 0) * mat.get(0, 2) + get(3, 1) * mat.get(1, 2) + get(3, 2) * mat.get(2, 2) + get(3, 3) * mat.get(3, 2);
+	//m(3, 3) = get(3, 0) * mat.get(0, 3) + get(3, 1) * mat.get(1, 3) + get(3, 2) * mat.get(2, 3) + get(3, 3) * mat.get(3, 3);
+
+
+	//for (int i = 0; i < 4; i++) {
+	//	for (int j = 0; j < 4; j++) {
+	//		m.set(i, j, 0);
+
+	//		for (int k = 0; k < 4; k++) {
+	//			m(i, j) += get(i, k) * mat.get(k, j);
+	//		}
+
+	//	}
+	//}
+
 	return m;
+
 }
 
 template<typename T>

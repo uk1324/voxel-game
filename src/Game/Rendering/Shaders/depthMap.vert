@@ -39,6 +39,6 @@ void main()
 
 	texIndex = (vert & TEXTURE_INDEX_MASK) >> TEXTURE_INDEX_OFFSET;
 
-	gl_Position = lightSpaceMatrix * (model * vec4(vertexPosition, 1.0));
+	gl_Position = (model * vec4(vertexPosition, 1.0));
 	texCoord = texCoords[(vert & TEXTURE_POS_INDEX_MASK) >> TEXTURE_POS_INDEX_OFFSET];
 }

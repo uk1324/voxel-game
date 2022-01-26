@@ -5,7 +5,6 @@ layout (location = 0) in uint vert;
 uniform mat4 model;
 uniform mat4 projection;
 uniform mat4 camera;
-uniform mat4 lightSpaceMatrix;
 
 out flat uint texIndex;
 out vec2 texCoord;
@@ -54,5 +53,5 @@ void main()
 
 	gl_Position = projection * camera * model * vec4(vertexPosition, 1.0);
 	texCoord = texCoords[(vert & TEXTURE_POS_INDEX_MASK) >> TEXTURE_POS_INDEX_OFFSET];
-	FragPosLightSpace = lightSpaceMatrix * (model * vec4(vertexPosition, 1.0));
+	FragPosLightSpace = vec4(vec3((model) * vec4(vertexPosition, 1.0)), 1.0);
 }

@@ -1,6 +1,6 @@
 #version 430 core
 
-uniform sampler2D textureSampler;
+uniform sampler2DArray textureSampler;
 
 in vec2 textureCoord;
 
@@ -12,11 +12,13 @@ float linearize_depth(float d,float zNear,float zFar)
     return 2.0 * zNear * zFar / (zFar + zNear - z_n * (zFar - zNear));
 }
 
+uniform int index;
+
 void main()
 {
     float near = 0.1;
     float far = 10.0;
-    float depth = texture(textureSampler, textureCoord).r;
+    float depth = texture(textureSampler, vec3(textureCoord, index)).r;
     float ndc = depth * 2.0 - 1.0; 
     float linearDepth = (2.0 * near * far) / (far + near - ndc * (far - near));	
 	fragColor = vec4(vec3(depth), 1.0);

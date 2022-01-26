@@ -18,27 +18,51 @@ class RenderingSystem
 public:
 	RenderingSystem(Scene& scene);
 
-	void update(float width, float height, const Vec3& cameraPos, const Quat& cameraRot, const EntityManager& entityManger, const ChunkSystem& chunkSystem);
+	void update(const Vec2& screenSize, const Vec3& cameraPos, const Quat& cameraRot, const EntityManager& entityManger, const ChunkSystem& chunkSystem);
 
 	void drawCube(const Vec3& pos, const Vec3& scale, const Vec3& color);
 	void drawPoint(const Vec3& pos, float size, const Vec3& color);
 	void drawLine(const Vec3& startPos, const Vec3& endPos, const Vec3& color);
 
 private:
+	static void drawChunks(const ChunkSystem& chunkSystem, Gfx::ShaderProgram& shader);
+
+	void drawSkybox(const Mat4& projection, const Mat4& view);
+
+	// Later use a UBO;
+	void drawDebugShapes(const Mat4& projection, const Mat4& view);
+
+	void drawCrosshair(const Vec2& screenSize);
+
+private:
+	static std::vector<Vec3> getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view);
+	static Mat4 getLightSpaceMatrix(float fov, float nearZ, float farZ, float aspectRatio, const Mat4& view);
+	std::vector<Mat4> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Vec3& pos, const Quat& rot);
+
+private:
 	Gfx::CubeMap m_skyboxTexture;
 	Gfx::ShaderProgram m_skyboxShader;
 
-	const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
+	const unsigned int SHADOW_WIDTH = 4096 / 2, SHADOW_HEIGHT = 4096 / 2;
 
-	unsigned int depthMapFBO;
-	unsigned int depthMap;
+	/*unsigned int depthMapFBO;
+	unsigned int depthMap;*/
+	uint32_t lightFBO;
+	uint32_t lightDepthMaps;
+	static constexpr unsigned int depthMapResolution = 4096;
+	std::vector<float> shadowCascadeLevels;
+	static constexpr float farZ = 5 * 16;
+	static constexpr float nearZ = 0.1;
 
-	float orthoSize = 10.0f;
-	float farPlane = 10.0f;
-	float lightHeight = 0.0;
+	float a1;
+	float a2;
+	float a3;
+	float a4;
+	float a5;
 
-	Vec3 p;
-	Vec3 d;
+	int index = 0;
+	unsigned int matricesUBO;
+
 	Gfx::ShaderProgram m_chunkShader;
 	Gfx::ShaderProgram m_chunkShadowShader;
 

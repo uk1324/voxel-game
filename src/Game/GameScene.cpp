@@ -74,9 +74,9 @@ void GameScene::update()
 
     const Vec3 playerPos = entityManager.entityGetComponent<Position>(m_player).value;
     const Quat playerRot = entityManager.entityGetComponent<Rotation>(m_player).value;
-    const Vec2I windowSize = engine.window().getWindowSize();
+    const Vec2 windowSize = Vec2(engine.window().getWindowSize());
     m_renderingSystem.update(
-        static_cast<float>(windowSize.x), static_cast<float>(windowSize.y),
+        windowSize,
         playerPos, playerRot,
         entityManager,
         m_blockSystem.chunkSystem

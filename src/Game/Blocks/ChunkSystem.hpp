@@ -31,6 +31,11 @@ namespace std {
 	};
 }
 
+// Don't know what would be the best way to mesh chunks if not all the chunks around it a loaded yet.
+// I could just increase the load distance and only mesh the chunks which have chunk around them loaded.
+// I could store the vertices of the chunk in the vector and upload them when a chunk that wasn't loaded gets loaded.
+// I could just remesh every chunk around when a chunk gets loaded.
+
 class ChunkSystem
 {
 public:
