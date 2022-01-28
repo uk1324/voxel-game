@@ -28,7 +28,7 @@ public:
 	const Vec2& lastMousePos() const;
 	float scrollOffset() const;
 
-private:
+public:
 	// Have to use this because you cannot convert a capturing lambda to a function pointer
 	// and std::function does a virtual call
 	static InputManager* self; // Maybe rename this to s_self so I don't have to write InputManager::self.

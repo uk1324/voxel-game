@@ -84,6 +84,7 @@
 #include <Engine/Engine.hpp>
 #include <Game/GameScene.hpp>
 #include <TestScene/TestScene.hpp>
+#include <Menu/MenuScene.hpp>
 
 // Making Position use a Vec4 might allow for simd and won't require any extra space
 
@@ -268,7 +269,7 @@ int main()
 	{
 		Window window = Engine::init(800, 600, "game");
 		Engine engine(60, window);
-		engine.run(std::make_unique<GameScene>(engine));
+		engine.run(std::make_unique<MenuScene>(engine));
  	}
 	Engine::terminate();
 }

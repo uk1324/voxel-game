@@ -160,16 +160,16 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos) const
 				const Vec3I posInChunk(x, y, z);
 				const Vec3 pos(posInChunk + chunkPos * Chunk::SIZE);
 
-				if (pos.y == -5)
-				{
-					chunk.set(posInChunk, BlockType::Grass);
-				}
-				else
-				{
-					chunk.set(posInChunk, BlockType::Air);
-				}
+				//if (pos.y == -5)
+				//{
+				//	chunk.set(posInChunk, BlockType::Grass);
+				//}
+				//else
+				//{
+				//	chunk.set(posInChunk, BlockType::Air);
+				//}
 
-				continue;
+				//continue;
 
 				//if (abs(m_noise.value3d(pos * cave1) - cave3) < cave2)
 				//{
@@ -205,6 +205,7 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos) const
 					chunk.set(posInChunk, BlockType::Air);
 				}
 
+				// TODO: This is stupid just iterate over them after generation and clamp them to the chunk size.
 				// I assume linear search is faster than using a set because only a few chunks contain trees.
 				// It is also hard to benchmark this code because of how quickly it executes.
 				for (const auto& structure : structures)

@@ -33,7 +33,7 @@ ChunkSystem::~ChunkSystem()
 	m_worldGenerationThread.join();
 }
 
-void ChunkSystem::addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex)
+void ChunkSystem::addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex, size_t normalIndex)
 {
 	GLuint vertex;
 
@@ -41,12 +41,14 @@ void ChunkSystem::addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, s
 	static constexpr int Z_OFFSET = Y_OFFSET + 5;
 	static constexpr int TEXTURE_INDEX_OFFSET = Z_OFFSET + 5;
 	static constexpr int TEXTURE_POS_INDEX_OFFSET = TEXTURE_INDEX_OFFSET + 10;
+	static constexpr int NORMAL_INDEX_OFFSET = TEXTURE_POS_INDEX_OFFSET + 2;
 
 	vertex = x;
 	vertex |= (y << Y_OFFSET);
 	vertex |= (z << Z_OFFSET);
 	vertex |= ((static_cast<GLuint>(textureIndex.type)) << TEXTURE_INDEX_OFFSET);
 	vertex |= (texturePosIndex << TEXTURE_POS_INDEX_OFFSET);
+	vertex |= (normalIndex << NORMAL_INDEX_OFFSET);
 
 	vertices.push_back(vertex);
 }
@@ -62,104 +64,104 @@ void ChunkSystem::addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, s
 // to mirror swap 0 with 1 and 2 with 3
 void ChunkSystem::addCubeTop(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
-	addVertex(vertices, x, y + 1, z, block, 3);
-	addVertex(vertices, x + 1, y + 1, z + 1, block, 0);
-	addVertex(vertices, x, y + 1, z + 1, block, 1);
+	addVertex(vertices, x, y + 1, z, block, 3, 2);
+	addVertex(vertices, x + 1, y + 1, z + 1, block, 0, 2);
+	addVertex(vertices, x, y + 1, z + 1, block, 1, 2);
 
-	addVertex(vertices, x, y + 1, z, block, 3);
-	addVertex(vertices, x + 1, y + 1, z, block, 2);
-	addVertex(vertices, x + 1, y + 1, z + 1, block, 0);
+	addVertex(vertices, x, y + 1, z, block, 3, 2);
+	addVertex(vertices, x + 1, y + 1, z, block, 2, 2);
+	addVertex(vertices, x + 1, y + 1, z + 1, block, 0, 2);
 }
 
 void ChunkSystem::addCubeBottom(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
-	addVertex(vertices, x, y, z, block, 0);
-	addVertex(vertices, x, y, z + 1, block, 2);
-	addVertex(vertices, x + 1, y, z + 1, block, 3);
+	addVertex(vertices, x, y, z, block, 0, 3);
+	addVertex(vertices, x, y, z + 1, block, 2, 3);
+	addVertex(vertices, x + 1, y, z + 1, block, 3, 3);
 
-	addVertex(vertices, x, y, z, block, 0);
-	addVertex(vertices, x + 1, y, z + 1, block, 3);
-	addVertex(vertices, x + 1, y, z, block, 1);
+	addVertex(vertices, x, y, z, block, 0, 3);
+	addVertex(vertices, x + 1, y, z + 1, block, 3, 3);
+	addVertex(vertices, x + 1, y, z, block, 1, 3);
 }
 
 void ChunkSystem::addCubeLeft(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
-	addVertex(vertices, x, y, z, block, 2);
-	addVertex(vertices, x, y + 1, z, block, 0);
-	addVertex(vertices, x, y, z + 1, block, 3);
+	addVertex(vertices, x, y, z, block, 2, 0);
+	addVertex(vertices, x, y + 1, z, block, 0, 0);
+	addVertex(vertices, x, y, z + 1, block, 3, 0);
 
-	addVertex(vertices, x, y, z + 1, block, 3);
-	addVertex(vertices, x, y + 1, z, block, 0);
-	addVertex(vertices, x, y + 1, z + 1, block, 1);
+	addVertex(vertices, x, y, z + 1, block, 3, 0);
+	addVertex(vertices, x, y + 1, z, block, 0, 0);
+	addVertex(vertices, x, y + 1, z + 1, block, 1, 0);
 }
 
 void ChunkSystem::addCubeRight(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
-	addVertex(vertices, x + 1, y, z, block, 3);
-	addVertex(vertices, x + 1, y, z + 1, block, 2);
-	addVertex(vertices, x + 1, y + 1, z, block, 1);
+	addVertex(vertices, x + 1, y, z, block, 3, 1);
+	addVertex(vertices, x + 1, y, z + 1, block, 2, 1);
+	addVertex(vertices, x + 1, y + 1, z, block, 1, 1);
 
-	addVertex(vertices, x + 1, y, z + 1, block, 2);
-	addVertex(vertices, x + 1, y + 1, z + 1, block, 0);
-	addVertex(vertices, x + 1, y + 1, z, block, 1);
+	addVertex(vertices, x + 1, y, z + 1, block, 2, 1);
+	addVertex(vertices, x + 1, y + 1, z + 1, block, 0, 1);
+	addVertex(vertices, x + 1, y + 1, z, block, 1, 1);
 }
 
 void ChunkSystem::addCubeFront(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
-	addVertex(vertices, x, y, z, block, 3);
-	addVertex(vertices, x + 1, y + 1, z, block, 0);
-	addVertex(vertices, x, y + 1, z, block, 1);
+	addVertex(vertices, x, y, z, block, 3, 5);
+	addVertex(vertices, x + 1, y + 1, z, block, 0, 5);
+	addVertex(vertices, x, y + 1, z, block, 1, 5);
 
-	addVertex(vertices, x, y, z, block, 3);
-	addVertex(vertices, x + 1, y, z, block, 2);
-	addVertex(vertices, x + 1, y + 1, z, block, 0);
+	addVertex(vertices, x, y, z, block, 3, 5);
+	addVertex(vertices, x + 1, y, z, block, 2, 5);
+	addVertex(vertices, x + 1, y + 1, z, block, 0, 5);
 }
 
 void ChunkSystem::addCubeBack(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
-	addVertex(vertices, x, y, z + 1, block, 2);
-	addVertex(vertices, x, y + 1, z + 1, block, 0);
-	addVertex(vertices, x + 1, y + 1, z + 1, block, 1);
+	addVertex(vertices, x, y, z + 1, block, 2, 4);
+	addVertex(vertices, x, y + 1, z + 1, block, 0, 4);
+	addVertex(vertices, x + 1, y + 1, z + 1, block, 1, 4);
 
-	addVertex(vertices, x, y, z + 1, block, 2);
-	addVertex(vertices, x + 1, y + 1, z + 1, block, 1);
-	addVertex(vertices, x + 1, y, z + 1, block, 3);
+	addVertex(vertices, x, y, z + 1, block, 2, 4);
+	addVertex(vertices, x + 1, y + 1, z + 1, block, 1, 4);
+	addVertex(vertices, x + 1, y, z + 1, block, 3, 4);
 }
 
 void ChunkSystem::meshDecoration(uint32_t textureIndex, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
 	auto a = static_cast<BlockType>(textureIndex);
-	addVertex(vertices, x, y, z, a, 2);
-	addVertex(vertices, x + 1, y, z + 1, a, 3);
-	addVertex(vertices, x + 1, y + 1, z + 1, a, 1);
+	addVertex(vertices, x, y, z, a, 2, 1);
+	addVertex(vertices, x + 1, y, z + 1, a, 3, 1);
+	addVertex(vertices, x + 1, y + 1, z + 1, a, 1, 1);
 
-	addVertex(vertices, x, y, z, a, 2);
-	addVertex(vertices, x, y + 1, z, a, 0);
-	addVertex(vertices, x + 1, y + 1, z + 1, a, 1);
+	addVertex(vertices, x, y, z, a, 2, 1);
+	addVertex(vertices, x, y + 1, z, a, 0, 1);
+	addVertex(vertices, x + 1, y + 1, z + 1, a, 1, 1);
 
-	addVertex(vertices, x + 1, y, z, a, 2);
-	addVertex(vertices, x, y, z + 1, a, 3);
-	addVertex(vertices, x, y + 1, z + 1, a, 1);
+	addVertex(vertices, x + 1, y, z, a, 2, 1);
+	addVertex(vertices, x, y, z + 1, a, 3, 1);
+	addVertex(vertices, x, y + 1, z + 1, a, 1, 1);
 
-	addVertex(vertices, x + 1, y, z, a, 2);
-	addVertex(vertices, x + 1, y + 1, z, a, 0);
-	addVertex(vertices, x, y + 1, z + 1, a, 1);
+	addVertex(vertices, x + 1, y, z, a, 2, 1);
+	addVertex(vertices, x + 1, y + 1, z, a, 0, 1);
+	addVertex(vertices, x, y + 1, z + 1, a, 1, 1);
 
-	addVertex(vertices, x, y, z, a, 2);
-	addVertex(vertices, x + 1, y + 1, z + 1, a, 1);
-	addVertex(vertices, x + 1, y, z + 1, a, 3);
+	addVertex(vertices, x, y, z, a, 2, 1);
+	addVertex(vertices, x + 1, y + 1, z + 1, a, 1, 1);
+	addVertex(vertices, x + 1, y, z + 1, a, 3, 1);
 
-	addVertex(vertices, x, y, z, a, 2);
-	addVertex(vertices, x + 1, y + 1, z + 1, a, 1);
-	addVertex(vertices, x, y + 1, z, a, 0);
+	addVertex(vertices, x, y, z, a, 2, 1);
+	addVertex(vertices, x + 1, y + 1, z + 1, a, 1, 1);
+	addVertex(vertices, x, y + 1, z, a, 0, 1);
 
-	addVertex(vertices, x + 1, y, z, a, 2);
-	addVertex(vertices, x, y + 1, z + 1, a, 1);
-	addVertex(vertices, x, y, z + 1, a, 3);
+	addVertex(vertices, x + 1, y, z, a, 2, 1);
+	addVertex(vertices, x, y + 1, z + 1, a, 1, 1);
+	addVertex(vertices, x, y, z + 1, a, 3, 1);
 
-	addVertex(vertices, x + 1, y, z, a, 2);
-	addVertex(vertices, x, y + 1, z + 1, a, 1);
-	addVertex(vertices, x + 1, y + 1, z, a, 0);
+	addVertex(vertices, x + 1, y, z, a, 2, 1);
+	addVertex(vertices, x, y + 1, z + 1, a, 1, 1);
+	addVertex(vertices, x + 1, y + 1, z, a, 0, 1);
 }
 
 bool ChunkSystem::isInBounds(size_t x, size_t y, size_t z)

@@ -17,7 +17,7 @@ public:
 	void update();
 	void stop();
 
-	void changeScene(std::unique_ptr<Scene>&& scene);
+	void changeScene(std::unique_ptr<Scene> scene);
 
 	Time& time();
 	Window& window();

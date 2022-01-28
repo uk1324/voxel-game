@@ -1,6 +1,5 @@
 #include <TestScene/TestScene.hpp>
 #include <Engine/Engine.hpp>
-#include <Engine/Graphics/GraphicsPrimitives.hpp>
 #include <Engine/Graphics/Drawing.hpp>
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>

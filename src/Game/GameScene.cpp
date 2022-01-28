@@ -7,7 +7,6 @@
 
 #include <string>
 
-#include <Engine/Graphics/GraphicsPrimitives.hpp>
 #include <Game/Debug/Debug.hpp>
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>
@@ -28,7 +27,7 @@ GameScene::GameScene(Engine& engine)
     , m_isGamePaused(false)
 {
     Debug::init(input, m_renderingSystem);
-    engine.window().setPos(Vec2I(600, 400));
+    //engine.window().setPos(Vec2I(600, 400));
     engine.window().hideCursor();
     registerInputActions();
 

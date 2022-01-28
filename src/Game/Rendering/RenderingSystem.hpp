@@ -35,33 +35,23 @@ private:
 	void drawCrosshair(const Vec2& screenSize);
 
 private:
-	static std::vector<Vec3> getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view);
-	static Mat4 getLightSpaceMatrix(float fov, float nearZ, float farZ, float aspectRatio, const Mat4& view);
-	std::vector<Mat4> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Vec3& pos, const Quat& rot);
 
 private:
 	Gfx::CubeMap m_skyboxTexture;
 	Gfx::ShaderProgram m_skyboxShader;
 
-	const unsigned int SHADOW_WIDTH = 4096 / 2, SHADOW_HEIGHT = 4096 / 2;
-
-	/*unsigned int depthMapFBO;
-	unsigned int depthMap;*/
-	uint32_t lightFBO;
-	uint32_t lightDepthMaps;
-	static constexpr unsigned int depthMapResolution = 4096;
-	std::vector<float> shadowCascadeLevels;
-	static constexpr float farZ = 5 * 16;
+	static constexpr float farZ = 6 * 16;
 	static constexpr float nearZ = 0.1;
 
-	float a1;
-	float a2;
-	float a3;
-	float a4;
-	float a5;
+	Vec3 lightDir;
+	unsigned int lightFBO;
+	unsigned int lightDepthMaps;
+	const unsigned int depthMapResolution = 4096;
+	unsigned int matricesUBO;
 
 	int index = 0;
-	unsigned int matricesUBO;
+
+	std::vector<float> shadowCascadeLevels{ farZ / 50.0f, farZ / 25.0f, farZ / 10.0f, farZ / 2.0f };
 
 	Gfx::ShaderProgram m_chunkShader;
 	Gfx::ShaderProgram m_chunkShadowShader;

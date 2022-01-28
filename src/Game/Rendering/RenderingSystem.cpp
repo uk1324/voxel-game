@@ -71,23 +71,17 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	Gfx::VertexArray::setAttribute(0, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 2, 0, sizeof(float) * 4, false));
 	Gfx::VertexArray::setAttribute(1, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 2, sizeof(float) * 2, sizeof(float) * 4, false));
 
-	shadowCascadeLevels = { farZ / 50.0f, farZ / 25.0f, farZ / 10.0f, farZ / 2.0f };
+
+
+	lightDir = Vec3(20.0f, 50, 20.0f).normalized();
 
 	glGenFramebuffers(1, &lightFBO);
 
 	glGenTextures(1, &lightDepthMaps);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, lightDepthMaps);
 	glTexImage3D(
-		GL_TEXTURE_2D_ARRAY,
-		0,
-		GL_DEPTH_COMPONENT32F,
-		depthMapResolution,
-		depthMapResolution,
-		int(shadowCascadeLevels.size()) + 1,
-		0,
-		GL_DEPTH_COMPONENT,
-		GL_FLOAT,
-		nullptr);
+		GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, depthMapResolution, depthMapResolution, int(shadowCascadeLevels.size()) + 1,
+		0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -111,14 +105,122 @@ RenderingSystem::RenderingSystem(Scene& scene)
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	// configure UBO
+	// --------------------
 	glGenBuffers(1, &matricesUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, matricesUBO);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(Mat4) * 16, nullptr, GL_STATIC_DRAW);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, matricesUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+
+	glEnable(GL_CULL_FACE);
+
+	
 }
 
-#include <Engine/Graphics/GraphicsPrimitives.hpp>
+
+std::vector<Vec3> getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view)
+{
+	const auto inv = (view * proj).inverse();
+
+	std::vector<Vec3> frustumCorners;
+	for (unsigned int x = 0; x < 2; ++x)
+	{
+		for (unsigned int y = 0; y < 2; ++y)
+		{
+			for (unsigned int z = 0; z < 2; ++z)
+			{
+				const Vec3 pt = inv * Vec3(2.0f * x - 1.0f, 2.0f * y - 1.0f, 2.0f * z - 1.0f);
+				frustumCorners.push_back(pt);
+			}
+		}
+	}
+
+	return frustumCorners;
+}
+
+Mat4 getLightSpaceMatrix(float fov, float aspectRatio, const float nearPlane, const float farPlane, const Mat4& view, const Vec3& lightDir)
+{
+	const auto proj = Mat4::perspective(fov, aspectRatio, nearPlane, farPlane);
+	const auto corners = getFrustumCornersWorldSpace(proj, view);
+
+	Vec3 center = Vec3(0, 0, 0);
+	for (const auto& v : corners)
+	{
+		center += Vec3(v);
+	}
+	center /= corners.size();
+
+	const auto lightView = Mat4::lookAt(center - lightDir, center, Vec3::up);
+	//const auto lightView = glm::lookAt(center + lightDir, center, glm::vec3(0.0f, 1.0f, 0.0f));
+
+	float minX = std::numeric_limits<float>::max();
+	float maxX = std::numeric_limits<float>::min();
+	float minY = std::numeric_limits<float>::max();
+	float maxY = std::numeric_limits<float>::min();
+	float minZ = std::numeric_limits<float>::max();
+	float maxZ = std::numeric_limits<float>::min();
+	for (const auto& v : corners)
+	{
+		const auto trf = lightView * v;
+		minX = std::min(minX, trf.x);
+		maxX = std::max(maxX, trf.x);
+		minY = std::min(minY, trf.y);
+		maxY = std::max(maxY, trf.y);
+		minZ = std::min(minZ, trf.z);
+		maxZ = std::max(maxZ, trf.z);
+	}
+
+	// Tune this parameter according to the scene
+	constexpr float zMult = 20.0f;
+	if (minZ < 0)
+	{
+		minZ *= zMult;
+	}
+	else
+	{
+		minZ /= zMult;
+	}
+	if (maxZ < 0)
+	{
+		maxZ /= zMult;
+	}
+	else
+	{
+		maxZ *= zMult;
+	}
+
+	const Mat4 lightProjection = Mat4::orthographic(
+		Vec3(minX, minY, minZ),
+		Vec3(maxX, maxY, maxZ)
+	);
+
+	return lightView * lightProjection;
+}
+
+std::vector<Mat4> getLightSpaceMatrices(float fov, float aspectRatio, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& shadowCascadeLevels)
+{
+	std::vector<Mat4> ret;
+	for (size_t i = 0; i < shadowCascadeLevels.size() + 1; ++i)
+	{
+		if (i == 0)
+		{
+			ret.push_back(getLightSpaceMatrix(fov, aspectRatio, nearZ, shadowCascadeLevels[i], view, lightDir));
+		}
+		else if (i < shadowCascadeLevels.size())
+		{
+			ret.push_back(getLightSpaceMatrix(fov, aspectRatio, shadowCascadeLevels[i - 1], shadowCascadeLevels[i], view, lightDir));
+		}
+		else
+		{
+			ret.push_back(getLightSpaceMatrix(fov, aspectRatio, shadowCascadeLevels[i - 1], farZ, view, lightDir));
+		}
+	}
+	return ret;
+}
+
+
 #include <iostream>
 #include <imgui.h>
 
@@ -127,42 +229,20 @@ RenderingSystem::RenderingSystem(Scene& scene)
 void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, const Quat& cameraRot, const EntityManager& entityManger, const ChunkSystem& chunkSystem)
 {
 	static constexpr float fov = degToRad(90.0f);
-	//static constexpr float nearZ = 0.1f;
-	//static float farZ = sqrt(2.0f) * 4 * 16;
 	const Mat4 projection = Mat4::perspective(fov, screenSize.x / screenSize.y, nearZ, farZ);
 	const  Mat4 view = Mat4::lookAt(cameraPos, cameraPos + (cameraRot * Vec3::forward), Vec3::up);
 
-	glViewport(0, 0, screenSize.x, screenSize.y);
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-	glActiveTexture(GL_TEXTURE0); 
-	chunkSystem.blockData.textureArray.bind();
-	m_chunkShader.setTexture("blockTextureArray", 0);
 
-	auto lightSpaceMatrix = getLightSpaceMatrix(fov, nearZ, farZ, screenSize.x / screenSize.y, view);
+	float aspectRatio = screenSize.x / screenSize.y;
 
-	m_chunkShadowShader.use();
-	//m_chunkShadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-	
-	glViewport(0, 0, depthMapResolution, depthMapResolution);
-	glBindFramebuffer(GL_FRAMEBUFFER, lightFBO);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	glCullFace(GL_FRONT);
-	drawChunks(chunkSystem, m_chunkShadowShader);
-	glCullFace(GL_BACK);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	// render
+// ------
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	ImGui::Begin("abcd");
-	ImGui::SliderFloat("1", &a1, 0, 80);
-	ImGui::SliderFloat("2", &a2, 0, 80);
-	ImGui::SliderFloat("3", &a3, 0, 80);
-	ImGui::SliderFloat("4", &a4, 0, 80);
-	//ImGui::SliderFloat("5", &a5, 0, 80);
-	ImGui::End();
-	//shadowCascadeLevels = { farZ / 50.0f, farZ / 25.0f, farZ / 10.0f, farZ / 2.0f };
-	shadowCascadeLevels = { a1, a2, a3, a4 };
-
-	const auto lightMatrices = getLightSpaceMatrices(fov, screenSize.x / screenSize.y, cameraPos, cameraRot);
+	// 0. UBO setup
+	const auto lightMatrices = getLightSpaceMatrices(fov, aspectRatio, view, lightDir, nearZ, farZ, shadowCascadeLevels);
 	glBindBuffer(GL_UNIFORM_BUFFER, matricesUBO);
 	for (size_t i = 0; i < lightMatrices.size(); ++i)
 	{
@@ -170,47 +250,81 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 	}
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-
-	// 2. then render scene as normal with shadow mapping (using depth map)
-	glViewport(0, 0, screenSize.x, screenSize.y);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//glActiveTexture(GL_TEXTURE1);
-	//glBindTexture(GL_TEXTURE_2D, depthMap);
-
-	m_chunkShader.use();
-
+	// 1. render depth of scene to texture (from light's perspective)
+	// --------------------------------------------------------------
+	//lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
+	// render scene from light's point of view
+	m_chunkShadowShader.use();
 	glActiveTexture(GL_TEXTURE0);
 	chunkSystem.blockData.textureArray.bind();
-	m_chunkShader.setTexture("blockTextureArray", 0);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, lightDepthMaps);
-	m_chunkShader.setTexture("shadowMap", 1);
+	m_chunkShadowShader.setTexture("blockTextureArray", 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, lightFBO);
+	//glFramebufferTexture(GL_FRAMEBUFFER, GL_TEXTURE_2D_ARRAY, lightDepthMaps, 0);
+	glViewport(0, 0, depthMapResolution, depthMapResolution);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glCullFace(GL_FRONT);  // peter panning
+	drawChunks(chunkSystem, m_chunkShadowShader);
+	glCullFace(GL_BACK);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	// reset viewport
+	glViewport(0, 0, screenSize.x, screenSize.y);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// 2. render scene as normal using the generated depth/shadow map  
+	// --------------------------------------------------------------
+	m_chunkShader.use();
+	//const glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, cameraNearPlane, cameraFarPlane);
+	//const glm::mat4 view = camera.GetViewMatrix();
 	m_chunkShader.setMat4("projection", projection);
 	m_chunkShader.setMat4("camera", view);
-	
+	// set light uniforms
+	//m_chunkShader.setVec3("viewPos", cameraPos);
+	m_chunkShader.setVec3("lightDir", lightDir);
 	m_chunkShader.setFloat("farPlane", farZ);
 	m_chunkShader.setInt("cascadeCount", shadowCascadeLevels.size());
 	for (size_t i = 0; i < shadowCascadeLevels.size(); ++i)
 	{
 		m_chunkShader.setFloat("cascadePlaneDistances[" + std::to_string(i) + "]", shadowCascadeLevels[i]);
 	}
+	glActiveTexture(GL_TEXTURE0);
+	chunkSystem.blockData.textureArray.bind();
+	m_chunkShader.setTexture("blockTextureArray", 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, lightDepthMaps);
+	m_chunkShader.setTexture("shadowMap", 1);
 	drawChunks(chunkSystem, m_chunkShader);
 
-	glViewport(0, 0, 300, 300);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, lightDepthMaps);
-	m_squareTrianglesVao2.bind();
-	m_texturedSquareShader.use();
-	m_texturedSquareShader.setTexture("textureSampler", 0);
-	m_texturedSquareShader.setVec2("pos", Vec2(0));
-	m_texturedSquareShader.setVec2("size", Vec2(1));
-	m_texturedSquareShader.setVec2("textureCoordScale", Vec2(1));
-	ImGui::SliderInt("abc", &index, 0, 5);
-	m_texturedSquareShader.setInt("index", index);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glViewport(0, 0, screenSize.x, screenSize.y);
-	
+
+
+	//glViewport(0, 0, 300, 300);
+	//glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D_ARRAY, lightDepthMaps);
+	//m_squareTrianglesVao2.bind();
+	//m_texturedSquareShader.use();
+	//m_texturedSquareShader.setTexture("textureSampler", 0);
+	//m_texturedSquareShader.setVec2("pos", Vec2(0));
+	//m_texturedSquareShader.setVec2("size", Vec2(1));
+	//m_texturedSquareShader.setVec2("textureCoordScale", Vec2(1));
+	////ImGui::SliderInt("abc", &index, 0, 5);
+	//m_texturedSquareShader.setInt("index", index);
+	//glDrawArrays(GL_TRIANGLES, 0, 6);
+	//glViewport(0, 0, screenSize.x, screenSize.y);
+
+	//glViewport(0, 0, screenSize.x, screenSize.y);
+	//glClear(GL_DEPTH_BUFFER_BIT);
+	//m_chunkShader.use();
+	//glActiveTexture(GL_TEXTURE0);
+	//chunkSystem.blockData.textureArray.bind();
+	//m_chunkShader.setTexture("blockTextureArray", 0);
+	//m_chunkShader.setMat4("projection", projection);
+	//m_chunkShader.setMat4("camera", view);
+	//drawChunks(chunkSystem, m_chunkShader);
+
+
+
+
+
 	drawDebugShapes(projection, view);
 	// Drawing the skybox last because it is behind everything so less fragments need to be drawn that way.
 	drawSkybox(projection, view);
@@ -314,119 +428,3 @@ void RenderingSystem::drawCrosshair(const Vec2& screenSize)
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glDisable(GL_BLEND);
 }
-
-std::vector<Vec3> RenderingSystem::getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view)
-{
-	const auto inv = (view * proj).inverse();
-
-	std::vector<Vec3> frustumCorners;
-	// Generates ndc coordinates.
-	// Maybe use std::array and put the points there instead of using a loop.
-	for (unsigned int x = 0; x < 2; ++x)
-	{
-		for (unsigned int y = 0; y < 2; ++y)
-		{
-			for (unsigned int z = 0; z < 2; ++z)
-			{
-				// Already do perspective divide inside the multiplication function.
-				frustumCorners.push_back(inv * Vec3(2.0f * x - 1.0f, 2.0f * y - 1.0f, 2.0f * z - 1.0f));
-			}
-		}
-	}
-
-	return frustumCorners;
-}
-
-Mat4 RenderingSystem::getLightSpaceMatrix(float fov, float nearZ, float farZ, float aspectRatio, const Mat4& view)
-{
-	Vec3 center(0, 0, 0);
-	const auto projection = Mat4::perspective(fov, aspectRatio, nearZ, farZ);
-	auto x = getFrustumCornersWorldSpace(projection, view);
-
-	for (const auto& v : x)
-	{
-		//Debug::drawPoint(v);
-		center += v;
-	}
-	center /= x.size();
-
-	const auto lightView = Mat4::lookAt(
-		center - Vec3(20.0f, 50, 20.0f).normalized(),
-		center,
-		Vec3(0.0f, 1.0f, 0.0f)
-	);
-
-	float minX = std::numeric_limits<float>::max();
-	float maxX = std::numeric_limits<float>::min();
-	float minY = std::numeric_limits<float>::max();
-	float maxY = std::numeric_limits<float>::min();
-	float minZ = std::numeric_limits<float>::max();
-	float maxZ = std::numeric_limits<float>::min();
-	for (const auto& v : x)
-	{
-		const auto trf = lightView * v;
-		minX = std::min(minX, trf.x);
-		maxX = std::max(maxX, trf.x);
-		minY = std::min(minY, trf.y);
-		maxY = std::max(maxY, trf.y);
-		minZ = std::min(minZ, trf.z);
-		maxZ = std::max(maxZ, trf.z);
-	}
-
-
-	constexpr float zMult = 1.0f;
-	if (minZ < 0)
-	{
-		minZ *= zMult;
-	}
-	else
-	{
-		minZ /= zMult;
-	}
-	if (maxZ < 0)
-	{
-		maxZ /= zMult;
-	}
-	else
-	{
-		maxZ *= zMult;
-	}
-
-	Vec3 min(minX, minY, minZ); Vec3 max(maxX, maxY, maxZ);
-	Debug::drawCube((min + max) / 2.0f, max - min);
-
-	const Mat4 lightProjection = Mat4::orthographic(Vec3(minX, minY, minZ), Vec3(maxX, maxY, maxZ));
-
-	const Mat4 lightSpaceMatrix = lightView * lightProjection;
-	return lightSpaceMatrix;
-}
-
-
-std::vector<Mat4> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Vec3& pos, const Quat& rot)
-{
-	std::vector<Mat4> ret;
-	for (size_t i = 0; i < shadowCascadeLevels.size() + 1; ++i)
-	{
-		auto view = Mat4::lookAt(pos, pos + rot * Vec3::forward, Vec3::up);
-		if (i == 0)
-		{
-			/*Vec3 p = pos + (rot * Vec3::forward) * nearZ;
-			auto view = Mat4::lookAt(p, p + rot * Vec3::forward, Vec3::up);*/
-			ret.push_back(getLightSpaceMatrix(fov, nearZ, shadowCascadeLevels[i], aspectRatio, view));
-		}
-		else if (i < shadowCascadeLevels.size())
-		{
-			/*Vec3 p = pos + (rot * Vec3::forward) * shadowCascadeLevels[i - 1];
-			auto view = Mat4::lookAt(p, p + rot * Vec3::forward, Vec3::up);*/
-			ret.push_back(getLightSpaceMatrix(fov, shadowCascadeLevels[i - 1], shadowCascadeLevels[i], aspectRatio, view));
-		}
-		else
-		{
-			/*Vec3 p = pos + (rot * Vec3::forward) * shadowCascadeLevels[i - 1];
-			auto view = Mat4::lookAt(p, p + rot * Vec3::forward, Vec3::up);*/
-			ret.push_back(getLightSpaceMatrix(fov, shadowCascadeLevels[i - 1], farZ, aspectRatio, view));
-		}
-	}
-	return ret;
-}
-

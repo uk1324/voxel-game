@@ -3,7 +3,6 @@
 layout (location = 0) in uint vert;
 
 uniform mat4 model;
-uniform mat4 lightSpaceMatrix;
 
 out flat uint texIndex;
 out vec2 texCoord;

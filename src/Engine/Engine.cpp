@@ -2,7 +2,6 @@
 #include <Engine/Window.hpp>
 #include <Utils/Assertions.hpp>
 #include <Log/Log.hpp>
-#include <Engine/Graphics/GraphicsPrimitives.hpp>
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
@@ -50,12 +49,12 @@ void Engine::run(std::unique_ptr<Scene>&& startingScene)
 void Engine::update()
 {
 	m_currentScene->input.update();
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
+	//ImGui_ImplOpenGL3_NewFrame();
+	//ImGui_ImplGlfw_NewFrame();
+	//ImGui::NewFrame();
 	m_currentScene->update();
- 	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+ //	ImGui::Render();
+	//ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	m_window.update();
 	m_currentScene->entityManager.update();
 }
@@ -65,9 +64,14 @@ void Engine::stop()
 	m_window.close();
 }
 
-void Engine::changeScene(std::unique_ptr<Scene>&& scene)
+void Engine::changeScene(std::unique_ptr<Scene> scene)
 {
 	m_currentScene = std::move(scene);
+	// TODO: Fix this. Don't know why but I need to reregister the callbacks here even though they are registed in the constructor.
+	glfwSetKeyCallback(m_window.handle(), InputManager::keyboardCallback);
+	glfwSetCursorPosCallback(m_window.handle(), InputManager::mouseMoveCallback);
+	glfwSetMouseButtonCallback(m_window.handle(), InputManager::mouseButtonCallback);
+	glfwSetScrollCallback(m_window.handle(), InputManager::mouseScrollCallback);
 }
 
 Window Engine::init(int windowWidth, int windowHeight, std::string_view windowTitle)
@@ -85,8 +89,6 @@ Window Engine::init(int windowWidth, int windowHeight, std::string_view windowTi
 	{
 		initOpenGl();
 		initImGui(window);
-
-		Gfx::Primitives::init();
 
 		s_isInitialized = true;
 	}

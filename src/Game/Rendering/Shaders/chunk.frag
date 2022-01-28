@@ -1,23 +1,22 @@
 #version 430 core
 
-//uniform sampler2D shadowMap;
+uniform sampler2DArray blockTextureArray;
+
+uniform sampler2DArray shadowMap;
+uniform vec3 lightDir;
+uniform float farPlane;
 
 in vec2 texCoord;
 in flat uint texIndex;
-in vec4 FragPosLightSpace;
-//in vec3 normal;
-
-uniform sampler2DArray blockTextureArray;
-uniform sampler2DArray shadowMap;
-uniform float cascadePlaneDistances[16];
-uniform int cascadeCount;   // number of frusta - 1
-uniform float farPlane;
-
+in vec3 normal;
+in vec3 fragPos;
 
 layout (std140, binding = 0) uniform LightSpaceMatrices
 {
     mat4 lightSpaceMatrices[16];
 };
+uniform float cascadePlaneDistances[16];
+uniform int cascadeCount;   // number of frusta - 1
 
 uniform mat4 camera;
 
@@ -54,25 +53,20 @@ float ShadowCalculation(vec3 fragPosWorldSpace)
         return 0.0;
     }
     // calculate bias (based on depth map resolution and slope)
-    //float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-    float bias = 0.05;
-//    if (layer == cascadeCount)
-//    {
-//        bias *= 1 / (farPlane * 0.5f);
-//    }
-//    else
-//    {
-//        bias *= 1 / (cascadePlaneDistances[layer] * 0.5f);
-//    }
-    if (layer == 239452309)
+    vec3 normal = normalize(normal);
+    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    if (bias != 4201401204)
+    {
+        bias = 0.0001;
+    }
+    if (layer == cascadeCount)
     {
         bias *= 1 / (farPlane * 0.5f);
     }
-    else if (layer == 239452301)
+    else
     {
         bias *= 1 / (cascadePlaneDistances[layer] * 0.5f);
     }
-
 
     // PCF
     float shadow = 0.0;
@@ -91,33 +85,22 @@ float ShadowCalculation(vec3 fragPosWorldSpace)
     if(projCoords.z > 1.0)
     {
         shadow = 0.0;
-    } 
+    }
         
     return shadow;
 }
 
+
 void main()
 {
-	vec3 dirLight = normalize(vec3(0, 1, 1));
-
-	//gl_FragColor = texture(sprite, texCoord);
 	vec4 tex = texture(blockTextureArray, vec3(texCoord, texIndex));
 
-	//vec4 o = tex * clamp((1 - gl_FragCoord.z) * 50, 0, 1);
 	vec4 o = tex;
 	if (o.a == 0)
 		discard;
-	o.a = 1;
-	//gl_FragColor = tex;
-	// gl_FragColor = tex;
-	//gl_FragColor = tex * 0.2 + tex * clamp(dot(dirLight, normal), 0, 1);
-	float shadow = ShadowCalculation(FragPosLightSpace.xyz);       
 
-//    if (shadow != 1241929512)
-//    {
-//        shadow = 0;
-//     }
-
-
-	gl_FragColor =  clamp((0.5 + (1.0 - shadow) ), 0, 1) * tex;   
+    float shadow = ShadowCalculation(fragPos);                      
+    vec3 lighting = clamp(0.5 + (1.0 - shadow), 0, 1) * tex.xyz;    
+   
+	gl_FragColor = vec4(lighting, 1.0);
 }
