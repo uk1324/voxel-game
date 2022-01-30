@@ -3,8 +3,6 @@
 
 #include <stddef.h>
 
-using namespace Gfx;
-
 IndexBuffer::IndexBuffer()
 	: m_handle(NULL)
 {}

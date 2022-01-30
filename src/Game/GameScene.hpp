@@ -6,10 +6,11 @@
 #include <Game/Blocks/BlockSystem.hpp>
 #include <Engine/Scene.hpp>
 #include <Engine/Graphics/ShaderProgram.hpp>
-#include <Engine/Graphics/VertexArray.hpp>
+#include <Engine/Graphics/Vao.hpp>
 #include <Engine/Graphics/TextureArray.hpp>
 #include <Game/Inventory/InventorySystem.hpp>
 #include <Game/Rendering/RenderingSystem.hpp>
+#include <Game/EntitySystem.hpp>
 
 class GameScene : public Scene
 {
@@ -18,16 +19,16 @@ public:
 
 	void update() override;
 
-	std::vector<Vec3I> points;
 	ItemData itemData;
-	Vec3 rayStart;
-	Vec3 rayEnd;
 
 private:
 	void registerInputActions();
 
 private:
 	bool m_isGamePaused;
+
+	Vec3 rayStart;
+	Vec3 rayEnd;
 
 private:
 	Entity m_player;
@@ -40,4 +41,5 @@ private:
 	RenderingSystem m_renderingSystem;
 	PhysicsSystem m_physicsSystem;
 	BlockSystem m_blockSystem;
+	EntitySystem m_entitySystem;
 };

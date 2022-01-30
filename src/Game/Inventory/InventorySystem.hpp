@@ -3,7 +3,7 @@
 // Maybe move this to Player folder later and also PlayerMovementSystem and interaction system
 
 #include <Engine/Scene.hpp>
-#include <Engine/Graphics/VertexArray.hpp>
+#include <Engine/Graphics/Vao.hpp>
 #include <Engine/Graphics/ShaderProgram.hpp>
 #include <Engine/Graphics/Texture.hpp>
 #include <Engine/Input/InputManager.hpp>
@@ -13,8 +13,6 @@
 #include <Game/Item/ItemStack.hpp>
 #include <Game/Item/ItemData.hpp>
 #include <Utils/Opt.hpp>
-
-// Maybe use glDepthFunc(GL_ALWAYS) instead of disabling the depth buffer.
 
 // Probably should rewrite the entire ui system. Working with normalized device coordinates is not good, but I don't know what would be better.
 
@@ -100,20 +98,20 @@ private:
 	static constexpr float ITEM_COUNT_OFFSET_Y_CELL_SIZE_PERCENT_Y = -0.5f;
 
 
-	Gfx::VertexArray m_squareTrianglesVao;
-	Gfx::VertexBuffer m_squareTrianglesVbo;
-	Gfx::VertexArray m_cubeTrianglesVao;
-	Gfx::VertexBuffer m_cubeTrianglesVbo;
+	Vao m_squareTrianglesVao;
+	Vbo m_squareTrianglesVbo;
+	Vao m_cubeTrianglesVao;
+	Vbo m_cubeTrianglesVbo;
 
-	Gfx::ShaderProgram m_uiTexturedShader;
-	Gfx::ShaderProgram m_uiColoredShader;
-	Gfx::ShaderProgram m_3dItemShader;
-	Gfx::ShaderProgram m_itemShader;
-	Gfx::ShaderProgram m_fontShader;
+	ShaderProgram m_uiTexturedShader;
+	ShaderProgram m_uiColoredShader;
+	ShaderProgram m_3dItemShader;
+	ShaderProgram m_itemShader;
+	ShaderProgram m_fontShader;
 
-	Gfx::Texture m_hotbarSlotTexture;
-	Gfx::Texture m_hotbarSlotSelectedTexture;
-	Gfx::Texture m_inventorySlotTexture;
+	Texture m_hotbarSlotTexture;
+	Texture m_hotbarSlotSelectedTexture;
+	Texture m_inventorySlotTexture;
 
-	Gfx::TextureArray m_fontTextureArray;
+	TextureArray m_fontTextureArray;
 };

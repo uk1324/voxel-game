@@ -1,9 +1,6 @@
-#include "VertexArray.hpp"
-#include <Engine/Graphics/VertexArray.hpp>
+#include <Engine/Graphics/Vao.hpp>
 
 #include <stddef.h>
-
-using namespace Gfx;
 
 BufferLayout::BufferLayout(ShaderDataType dataType, uint32_t dataTypeCountPerVertex, intptr_t offset, size_t stride, bool isNormalized)
 	: dataType(dataType)
@@ -20,23 +17,23 @@ IntBufferLayout::IntBufferLayout(ShaderDataType dataType, uint32_t dataTypeCount
 	, stride(stride)
 {}
 
-VertexArray::VertexArray()
+Vao::Vao()
 {
 	glGenVertexArrays(1, &m_handle);
 }
 
-VertexArray::~VertexArray()
+Vao::~Vao()
 {
 	glDeleteVertexArrays(1, &m_handle);
 }
 
-VertexArray::VertexArray(VertexArray&& other) noexcept
+Vao::Vao(Vao&& other) noexcept
 	: m_handle(other.m_handle)
 {
 	other.m_handle = NULL;
 }
 
-VertexArray& VertexArray::operator=(VertexArray&& other) noexcept
+Vao& Vao::operator=(Vao&& other) noexcept
 {
 	glDeleteVertexArrays(1, &m_handle);
 	m_handle = other.m_handle;
@@ -44,12 +41,12 @@ VertexArray& VertexArray::operator=(VertexArray&& other) noexcept
 	return *this;
 }
 
-uint32_t VertexArray::handle() const
+uint32_t Vao::handle() const
 {
 	return m_handle;
 }
 
-void VertexArray::setAttribute(uint32_t index, const BufferLayout& layout)
+void Vao::setAttribute(uint32_t index, const BufferLayout& layout)
 {
 	glVertexAttribPointer(
 		index,
@@ -62,7 +59,7 @@ void VertexArray::setAttribute(uint32_t index, const BufferLayout& layout)
 	glEnableVertexAttribArray(index);
 }
 
-void Gfx::VertexArray::setAttribute(uint32_t index, const IntBufferLayout& layout)
+void Vao::setAttribute(uint32_t index, const IntBufferLayout& layout)
 {
 	glVertexAttribIPointer(
 		index,
@@ -74,7 +71,32 @@ void Gfx::VertexArray::setAttribute(uint32_t index, const IntBufferLayout& layou
 	glEnableVertexAttribArray(index);
 }
 
-void VertexArray::bind() const
+void Vao::setAttribute(uint32_t index, ShaderDataType dataType, uint32_t dataTypeCountPerVertex, bool isNormalized, size_t stride, intptr_t offset)
+{
+	glVertexAttribPointer(
+		index,
+		dataTypeCountPerVertex,
+		static_cast<GLenum>(dataType),
+		isNormalized,
+		stride,
+		reinterpret_cast<void*>(offset)
+	);
+	glEnableVertexAttribArray(index);
+}
+
+void Vao::setIntAttribute(uint32_t index, ShaderDataType dataType, uint32_t dataTypeCountPerVertex, size_t stride, intptr_t offset)
+{
+	glVertexAttribIPointer(
+		index,
+		dataTypeCountPerVertex,
+		static_cast<GLenum>(dataType),
+		stride,
+		reinterpret_cast<void*>(offset)
+	);
+	glEnableVertexAttribArray(index);
+}
+
+void Vao::bind() const
 {
 	glBindVertexArray(m_handle);
 }

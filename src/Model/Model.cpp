@@ -33,7 +33,7 @@ Model::Model(std::string_view path)
 			std::string bufferData = stringFromFile((folder / bufferInfo.at("uri").getString()).string());
 			size_t bufferDataLength = static_cast<size_t>(bufferInfo.at("byteLength").getIntNumber());
 			ASSERT(bufferDataLength == bufferData.size());
-			m_buffers.push_back(Gfx::VertexBuffer(bufferData.data(), bufferData.size()));
+			m_buffers.push_back(Vbo(bufferData.data(), bufferData.size()));
 			m_buffers[0].bind();
 			//glBufferSubData(GL_ARRAY_BUFFER, 0, bufferData.size(), bufferData.data());
 		}
@@ -45,7 +45,7 @@ Model::Model(std::string_view path)
 			const Json::Value::MapType& bufferInfo = buffer.getObject();
 			std::string bufferPath = (folder / bufferInfo.at("uri").getString()).string();
 			stbi_set_flip_vertically_on_load(false);
-			m_textures.push_back(Gfx::Texture(bufferPath));
+			m_textures.push_back(Texture(bufferPath));
 		}
 
 		this->meshes.push_back(Mesh(this->m_buffers, model, 0));
@@ -86,7 +86,7 @@ Model::Node Model::parseNode(const Json::Value::ArrayType& nodes, const Json::Va
 	return nodeData;
 }
 
-Model::Mesh::Mesh(std::vector<Gfx::VertexBuffer>& buffers, const Json::Value& model, int index)
+Model::Mesh::Mesh(std::vector<Vbo>& buffers, const Json::Value& model, int index)
 {
 	const Json::Value::MapType& mesh = model.at("meshes").getArray()[index].getObject();
 	const Json::Value::ArrayType& accessors = model.at("accessors").getArray();
@@ -103,8 +103,8 @@ Model::Mesh::Mesh(std::vector<Gfx::VertexBuffer>& buffers, const Json::Value& mo
 		auto accessor = accessors.at(pos);
 		auto view = views.at(accessor.at("bufferView").getIntNumber());
 		
-		Gfx::BufferLayout layout;
-		layout.dataType = static_cast<Gfx::ShaderDataType>(accessor.at("componentType").getIntNumber());
+		BufferLayout layout;
+		layout.dataType = static_cast<ShaderDataType>(accessor.at("componentType").getIntNumber());
 		const std::string& type = accessor.at("type").getString();
 
 		if (type == "VEC3")
@@ -132,8 +132,8 @@ Model::Mesh::Mesh(std::vector<Gfx::VertexBuffer>& buffers, const Json::Value& mo
 		auto accessor = accessors.at(pos);
 		auto view = views.at(accessor.at("bufferView").getIntNumber());
 
-		Gfx::BufferLayout layout;
-		layout.dataType = static_cast<Gfx::ShaderDataType>(accessor.at("componentType").getIntNumber());
+		BufferLayout layout;
+		layout.dataType = static_cast<ShaderDataType>(accessor.at("componentType").getIntNumber());
 		const std::string& type = accessor.at("type").getString();
 
 		if (type == "VEC3")
@@ -161,8 +161,8 @@ Model::Mesh::Mesh(std::vector<Gfx::VertexBuffer>& buffers, const Json::Value& mo
 		auto accessor = accessors.at(pos);
 		auto view = views.at(accessor.at("bufferView").getIntNumber());
 
-		Gfx::BufferLayout layout;
-		layout.dataType = static_cast<Gfx::ShaderDataType>(accessor.at("componentType").getIntNumber());
+		BufferLayout layout;
+		layout.dataType = static_cast<ShaderDataType>(accessor.at("componentType").getIntNumber());
 		const std::string& type = accessor.at("type").getString();
 
 		if (type == "VEC2")

@@ -7,30 +7,33 @@
 
 // A texture array requires all textures to be the same size.
 
-namespace Gfx
+
+class TextureArray
 {
-	class TextureArray
-	{
-	public:
-		TextureArray();
-		TextureArray(size_t width, size_t height, std::vector<std::string_view> textures);
-		TextureArray(size_t width, size_t height, std::string_view texturePath);
-		~TextureArray();
+public:
+	TextureArray(uint32_t handle);
+	TextureArray(size_t width, size_t height, size_t layers);
+	TextureArray(size_t width, size_t height, std::vector<std::string_view> textures);
+	TextureArray(size_t width, size_t height, std::string_view texturePath);
+	~TextureArray();
 
-		TextureArray(const TextureArray&) = delete;
-		TextureArray& operator= (const TextureArray&) = delete;
+	TextureArray(const TextureArray&) = delete;
+	TextureArray& operator= (const TextureArray&) = delete;
 
-		TextureArray(TextureArray&& other) noexcept;
-		TextureArray& operator= (TextureArray&& other) noexcept;
+	TextureArray(TextureArray&& other) noexcept;
+	TextureArray& operator= (TextureArray&& other) noexcept;
 
-		GLuint handle() const;
+	GLuint handle() const;
 
-		void bind() const;
+	void bind() const;
 
-	private:
-		static constexpr GLenum TARGET = GL_TEXTURE_2D_ARRAY;
+public:
+	static TextureArray null();
+	static TextureArray incomplete();
 
-	private:
-		GLuint m_handle;
-	};
-}
+private:
+	static constexpr GLenum TARGET = GL_TEXTURE_2D_ARRAY;
+
+private:
+	GLuint m_handle;
+};

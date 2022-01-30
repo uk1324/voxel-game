@@ -1,26 +1,23 @@
-#pragma
+#pragma once
 
 #include <array>
 #include <string_view>
 
-namespace Gfx
+class CubeMap
 {
-	struct CubeMapTexturePaths
-	{
-	public:
-		std::string_view right, left, top, bottom, front, back;
-	};
+public:
+	CubeMap(
+		std::string_view right,
+		std::string_view left,
+		std::string_view top,
+		std::string_view bottom,
+		std::string_view front,
+		std::string_view back);
+	CubeMap();
+	~CubeMap();
 
-	class CubeMap
-	{
-	public:
-		CubeMap(const CubeMapTexturePaths& texture);
-		CubeMap();
-		~CubeMap();
+	void bind();
 
-		void bind();
-
-	private:
-		uint32_t m_handle;
-	};
-}
+private:
+	uint32_t m_handle;
+};

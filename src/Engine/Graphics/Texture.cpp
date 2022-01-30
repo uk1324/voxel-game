@@ -2,7 +2,9 @@
 #include <Log/Log.hpp>
 #include <stb_image.h>
 
-using namespace Gfx;
+Texture::Texture(uint32_t handle)
+	: m_handle(handle)
+{}
 
 Texture::Texture(std::string_view path)
 {
@@ -56,4 +58,16 @@ void Texture::bind() const
 GLuint Texture::handle() const
 {
 	return m_handle;
+}
+
+Texture Texture::incomplete()
+{
+	uint32_t handle;
+	glGenTextures(1, &handle);
+	return Texture(handle);
+}
+
+Texture Texture::null()
+{
+	return Texture(NULL);
 }

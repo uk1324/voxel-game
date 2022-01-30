@@ -1,20 +1,28 @@
-#include "ShaderProgram.hpp"
-#include "ShaderProgram.hpp"
 #include <Engine/Graphics/ShaderProgram.hpp>
 #include <Log/Log.hpp>
-
-using namespace Gfx;
 
 ShaderProgram::ShaderProgram()
 	: m_handle(glCreateProgram())
 {}
 
 ShaderProgram::ShaderProgram(std::string_view vertexPath, std::string_view fragmentPath)
-	: m_handle(glCreateProgram())
+	: ShaderProgram()
 {
 	Shader vertex(vertexPath, ShaderType::Vertex);
 	Shader fragment(fragmentPath, ShaderType::Fragment);
 	addShader(vertex);
+	addShader(fragment);
+	link();
+}
+
+ShaderProgram::ShaderProgram(std::string_view vertexPath, std::string_view geometryPath, std::string_view fragmentPath)
+	: ShaderProgram()
+{
+	Shader vertex(vertexPath, ShaderType::Vertex);
+	Shader geoemetry(geometryPath, ShaderType::Geometry);
+	Shader fragment(fragmentPath, ShaderType::Fragment);
+	addShader(vertex);
+	addShader(geoemetry);
 	addShader(fragment);
 	link();
 }

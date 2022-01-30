@@ -17,8 +17,8 @@ TEST_F(EcsTest, AddingComponents)
 {
 	manager.registerComponent<int>();
 	Entity entity = manager.createEntity();
-	manager.entityAddComponent<int>(entity, 2);
-	EXPECT_EQ(manager.entityGetComponent<int>(entity), 2);
+	manager.addComponent<int>(entity, 2);
+	EXPECT_EQ(manager.getComponent<int>(entity), 2);
 }
 
 TEST_F(EcsTest, RemovingComponents)
@@ -26,11 +26,11 @@ TEST_F(EcsTest, RemovingComponents)
 	manager.registerComponent<int>();
 	manager.registerComponent<float>();
 	Entity entity = manager.createEntity();
-	manager.entityAddComponent<int>(entity, 5);
-	manager.entityAddComponent<float>(entity, 1.5f);
-	manager.entityRemoveComponent<int>(entity);
+	manager.addComponent<int>(entity, 5);
+	manager.addComponent<float>(entity, 1.5f);
+	manager.removeComponent<int>(entity);
 	manager.update();
-	EXPECT_EQ(manager.entityGetComponent<float>(entity), 1.5f);
+	EXPECT_EQ(manager.getComponent<float>(entity), 1.5f);
 }
 
 TEST_F(EcsTest, IteratingComponents)
@@ -42,7 +42,7 @@ TEST_F(EcsTest, IteratingComponents)
 	for (int value : values)
 	{
 		Entity entity = manager.createEntity();
-		manager.entityEmplaceComponent<int>(entity, value);
+		manager.addComponent<int>(entity, value);
 	}
 
 	int sum = 0;

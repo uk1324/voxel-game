@@ -12,8 +12,8 @@ PlayerInteractionSystem::PlayerInteractionSystem()
 
 void PlayerInteractionSystem::update(Entity player, const ItemData& itemData, Opt<ItemStack>& heldItem, const InputManager& input, const EntityManager& entityManager, BlockSystem& blockSystem)
 {
-	const Vec3& playerPos = entityManager.entityGetComponent<Position>(player).value;
-	const Quat& playerRot = entityManager.entityGetComponent<Rotation>(player).value;
+	const Vec3& playerPos = entityManager.getComponent<Position>(player).value;
+	const Quat& playerRot = entityManager.getComponent<Rotation>(player).value;
 
 	const Vec3 rayEnd = playerPos + (playerRot * Vec3::forward * playerReachDistance);
 

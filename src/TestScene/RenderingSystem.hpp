@@ -17,6 +17,6 @@ public:
 	void update(const EntityManager& entityManager, Entity player, const Mat4& view, const Mat4& projection);
 
 private:
-	Gfx::ShaderProgram m_shader;
+	ShaderProgram m_shader;
 	Model m_model;
 };

@@ -36,5 +36,5 @@ public:
 public:
 	std::vector<Entry> items;
 
-	Gfx::TextureArray textureArray;
+	TextureArray textureArray;
 };

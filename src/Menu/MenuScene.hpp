@@ -2,9 +2,10 @@
 
 #include <Engine/Scene.hpp>
 #include <Engine/Graphics/ShaderProgram.hpp>
-#include <Engine/Graphics/VertexArray.hpp>
+#include <Engine/Graphics/Vao.hpp>
 #include <Engine/Graphics/TextureArray.hpp>
 #include <Game/GameScene.hpp>
+#include <Engine/Renderer/Renderer.hpp>
 
 class MenuScene : public Scene
 {
@@ -39,17 +40,13 @@ private:
 
 	Vec2 m_screenSize;
 
-	Gfx::ShaderProgram m_buttonShader;
+	ShaderProgram m_buttonShader;
 
-	Gfx::ShaderProgram m_fontShader;
-	Gfx::TextureArray m_fontTextureArray;
+	ShaderProgram m_fontShader;
+	TextureArray m_fontTextureArray;
 
-	Gfx::VertexArray m_squareTrianglesVao;
-	Gfx::VertexBuffer m_squareTrianglesVbo;
+	Vao m_squareTrianglesVao;
+	Vbo m_squareTrianglesVbo;
 
-	Gfx::VertexArray m_cubeTrianglesVao;
-	Gfx::VertexBuffer m_cubeTrianglesVbo;
-
-	Gfx::CubeMap m_skyboxTexture;
-	Gfx::ShaderProgram m_skyboxShader;
+	SkyboxData m_skyboxData;
 };

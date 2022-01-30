@@ -42,7 +42,7 @@ public:
 
 	std::vector<Entry> blocks;
 
-	Gfx::TextureArray textureArray;
+	TextureArray textureArray;
 
 private:
 	static constexpr float DEFAULT_BLOCK_FRICTION = 0.85f;

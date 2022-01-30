@@ -11,6 +11,7 @@ public:
 	Vec3 value;
 };
 
+// Maybe store this as min and max and then add the position to it. Also inherit from Aabb
 struct PhysicsAabbCollider
 {
 public:
@@ -26,9 +27,18 @@ struct Grounded
 class PhysicsSystem
 {
 public:
+	struct RaycastHit
+	{
+		Entity entity;
+		float time;
+	};
+
+public:
 	PhysicsSystem(Scene& scene);
 
 	void update(const Time& time, EntityManager& entityManager, const ChunkSystem& chunkSystem);
+
+	Opt<RaycastHit> raycast(Entity entityToExclude, const Vec3& rayStart, const Vec3& rayEnd, const EntityManager& entityManager);
 
 private:
 

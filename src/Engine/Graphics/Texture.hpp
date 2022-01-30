@@ -4,28 +4,31 @@
 
 #include <string_view>
 
-namespace Gfx
+
+class Texture
 {
-	class Texture
-	{
-	public:
-		Texture(std::string_view path);
-		~Texture();
+public:
+	Texture(uint32_t handle);
+	Texture(std::string_view path);
+	~Texture();
 
-		Texture(const Texture&) = delete;
-		Texture& operator= (const Texture&) = delete;
+	Texture(const Texture&) = delete;
+	Texture& operator= (const Texture&) = delete;
 
-		Texture(Texture&& other) noexcept;
-		Texture& operator= (Texture&& other) noexcept;
+	Texture(Texture&& other) noexcept;
+	Texture& operator= (Texture&& other) noexcept;
 
-		void bind() const;
+	void bind() const;
 
-		GLuint handle() const;
+	GLuint handle() const;
 
-	private:
-		static constexpr GLenum TARGET = GL_TEXTURE_2D;
+public:
+	static Texture incomplete();
+	static Texture null();
 
-	private:
-		GLuint m_handle;
-	};
-}
+private:
+	static constexpr GLenum TARGET = GL_TEXTURE_2D;
+
+private:
+	GLuint m_handle;
+};

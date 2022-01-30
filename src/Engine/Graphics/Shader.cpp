@@ -2,8 +2,6 @@
 #include <Utils/FileIo.hpp>
 #include <Log/Log.hpp>
 
-using namespace Gfx;
-
 Shader::Shader(std::string_view path, ShaderType type)
 {
 	m_handle = glCreateShader(static_cast<GLenum>(type));

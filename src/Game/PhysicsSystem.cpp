@@ -10,14 +10,16 @@ PhysicsSystem::PhysicsSystem(Scene& scene)
 
 // Prevent from getting into unloaded chunks or stop player if is inside unloaded chunks idk.
 
+#include <Game/Debug/Debug.hpp>
+
 void PhysicsSystem::update(const Time& time, EntityManager& entityManager, const ChunkSystem& chunkSystem)
 {
 	for (auto& [entity, velocityComponent] : entityManager.getComponents<PhysicsVelocity>())
 	{
 		Vec3& entityVel = velocityComponent.value;
-		Vec3& entityPos = entityManager.entityGetComponent<Position>(entity).value;
-		bool& isEntityGrounded = entityManager.entityGetComponent<Grounded>(entity).value;
-		const PhysicsAabbCollider& collider = entityManager.entityGetComponent<PhysicsAabbCollider>(entity);
+		Vec3& entityPos = entityManager.getComponent<Position>(entity).value;
+		bool& isEntityGrounded = entityManager.getComponent<Grounded>(entity).value;
+		const PhysicsAabbCollider& collider = entityManager.getComponent<PhysicsAabbCollider>(entity);
 
 		entityVel.y -= gravity * time.deltaTime();
 
@@ -72,9 +74,173 @@ void PhysicsSystem::update(const Time& time, EntityManager& entityManager, const
 				movement.z = 0.0f;
 			}
 		}
+		Debug::drawCube(entityPos + collider.centerOffset, collider.halfSize * 2);
 	}
 }
 
+#include <iostream>
+
+Opt<PhysicsSystem::RaycastHit> PhysicsSystem::raycast(Entity entityToExclude, const Vec3& rayStart, const Vec3& rayEnd, const EntityManager& entityManager)
+{
+	Opt<RaycastHit> result = std::nullopt;
+	for (const auto& [entity, collider] : entityManager.getComponents<PhysicsAabbCollider>())
+	{
+		const Vec3 pos = entityManager.getComponent<Position>(entity).value + collider.centerOffset;
+		if (entity != entityToExclude)
+		{
+			Vec3 collisionAreaMin;
+			Vec3 collisionAreaMax;
+			// Later make an Aabb class constructor from 2 random points that finds the min and max itself.
+			if (rayStart.x < rayEnd.x)
+			{
+				collisionAreaMin.x = rayStart.x;
+				collisionAreaMax.x = rayEnd.x;
+			}
+			else
+			{
+				collisionAreaMin.x = rayEnd.x;
+				collisionAreaMax.x = rayStart.x;
+			}
+
+			if (rayStart.y < rayEnd.y)
+			{
+				collisionAreaMin.y = rayStart.y;
+				collisionAreaMax.y = rayEnd.y;
+			}
+			else
+			{
+				collisionAreaMin.y = rayEnd.y;
+				collisionAreaMax.y = rayStart.y;
+			}
+
+
+			if (rayStart.z < rayEnd.z)
+			{
+				collisionAreaMin.z = rayStart.z;
+				collisionAreaMax.z = rayEnd.z;
+			}
+			else
+			{
+				collisionAreaMin.z = rayEnd.z;
+				collisionAreaMax.z = rayStart.z;
+			}
+
+			/*if ((pos.x - collider.halfSize.x < collisionAreaMax.x) && (pos.x + collider.halfSize.x > collisionAreaMin.x)
+				&& (pos.y - collider.halfSize.y < collisionAreaMax.y) && (pos.y + collider.halfSize.y > collisionAreaMin.y)
+				&& (pos.z - collider.halfSize.z < collisionAreaMax.z) && (pos.z + collider.halfSize.z > collisionAreaMin.z))*/
+			{
+				// Rename to direction
+				Vec3 delta = rayEnd - rayStart;
+
+				Vec3 entryDistance;
+				Vec3 exitDistance;
+
+				if (delta.x > 0)
+				{
+					entryDistance.x = (pos.x - collider.halfSize.x) - rayStart.x;
+					exitDistance.x = (pos.x + collider.halfSize.x) - rayStart.x;
+				}
+				else
+				{
+					entryDistance.x = (pos.x + collider.halfSize.x) - rayStart.x;
+					exitDistance.x =  (pos.x - collider.halfSize.x) - rayStart.x;
+				}
+
+				if (delta.y > 0)
+				{
+					entryDistance.y = (pos.y - collider.halfSize.y) - rayStart.y;
+					exitDistance.y = (pos.y + collider.halfSize.y) - rayStart.y;
+				}
+				else
+				{
+					entryDistance.y = (pos.y + collider.halfSize.y) - rayStart.y;
+					exitDistance.y = (pos.y - collider.halfSize.y) - rayStart.y;
+				}
+
+				if (delta.z > 0)
+				{
+					entryDistance.z = (pos.z - collider.halfSize.z) - rayStart.z;
+					exitDistance.z = (pos.z + collider.halfSize.z) - rayStart.z;
+				}
+				else
+				{
+					entryDistance.z = (pos.z + collider.halfSize.z) - rayStart.z;
+					exitDistance.z = (pos.z - collider.halfSize.z) - rayStart.z;
+				}
+
+				Vec3 entryTime;
+				Vec3 exitTime;
+
+				if (delta.x == 0.0f)
+				{
+					entryTime.x = -std::numeric_limits<float>::infinity();
+					exitTime.x = std::numeric_limits<float>::infinity();
+				}
+				else
+				{
+					entryTime.x = entryDistance.x / delta.x;
+					exitTime.x = exitDistance.x / delta.x;
+				}
+
+				if (delta.y == 0.0f)
+				{
+					entryTime.y = -std::numeric_limits<float>::infinity();
+					exitTime.y = std::numeric_limits<float>::infinity();
+				}
+				else
+				{
+					entryTime.y = entryDistance.y / delta.y;
+					exitTime.y = exitDistance.y / delta.y;
+				}
+
+				if (delta.z == 0.0f)
+				{
+					entryTime.z = -std::numeric_limits<float>::infinity();
+					exitTime.z = std::numeric_limits<float>::infinity();
+				}
+				else
+				{
+					entryTime.z = entryDistance.z / delta.z;
+					exitTime.z = exitDistance.z / delta.z;
+				}
+
+				// Finding max entry to find the most movement possible before collision on any axis.
+				float entry = std::max(entryTime.x, std::max(entryTime.y, entryTime.z));
+				float exit = std::min(exitTime.x, std::min(exitTime.y, exitTime.z));
+
+				// No collision
+				if ((entry > exit)
+					//|| ((entryTime.x < 0.0f) && (entryTime.y < 0.0f) && (entryTime.z < 0.0f))
+					|| (entryTime.x > 1.0f)
+					|| (entryTime.y > 1.0f)
+					|| (entryTime.z > 1.0f)
+					// Closer collision already found.
+					|| (result.has_value() && entry > result->time))
+				{
+					continue;
+				}
+				else
+				{
+					if (result.has_value())
+					{
+						result->time = entry;
+					}
+					else
+					{
+						result = RaycastHit{};
+						result->time = entry;
+					}
+				}
+			}
+
+		}
+	}
+
+	return result;
+}
+
+// This probably could be optimized just by doing a raycast instead of checking all blocks in a range.
+// Also a different way to optimize the current version would be not to check the blocks the player is inside at all.
 PhysicsSystem::TerrainCollision PhysicsSystem::aabbVsTerrainCollision(const ChunkSystem& chunkSystem, const Vec3& pos, const Vec3& halfSize, Vec3 vel)
 {
 	TerrainCollision result;
@@ -213,6 +379,8 @@ PhysicsSystem::TerrainCollision PhysicsSystem::aabbVsTerrainCollision(const Chun
 
 					// No collision
 					if ((entry > exit) 
+						// Don't know if this should be there. I think it doesn't register a collision if the entity is already inside it.
+						// I guess finding the normal doesn't work if it happens. But I also already handle that case.
 						|| ((entryTime.x < 0.0f) && (entryTime.y < 0.0f) && (entryTime.z < 0.0f)) 
 						|| (entryTime.x > 1.0f)
 						|| (entryTime.y > 1.0f)

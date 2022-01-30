@@ -44,9 +44,8 @@ private:
 
 	Entity componentGetEntity(Component& component);
 
-	T* add(Entity entity, T&& component);
-	template<typename ...Args>
-	T* emplace(Entity entity, Args&&... args);
+	template<typename T2>
+	T* add(Entity entity, T2&& component);
 	void remove(T* component);
 	void remove(Component* component) override;
 
@@ -87,26 +86,15 @@ Entity ComponentPool<T>::componentGetEntity(Component& component)
 }
 
 template<typename T>
-T* ComponentPool<T>::add(Entity entity, T&& component)
+template<typename T2>
+T* ComponentPool<T>::add(Entity entity, T2&& component)
 {
 	T* location = &m_components[m_size];
-	new (location) T(std::forward<T>(component));
+	new (location) T(std::forward<T2>(component));
 	m_componentEntity[m_size] = entity;
 	m_size++;
 	return location;
 }
-
-template<typename T>
-template<typename ...Args>
-T* ComponentPool<T>::emplace(Entity entity, Args&&... args)
-{
-	T* location = &m_components[m_size];
-	new (location) T(std::forward<Args>(args)...);
-	m_componentEntity[m_size] = entity;
-	m_size++;
-	return location;
-}
-
 
 template<typename T>
 void ComponentPool<T>::remove(T* component)

@@ -2,6 +2,7 @@
 
 #include <Engine/Ecs/ComponentPool.hpp>
 #include <Utils/Assertions.hpp>
+#include <Utils/Opt.hpp>
 
 #include <vector>
 
@@ -20,15 +21,28 @@ public:
 	void destroyEntity(Entity entity);
 
 	template<typename T>
-	T& entityAddComponent(Entity entity, T&& component);
-	template<typename T, typename ...Args>
-	T& entityEmplaceComponent(Entity entity, Args&&... args);
+	T& addComponent(Entity entity, T&& component);
 	template<typename T>
-	T& entityGetComponent(Entity entity);
+	T& getComponent(Entity entity);
 	template<typename T>
-	const T& entityGetComponent(Entity entity) const;
+	Opt<T>& getOptComponent(Entity entity);
 	template<typename T>
-	void entityRemoveComponent(Entity entity);
+	const T& getComponent(Entity entity) const;
+	template<typename T>
+	void removeComponent(Entity entity);
+
+	// I wanted to also implement a view like in entt that would take types and return an iterator that would return entites with all those types.
+	// I decided not to do so because it might hide bugs with entites that are never iterated over because they don't have a set of components.
+	// Currently if I try to get a component from an entity that doesn't have it an assertion is raised. This makes it easier to find those bugs
+	// without causing undefined behaviour.
+	// There are also a couple problems with the implementation. To use structured bindigs like in entt ([entity, component1, component2, ...])
+	// I would need to reimplement std::tuple (structured bindings are not allowed on inherited objects).
+	// I could use an alternative and return a std::pair<Entity, Components> and then do [entity, components] and then do [component1, component2, ...].
+	// Another thing is how to handle the iterator increment operator. Because the iterator can only return entites with all the components
+	// it would need to check if an entity doesn't have them it would need to move onto the next one, but if it doesn't check if it passed the
+	// end then that would be bad. So it would need to perform 2 bounds checks. One internal and one inside the range based for loop.
+	// Maybe there is a better way to do it, but I don't know how.
+
 
 	template<typename T>
 	ComponentPool<T>& getComponents();
@@ -107,39 +121,39 @@ void EntityManager::registerComponent()
 }
 
 template<typename T>
-T& EntityManager::entityAddComponent(Entity entity, T&& component)
+T& EntityManager::addComponent(Entity entity, T&& component)
 {
-	size_t componentIndex = m_componentTypeIdToComponentId[getTypeId<T>()];
-	ComponentPool<T>* pool = reinterpret_cast<ComponentPool<T>*>(m_componentPools[componentIndex].get());
-	T* c = pool->add(entity, std::forward<T>(component));
-	m_entityComponent[componentIndex][entity] = reinterpret_cast<Component*>(c);
-	return *c;
-}
-
-template<typename T, typename ...Args>
-T& EntityManager::entityEmplaceComponent(Entity entity, Args&&... args)
-{
-	size_t componentIndex = m_componentTypeIdToComponentId[getTypeId<T>()];
-	ComponentPool<T>* pool = reinterpret_cast<ComponentPool<T>*>(m_componentPools[componentIndex].get());
-	T* c = pool->emplace(entity, std::forward<Args>(args)...);
+	using Type = std::remove_reference_t<T>;
+	size_t componentIndex = m_componentTypeIdToComponentId[getTypeId<Type>()];
+	auto pool = reinterpret_cast<ComponentPool<Type>*>(m_componentPools[componentIndex].get());
+	Type* c = pool->add(entity, std::forward<T>(component));
 	m_entityComponent[componentIndex][entity] = reinterpret_cast<Component*>(c);
 	return *c;
 }
 
 template<typename T>
-T& EntityManager::entityGetComponent(Entity entity)
+T& EntityManager::getComponent(Entity entity)
 {
 	return *reinterpret_cast<T*>(m_entityComponent[getComponentIndex<T>()][entity]);
 }
 
 template<typename T>
-const T& EntityManager::entityGetComponent(Entity entity) const
+Opt<T*> getOptComponent(Entity entity)
+{
+	auto component = reinterpret_cast<T*>(m_entityComponent[getComponentIndex<T>()][entity]);
+	if (component == nullptr)
+		return std::nullopt;
+	return *component;
+}
+
+template<typename T>
+const T& EntityManager::getComponent(Entity entity) const
 {
 	return *reinterpret_cast<T*>(m_entityComponent[getComponentIndex<T>()][entity]);
 }
 
 template<typename T>
-void EntityManager::entityRemoveComponent(Entity entity)
+void EntityManager::removeComponent(Entity entity)
 {
 	ComponentToRemove toRemove;
 	size_t componentIndex = getComponentIndex<T>();

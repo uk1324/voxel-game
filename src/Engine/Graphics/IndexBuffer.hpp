@@ -2,25 +2,23 @@
 
 #include <stdint.h>
 
-namespace Gfx
+
+class IndexBuffer
 {
-	class IndexBuffer
-	{
-	public:
-		IndexBuffer();
-		IndexBuffer(uint32_t* indices, size_t count);
-		~IndexBuffer();
+public:
+	IndexBuffer();
+	IndexBuffer(uint32_t* indices, size_t count);
+	~IndexBuffer();
 
-		IndexBuffer(const IndexBuffer&) = delete;
-		IndexBuffer& operator= (const IndexBuffer&) = delete;
+	IndexBuffer(const IndexBuffer&) = delete;
+	IndexBuffer& operator= (const IndexBuffer&) = delete;
 
-		IndexBuffer(IndexBuffer&& other) noexcept;
-		IndexBuffer& operator= (IndexBuffer&& other) noexcept;
+	IndexBuffer(IndexBuffer&& other) noexcept;
+	IndexBuffer& operator= (IndexBuffer&& other) noexcept;
 
-		void bind();
-		void unbind();
+	void bind();
+	void unbind();
 
-	private:
-		uint32_t m_handle;
-	};
-}
+private:
+	uint32_t m_handle;
+};

@@ -22,7 +22,7 @@ ChunkSystem::ChunkSystem()
 	}
 
 	m_vao.bind();
-	m_vao.setAttribute(0, Gfx::IntBufferLayout(Gfx::ShaderDataType::UnsignedInt, 1, 0, 4));
+	m_vao.setAttribute(0, IntBufferLayout(ShaderDataType::UnsignedInt, 1, 0, 4));
 
 	m_worldGenerationThread = std::thread(&ChunkSystem::generateChunks, this);
 }

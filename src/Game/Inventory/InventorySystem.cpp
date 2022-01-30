@@ -80,14 +80,14 @@ InventorySystem::InventorySystem(Scene& scene)
 {
 	m_squareTrianglesVao.bind();
 	m_squareTrianglesVbo.bind();
-	Gfx::VertexArray::setAttribute(0, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 2, 0, sizeof(float) * 4, false));
-	Gfx::VertexArray::setAttribute(1, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 2, sizeof(float) * 2, sizeof(float) * 4, false));
+	Vao::setAttribute(0, BufferLayout(ShaderDataType::Float, 2, 0, sizeof(float) * 4, false));
+	Vao::setAttribute(1, BufferLayout(ShaderDataType::Float, 2, sizeof(float) * 2, sizeof(float) * 4, false));
 
 	m_cubeTrianglesVao.bind();
 	m_cubeTrianglesVbo.bind();
-	Gfx::VertexArray::setAttribute(0, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 3, 0, sizeof(float) * 6, false));
-	Gfx::VertexArray::setAttribute(1, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 2, sizeof(float) * 3, sizeof(float) * 6, false));
-	Gfx::VertexArray::setAttribute(2, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 1, sizeof(float) * 5, sizeof(float) * 6, false));
+	Vao::setAttribute(0, BufferLayout(ShaderDataType::Float, 3, 0, sizeof(float) * 6, false));
+	Vao::setAttribute(1, BufferLayout(ShaderDataType::Float, 2, sizeof(float) * 3, sizeof(float) * 6, false));
+	Vao::setAttribute(2, BufferLayout(ShaderDataType::Float, 1, sizeof(float) * 5, sizeof(float) * 6, false));
 }
 
 Opt<ItemStack> InventorySystem::update(Inventory& inventory, Window& window, const InputManager& input, const ItemData& itemData)

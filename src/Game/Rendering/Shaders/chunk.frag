@@ -95,12 +95,12 @@ void main()
 {
 	vec4 tex = texture(blockTextureArray, vec3(texCoord, texIndex));
 
-	vec4 o = tex;
-	if (o.a == 0)
+	if (tex.a == 0)
 		discard;
 
     float shadow = ShadowCalculation(fragPos);                      
     vec3 lighting = clamp(0.5 + (1.0 - shadow), 0, 1) * tex.xyz;    
+    //vec3 lighting = clamp(0.5 + (1.0 - shadow) + dot(normal, lightDir), 0, 1) * tex.xyz;    
    
 	gl_FragColor = vec4(lighting, 1.0);
 }

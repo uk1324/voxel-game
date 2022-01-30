@@ -4,21 +4,25 @@
 #include <stb_image.h>
 #include <glad/glad.h>
 
-using namespace Gfx;
-
 CubeMap::CubeMap()
 	: m_handle(NULL)
 {}
 
-CubeMap::CubeMap(const CubeMapTexturePaths& texture)
+CubeMap::CubeMap(
+	std::string_view right,
+	std::string_view left,
+	std::string_view top,
+	std::string_view bottom,
+	std::string_view front,
+	std::string_view back)
 {
 	std::array<std::string_view, 6> texturePaths = {
-		texture.right,
-		texture.left,
-		texture.top,
-		texture.bottom,
-		texture.front,
-		texture.back 
+		right,
+		left,
+		top,
+		bottom,
+		front,
+		back 
 	};
 
 	glGenTextures(1, &m_handle);

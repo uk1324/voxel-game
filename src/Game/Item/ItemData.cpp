@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 ItemData::ItemData()
+	: textureArray(TextureArray::null())
 {
 	items.resize(static_cast<size_t>(ItemType::Count));
 	std::vector<std::string> texturesNames;
@@ -52,7 +53,7 @@ ItemData::ItemData()
 
 #undef ITEM_TEXUTRES_PATH
 
-	textureArray = Gfx::TextureArray(16, 16, std::vector<std::string_view>(texturesNames.begin(), texturesNames.end()));
+	textureArray = TextureArray(16, 16, std::vector<std::string_view>(texturesNames.begin(), texturesNames.end()));
 }
 
 ItemData::Entry& ItemData::operator[](ItemType type)

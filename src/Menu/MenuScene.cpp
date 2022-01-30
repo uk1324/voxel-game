@@ -12,33 +12,24 @@ float vertices[] = {
 	 1.0f, -1.0f, 1.0f, 1.0f,
 };
 
-static float cubeTrianglesVertices[] = { -1.0f,  1.0f, -1.0f,-1.0f, -1.0f, -1.0f,1.0f, -1.0f, -1.0f,1.0f, -1.0f, -1.0f,1.0f,  1.0f, -1.0f,-1.0f,  1.0f, -1.0f,-1.0f, -1.0f,  1.0f,-1.0f, -1.0f, -1.0f,-1.0f,  1.0f, -1.0f,-1.0f,  1.0f, -1.0f,-1.0f,  1.0f,  1.0f,-1.0f, -1.0f,  1.0f,1.0f, -1.0f, -1.0f,1.0f, -1.0f,  1.0f,1.0f,  1.0f,  1.0f,1.0f,  1.0f,  1.0f,1.0f,  1.0f, -1.0f,1.0f, -1.0f, -1.0f,-1.0f, -1.0f,  1.0f,-1.0f,  1.0f,  1.0f,1.0f,  1.0f,  1.0f,1.0f,  1.0f,  1.0f,1.0f, -1.0f,  1.0f,-1.0f, -1.0f,  1.0f,-1.0f,  1.0f, -1.0f,1.0f,  1.0f, -1.0f,1.0f,  1.0f,  1.0f,1.0f,  1.0f,  1.0f,-1.0f,  1.0f,  1.0f,-1.0f,  1.0f, -1.0f,-1.0f, -1.0f, -1.0f,-1.0f, -1.0f,  1.0f,1.0f, -1.0f, -1.0f,1.0f, -1.0f, -1.0f,-1.0f, -1.0f,  1.0f,1.0f, -1.0f,  1.0f };
-
 MenuScene::MenuScene(Engine& engine)
 	: Scene(engine, 1)
 	, m_squareTrianglesVbo(vertices, sizeof(vertices))
 	, m_fontShader("src/Game/Inventory/Shaders/font.vert", "src/Game/Inventory/Shaders/font.frag")
 	, m_buttonShader("src/Menu/button.vert", "src/Menu/button.frag")
 	, m_fontTextureArray(32, 32, "assets/textures/ascii_font.png")
-	, m_skyboxTexture(Gfx::CubeMapTexturePaths{
+	, m_skyboxData(
 		"assets/textures/panorama_1.png",
 		"assets/textures/panorama_3.png",
 		"assets/textures/panorama_4.png",
 		"assets/textures/panorama_5.png",
 		"assets/textures/panorama_0.png",
-		"assets/textures/panorama_2.png"
-	})
-	, m_cubeTrianglesVbo(cubeTrianglesVertices, sizeof(cubeTrianglesVertices))
-	, m_skyboxShader("src/Game/Rendering/Shaders/skybox.vert", "src/Game/Rendering/Shaders/skybox.frag")
+		"assets/textures/panorama_2.png")
 {
 	m_squareTrianglesVbo.bind();
 	m_squareTrianglesVao.bind();
-	Gfx::VertexArray::setAttribute(0, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 2, 0, sizeof(float) * 4, false));
-	Gfx::VertexArray::setAttribute(1, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 2, sizeof(float) * 2, sizeof(float) * 4, false));
-
-	m_cubeTrianglesVao.bind();
-	m_cubeTrianglesVbo.bind();
-	Gfx::VertexArray::setAttribute(0, Gfx::BufferLayout(Gfx::ShaderDataType::Float, 3, 0, sizeof(float) * 3, false));
+	Vao::setAttribute(0, BufferLayout(ShaderDataType::Float, 2, 0, sizeof(float) * 4, false));
+	Vao::setAttribute(1, BufferLayout(ShaderDataType::Float, 2, sizeof(float) * 2, sizeof(float) * 4, false));
 
 	input.registerMouseButton("press", MouseButton::Left);
 
@@ -71,22 +62,18 @@ void MenuScene::update()
 
 	auto projection = Mat4::perspective(degToRad(90.0f), m_screenSize.x / m_screenSize.y, 0.1, 100);
 
-	glActiveTexture(GL_TEXTURE0);
-	m_skyboxTexture.bind();
-	m_skyboxShader.setMat4("projection", projection);
-	m_skyboxShader.setMat4("view", Quat(Time::currentTime() / 2.0f, Vec3::up).rotationMatrix());
-	//m_skyboxShader.setMat4("view", Quat(degToRad(45.0f), Vec3::xAxis).rotationMatrix());
-	m_skyboxShader.use();
-	m_cubeTrianglesVao.bind();
-	glDepthFunc(GL_LEQUAL);
-	glFrontFace(GL_CCW);
-	glDepthMask(GL_FALSE);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glFrontFace(GL_CW);
-	glDepthMask(GL_TRUE);
 
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CCW);
+	Renderer::drawSkybox(
+		Quat(Time::currentTime() / 2.0f, Vec3::up).rotationMatrix(),
+		Quat(degToRad(45.0f), Vec3::xAxis).rotationMatrix(),
+		m_skyboxData
+	);
 
 	glClear(GL_DEPTH_BUFFER_BIT);
+	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_DEPTH_TEST);

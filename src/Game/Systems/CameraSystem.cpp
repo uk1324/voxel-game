@@ -14,8 +14,8 @@ void CameraSystem::update(const EntityManager& entityManager, const Entity& play
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
 
-	const Vec3& playerPos = entityManager.entityGetComponent<Position>(player).value;
-	const Quat& playerRotation = entityManager.entityGetComponent<Rotation>(player).value;
+	const Vec3& playerPos = entityManager.getComponent<Position>(player).value;
+	const Quat& playerRotation = entityManager.getComponent<Rotation>(player).value;
 
 	Vec3 direction = (playerRotation * Vec3::forward).normalized();
 	Vec3 target = playerPos + direction;

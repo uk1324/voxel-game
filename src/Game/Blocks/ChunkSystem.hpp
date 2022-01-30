@@ -4,7 +4,7 @@
 #include <Game/Blocks/Chunk.hpp>
 #include <Game/Blocks/BlockData.hpp>
 #include <Game/Blocks/WorldGen.hpp>
-#include <Engine/Graphics/VertexArray.hpp>
+#include <Engine/Graphics/Vao.hpp>
 #include <Utils/Opt.hpp>
 
 #include <unordered_map>
@@ -82,10 +82,10 @@ public:
 	static Pos posToChunkPosAndPosInChunk(const Vec3I& pos);
 
 public:
-	/*static constexpr int32_t VERTICAL_RENDER_DISTANCE = 3;
-	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 3;*/
-	static constexpr int32_t VERTICAL_RENDER_DISTANCE = 4;
-	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 5;
+	static constexpr int32_t VERTICAL_RENDER_DISTANCE = 3;
+	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 3;
+	/*static constexpr int32_t VERTICAL_RENDER_DISTANCE = 4;
+	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 5;*/
 	static constexpr int32_t CHUNKS_IN_RENDER_DISTANCE = (2 * VERTICAL_RENDER_DISTANCE + 1) * (2 * HORIZONTAL_RENDER_DISTANCE + 1) * (2 * HORIZONTAL_RENDER_DISTANCE + 1);
 	static constexpr size_t VERTEX_DATA_PER_CHUNK_BYTE_SIZE = Chunk::SIZE_CUBED * 6 * 3 * 2 * 4;
 	static constexpr size_t VERTEX_DATA_BYTE_SIZE = CHUNKS_IN_RENDER_DISTANCE * VERTEX_DATA_PER_CHUNK_BYTE_SIZE;
@@ -96,8 +96,8 @@ private:
 public:
 	WorldGen m_worldGen;
 
-	Gfx::VertexArray m_vao;
-	Gfx::VertexBuffer m_vbo;
+	Vao m_vao;
+	Vbo m_vbo;
 
 	Vec3I m_lastChunkPos;
 

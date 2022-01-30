@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Engine/Graphics/VertexArray.hpp>
+#include <Engine/Graphics/Vao.hpp>
 #include <Engine/Graphics/Texture.hpp>
 #include <Utils/FileIo.hpp>
 #include <Utils/SmartPointers.hpp>
@@ -25,10 +25,10 @@ public:
 	class Mesh
 	{
 	public:
-		Mesh(std::vector<Gfx::VertexBuffer>& buffers, const Json::Value& model, int index);
+		Mesh(std::vector<Vbo>& buffers, const Json::Value& model, int index);
 		
 	public:
-		Gfx::VertexArray vao;
+		Vao vao;
 		size_t offset;
 		size_t count;
 	};
@@ -49,7 +49,7 @@ public:
 	const Json::Value::ArrayType* accessors;
 	const Json::Value::ArrayType* bufferViews;
 
-	Gfx::VertexArray vao;
-	std::vector<Gfx::VertexBuffer> m_buffers;
-	std::vector<Gfx::Texture> m_textures;
+	Vao vao;
+	std::vector<Vbo> m_buffers;
+	std::vector<Texture> m_textures;
 };

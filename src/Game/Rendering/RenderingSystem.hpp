@@ -2,12 +2,15 @@
 
 #include <Engine/Scene.hpp>
 #include <Engine/Ecs/EntityManager.hpp>
-#include <Engine/Graphics/CubeMap.hpp>
 #include <Engine/Graphics/TextureArray.hpp>
 #include <Engine/Graphics/Texture.hpp>
 #include <Engine/Graphics/ShaderProgram.hpp>
+#include <Engine/Graphics/Fbo.hpp>
 #include <Game/Blocks/ChunkSystem.hpp>
 #include <Math/Quat.hpp>
+#include <Engine/Renderer/Renderer.hpp>
+#include <Math/Angles.hpp>
+#include <Model/Model.hpp>
 
 // If I later need to reuse this I put the main functionality into functions and inherit from it.
 // Some members could be static
@@ -15,6 +18,28 @@
 
 class RenderingSystem
 {
+private:
+	struct Cube
+	{
+		Vec3 pos;
+		Vec3 scale;
+		Vec3 color;
+	};
+
+	struct Point
+	{
+		Vec3 pos;
+		float size;
+		Vec3 color;
+	};
+
+	struct Line
+	{
+		Vec3 startPos;
+		Vec3 scale;
+		Vec3 color;
+	};
+
 public:
 	RenderingSystem(Scene& scene);
 
@@ -25,86 +50,76 @@ public:
 	void drawLine(const Vec3& startPos, const Vec3& endPos, const Vec3& color);
 
 private:
-	static void drawChunks(const ChunkSystem& chunkSystem, Gfx::ShaderProgram& shader);
-
-	void drawSkybox(const Mat4& projection, const Mat4& view);
-
-	// Later use a UBO;
+	void drawChunks(const ChunkSystem& chunkSystem, ShaderProgram& shader);
 	void drawDebugShapes(const Mat4& projection, const Mat4& view);
-
 	void drawCrosshair(const Vec2& screenSize);
 
-private:
+	void shadowMapSetup();
+	void drawToShadowMap(const ChunkSystem& chunkSystem);
+	void drawScene(const ChunkSystem& chunkSystem);
+
+	void onScreenResize();
+
+	std::array<Vec3, 8> getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view);
+	Mat4 getLightSpaceMatrix(float fov, float aspectRatio, const float nearPlane, const float farPlane, const Mat4& view, const Vec3& lightDir);
+	std::vector<Mat4> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& shadowCascadeLevels);
 
 private:
-	Gfx::CubeMap m_skyboxTexture;
-	Gfx::ShaderProgram m_skyboxShader;
+	static constexpr size_t DEPTH_MAP_RESOLUTION = 4096;
+		
+private:
+	Fbo m_fbo;
+	Texture m_fboTexture;
+	Texture m_fboDepthTexture;
+	ShaderProgram m_fboShader;
 
-	static constexpr float farZ = 6 * 16;
-	static constexpr float nearZ = 0.1;
+	ShaderProgram m_modelShader;
 
-	Vec3 lightDir;
-	unsigned int lightFBO;
-	unsigned int lightDepthMaps;
-	const unsigned int depthMapResolution = 4096;
+	Model m_model;
+
+	float m_farPlaneZ = 6.0 * 16.0f;
+	float m_nearPlaneZ = 0.1f;
+	float m_fov = degToRad(90.0f);
+	Vec3 m_directionalLightDir = Vec3(20.0f, 50, 20.0f).normalized();
+	Vec2 m_screenSize;
+
+	Mat4 m_projection;
+	Mat4 m_view;
+
+	Fbo m_shadowMapFbo;
+	TextureArray m_shadowMapTextures;
 	unsigned int matricesUBO;
 
-	int index = 0;
+	std::vector<float> shadowCascadeLevels{ m_farPlaneZ / 50.0f, m_farPlaneZ / 25.0f, m_farPlaneZ / 10.0f, m_farPlaneZ / 2.0f };
 
-	std::vector<float> shadowCascadeLevels{ farZ / 50.0f, farZ / 25.0f, farZ / 10.0f, farZ / 2.0f };
+	SkyboxData m_skyboxData;
 
-	Gfx::ShaderProgram m_chunkShader;
-	Gfx::ShaderProgram m_chunkShadowShader;
+	ShaderProgram m_chunkShader;
+	ShaderProgram m_chunkShadowShader;
 
-	Gfx::ShaderProgram m_texturedSquareShader;
-	Gfx::VertexArray m_squareTrianglesVao2;
-	Gfx::VertexBuffer m_squareTrianglesVbo2;
+	ShaderProgram m_texturedSquareShader;
+	Vao m_squareTrianglesVao2;
+	Vbo m_squareTrianglesVbo2;
 
-	Gfx::ShaderProgram m_squareShader;
-	Gfx::Texture m_crosshairTexture;
+	ShaderProgram m_squareShader;
+	Texture m_crosshairTexture;
 
-	Gfx::ShaderProgram m_debugShader;
+	ShaderProgram m_debugShader;
 
-	Gfx::VertexArray m_cubeTrianglesVao;
-	Gfx::VertexBuffer m_cubeTrianglesVbo;
+	Vao m_cubeLinesVao;
+	Vbo m_cubeLinesVbo;
 
-	Gfx::VertexArray m_cubeLinesVao;
-	Gfx::VertexBuffer m_cubeLinesVbo;
+	Vao m_squareTrianglesVao;
+	Vbo m_squareTrianglesVbo;
 
-	Gfx::VertexArray m_squareTrianglesVao;
-	Gfx::VertexBuffer m_squareTrianglesVbo;
+	Vao m_pointVao;
+	Vbo m_pointVbo;
 
-	Gfx::VertexArray m_pointVao;
-	Gfx::VertexBuffer m_pointVbo;
-
-	Gfx::VertexArray m_LineVao;
-	Gfx::VertexBuffer m_LineVbo;
-
-	struct Cube
-	{
-		Vec3 pos;
-		Vec3 scale;
-		Vec3 color;
-	};
+	Vao m_LineVao;
+	Vbo m_LineVbo;
 
 	// Have to store them because they would get cleared if I draw them asynchronously.
 	std::vector<Cube> m_cubesToDraw;
-
-	struct Point
-	{
-		Vec3 pos;
-		float size;
-		Vec3 color;
-	};
-
 	std::vector<Point> m_pointsToDraw;
-
-	struct Line
-	{
-		Vec3 startPos;
-		Vec3 scale;
-		Vec3 color;
-	};
-
 	std::vector<Line> m_linesToDraw;
 };

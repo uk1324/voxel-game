@@ -3,6 +3,7 @@
 #include <Utils/Assertions.hpp>
 
 BlockData::BlockData()
+	: textureArray(TextureArray::null())
 {
 	std::vector<std::string> texturesNames;
 	std::unordered_map<std::string, uint32_t> textureNameToIndex;
@@ -188,7 +189,7 @@ BlockData::BlockData()
 		false
 	));
 
-	textureArray = Gfx::TextureArray(16, 16, std::vector<std::string_view>(texturesNames.begin(), texturesNames.end()));
+	textureArray = TextureArray(16, 16, std::vector<std::string_view>(texturesNames.begin(), texturesNames.end()));
 }
 
 // Functions subtract 1 to skip BlockType::Air.

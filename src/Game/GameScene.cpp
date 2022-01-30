@@ -1,21 +1,12 @@
-#include "GameScene.hpp"
 #include <Game/GameScene.hpp>
 #include <Engine/Engine.hpp>
-#include <chrono>
-
 #include <Game/Inventory/Inventory.hpp>
-
-#include <string>
-
-#include <Game/Debug/Debug.hpp>
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>
-#include <Engine/Graphics/Drawing.hpp>
+#include <Game/Debug/Debug.hpp>
 
+#include <chrono>
 #include <iostream>
-
-#include <math.h>
-// Should timestep be fixed for things like chunk loading
 
 GameScene::GameScene(Engine& engine)
     : Scene(engine, 100)
@@ -35,17 +26,17 @@ GameScene::GameScene(Engine& engine)
     entityManager.registerComponent<Rotation>();
 
     m_player = entityManager.createEntity();
-    entityManager.entityEmplaceComponent<Position>(m_player, Vec3(0, 40, 0));
+    entityManager.addComponent(m_player, Position{ Vec3(0, 40, 0) });
     //entityManager.entityEmplaceComponent<Position>(m_player, Vec3(-31, -7, -237));
-    entityManager.entityEmplaceComponent<Rotation>(m_player, Quat::identity);
-    entityManager.entityEmplaceComponent<PlayerMovementComponent>(m_player);
+    entityManager.addComponent(m_player, Rotation{ Quat::identity });
+    entityManager.addComponent(m_player, PlayerMovementComponent{});
 
     PhysicsAabbCollider collider;
     collider.centerOffset = Vec3(0, -(1.62 - 0.5 * (1.875)), 0);
     collider.halfSize = Vec3(0.6, 1.875, 0.6) / 2.0f;
-    entityManager.entityEmplaceComponent<PhysicsAabbCollider>(m_player, collider);
-    entityManager.entityEmplaceComponent<PhysicsVelocity>(m_player, PhysicsVelocity{ Vec3(0, 0, 0) });
-    entityManager.entityEmplaceComponent<Grounded>(m_player, Grounded{ false });
+    entityManager.addComponent(m_player, collider);
+    entityManager.addComponent(m_player, PhysicsVelocity{ Vec3(0, 0, 0) });
+    entityManager.addComponent(m_player, Grounded{ false });
 
     input.registerKeyboardButton("testtest", KeyCode::T);
     input.registerKeyboardButton("testrender", KeyCode::B);
@@ -71,8 +62,8 @@ void GameScene::update()
         m_isGamePaused = !m_isGamePaused;
     }
 
-    const Vec3 playerPos = entityManager.entityGetComponent<Position>(m_player).value;
-    const Quat playerRot = entityManager.entityGetComponent<Rotation>(m_player).value;
+    const Vec3 playerPos = entityManager.getComponent<Position>(m_player).value;
+    const Quat playerRot = entityManager.getComponent<Rotation>(m_player).value;
     const Vec2 windowSize = Vec2(engine.window().getWindowSize());
     m_renderingSystem.update(
         windowSize,
@@ -86,11 +77,12 @@ void GameScene::update()
 
     if (input.isButtonDown("testtest"))
     {
-        m_blockSystem.chunkSystem.regenerateAll();
-        std::cout << "playerPos: " << playerPos << '\n';
+        m_entitySystem.spawnZombie(playerPos, entityManager);
+        /*m_blockSystem.chunkSystem.regenerateAll();
+        std::cout << "playerPos: " << playerPos << '\n';*/
     }
 
-    m_blockSystem.chunkSystem.update(entityManager.entityGetComponent<Position>(m_player).value);
+    m_blockSystem.chunkSystem.update(entityManager.getComponent<Position>(m_player).value);
 
     Opt<ItemStack> droppedItem = m_inventorySystem.update(m_inventory, engine.window(), input, itemData);
 
@@ -102,6 +94,19 @@ void GameScene::update()
             m_playerInteractionSystem.update(m_player, itemData, m_inventorySystem.heldItem(m_inventory), input, entityManager, m_blockSystem);
         }
     }
+
+    if (input.isButtonDown("attack"))
+    {
+        rayStart = playerPos;
+        rayEnd = playerPos + playerRot * Vec3::forward * 3;
+        auto x = m_physicsSystem.raycast(m_player, rayStart, rayEnd, entityManager);
+        if (x.has_value())
+        {
+            std::cout << "hit\n";
+            rayEnd = playerPos + playerRot * Vec3::forward * 3 * x->time;
+        }
+    }
+    Debug::drawLine(rayStart, rayEnd);
 
     m_physicsSystem.update(time, entityManager, m_blockSystem.chunkSystem);
 

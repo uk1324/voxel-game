@@ -1,39 +1,37 @@
-#include <Engine/Graphics/VertexBuffer.hpp>
+#include <Engine/Graphics/Vbo.hpp>
 
 #include <glad/glad.h>
 
-using namespace Gfx;
-
-VertexBuffer::VertexBuffer()
+Vbo::Vbo()
 	: m_handle(NULL)
 {}
 
-VertexBuffer::VertexBuffer(size_t dataByteSize)
+Vbo::Vbo(size_t dataByteSize)
 {
 	glGenBuffers(1, &m_handle);
 	bind();
 	glBufferData(GL_ARRAY_BUFFER, dataByteSize, nullptr, GL_DYNAMIC_DRAW);
 }
 
-VertexBuffer::VertexBuffer(const void* data, size_t dataByteSize)
+Vbo::Vbo(const void* data, size_t dataByteSize)
 {
 	glGenBuffers(1, &m_handle);
 	bind();
 	glBufferData(GL_ARRAY_BUFFER, dataByteSize, data, GL_STATIC_DRAW);
 }
 
-VertexBuffer::~VertexBuffer()
+Vbo::~Vbo()
 {
  	glDeleteBuffers(1, &m_handle);
 }
 
-VertexBuffer::VertexBuffer(VertexBuffer&& other) noexcept
+Vbo::Vbo(Vbo&& other) noexcept
 	: m_handle(other.m_handle)
 {
 	other.m_handle = NULL;
 }
 
-VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other) noexcept
+Vbo& Vbo::operator=(Vbo&& other) noexcept
 {
 	glDeleteBuffers(1, &m_handle);
 	m_handle = other.m_handle;
@@ -41,22 +39,22 @@ VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other) noexcept
 	return *this;
 }
 
-void VertexBuffer::setData(intptr_t offset, const void* data, size_t dataSize)
+void Vbo::setData(intptr_t offset, const void* data, size_t dataSize)
 {
 	glBufferSubData(GL_ARRAY_BUFFER, offset, dataSize, data);
 }
 
-void VertexBuffer::bind() const
+void Vbo::bind() const
 {
 	glBindBuffer(GL_ARRAY_BUFFER, m_handle);
 }
 
-void VertexBuffer::bindAsIndexBuffer() const
+void Vbo::bindAsIndexBuffer() const
 {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_handle);
 }
 
-const GLuint VertexBuffer::handle() const
+const GLuint Vbo::handle() const
 {
 	return m_handle;
 }

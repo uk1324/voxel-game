@@ -13,9 +13,9 @@ PlayerMovementSystem::PlayerMovementSystem(Scene& scene)
 
 void PlayerMovementSystem::update(Entity& player, const InputManager& input, const Time& time, EntityManager& entityManager)
 {
-	Vec3& playerVel = entityManager.entityGetComponent<PhysicsVelocity>(player).value;
-	Quat& playerRotation = entityManager.entityGetComponent<Rotation>(player).value;
-	PlayerMovementComponent& playerMovement = entityManager.entityGetComponent<PlayerMovementComponent>(player);
+	Vec3& playerVel = entityManager.getComponent<PhysicsVelocity>(player).value;
+	Quat& playerRotation = entityManager.getComponent<Rotation>(player).value;
+	PlayerMovementComponent& playerMovement = entityManager.getComponent<PlayerMovementComponent>(player);
 
 	Vec2 offset = input.mousePos() - input.lastMousePos();
 
@@ -67,7 +67,7 @@ void PlayerMovementSystem::update(Entity& player, const InputManager& input, con
 	movementDirection.normalize();
 
 
-	const bool isEntityGrounded = entityManager.entityGetComponent<Grounded>(player).value;
+	const bool isEntityGrounded = entityManager.getComponent<Grounded>(player).value;
 	if (isEntityGrounded)
 	{
 		playerVel += (rotationX * movementDirection) * walkSpeed * time.deltaTime();

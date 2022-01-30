@@ -4,10 +4,8 @@
 
 #include <memory>
 
-using namespace Gfx;
-
-TextureArray::TextureArray()
-	: m_handle(NULL)
+TextureArray::TextureArray(uint32_t handle)
+	: m_handle(handle)
 {}
 
 TextureArray::TextureArray(size_t width, size_t height, std::vector<std::string_view> textures)
@@ -191,4 +189,16 @@ GLuint TextureArray::handle() const
 void TextureArray::bind() const
 {
 	glBindTexture(TARGET, m_handle);
+}
+
+TextureArray TextureArray::null()
+{
+	return TextureArray(NULL);
+}
+
+TextureArray TextureArray::incomplete()
+{
+	uint32_t handle;
+	glGenTextures(1, &handle);
+	return TextureArray(handle);
 }
