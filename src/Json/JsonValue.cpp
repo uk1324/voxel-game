@@ -307,6 +307,11 @@ Json::Value& Json::Value::at(const StringType& key)
 	return m_value.object.at(key);
 }
 
+bool Json::Value::contains(const StringType& key) const
+{
+	return m_value.object.count(key) > 0;
+}
+
 const Json::Value& Json::Value::at(const StringType& key) const
 {
 	if (m_type != Type::Object)
@@ -318,154 +323,79 @@ const Json::Value& Json::Value::at(const StringType& key) const
 	return m_value.object.at(key);
 }
 
-bool Json::Value::contains(const StringType& key) const
+Json::Value& Json::Value::at(IntType key)
 {
-	return m_value.object.count(key) > 0;
+	Json::Value::ArrayType& arr = array();
+	if ((key < 0) || (key >= arr.size()))
+		throw OutOfRangeAccess();
+	return arr[key];
+}
+
+const Json::Value& Json::Value::at(IntType key) const
+{
+	const Json::Value::ArrayType& arr = array();
+	if ((key < 0) || (key >= arr.size()))
+		throw OutOfRangeAccess();
+	return arr[key];
 }
 
 Json::Value::StringType& Json::Value::string()
-{
-	ASSERT(isString());
-	return m_value.string;
-}
-
-Json::Value::FloatType& Json::Value::number()
-{
-	ASSERT(isFloat());
-	return m_value.floatNumber;
-}
-
-bool& Json::Value::boolean()
-{
-	ASSERT(isBoolean());
-	return m_value.boolean;
-}
-
-Json::Value::FloatType& Json::Value::floatNumber()
-{
-	ASSERT(isFloat());
-	return m_value.floatNumber;
-}
-
-Json::Value::IntType& Json::Value::intNumber()
-{
-	ASSERT(isInt());
-	return m_value.intNumber;
-}
-
-Json::Value::MapType& Json::Value::object()
-{
-	ASSERT(isObject());
-	return m_value.object;
-}
-
-Json::Value::ArrayType& Json::Value::array()
-{
-	ASSERT(isArray());
-	return m_value.array;
-}
-
-const Json::Value::StringType& Json::Value::string() const
-{
-	ASSERT(isString());
-	return m_value.string;
-}
-
-Json::Value::FloatType Json::Value::number() const
-{
-	ASSERT(isNumber());
-	if (isInt())
-		return static_cast<double>(m_value.intNumber);
-	return m_value.floatNumber;
-}
-
-Json::Value::FloatType Json::Value::floatNumber() const
-{
-	ASSERT(isFloat());
-	return m_value.floatNumber;
-}
-
-Json::Value::IntType Json::Value::intNumber() const
-{
-	ASSERT(isInt());
-	return m_value.intNumber;
-}
-
-bool Json::Value::boolean() const
-{
-	ASSERT(isBoolean());
-	return m_value.boolean;
-}
-
-const Json::Value::MapType& Json::Value::object() const
-{
-	ASSERT(isObject());
-	return m_value.object;
-}
-
-const Json::Value::ArrayType& Json::Value::array() const
-{
-	ASSERT(isArray());
-	return m_value.array;
-}
-
-Json::Value::StringType& Json::Value::getString()
 {
 	if (isString())
 		return m_value.string;
 	throw InvalidTypeAccess();
 }
 
-double& Json::Value::getNumber()
+double& Json::Value::number()
 {
 	if (isFloat())
 		return m_value.floatNumber;
 	throw InvalidTypeAccess();
 }
 
-Json::Value::FloatType& Json::Value::getFloatNumber()
+Json::Value::FloatType& Json::Value::floatNumber()
 {
 	if (isFloat())
 		return m_value.floatNumber;
 	throw InvalidTypeAccess();
 }
 
-Json::Value::IntType& Json::Value::getIntNumber()
+Json::Value::IntType& Json::Value::intNumber()
 {
 	if (isInt())
 		return m_value.intNumber;
 	throw InvalidTypeAccess();
 }
 
-bool& Json::Value::getBoolean()
+bool& Json::Value::boolean()
 {
 	if (isBoolean())
 		return m_value.boolean;
 	throw InvalidTypeAccess();
 }
 
-Json::Value::MapType& Json::Value::getObject()
+Json::Value::MapType& Json::Value::object()
 {
 	if (isObject())
 		return m_value.object;
 	throw InvalidTypeAccess();
 }
 
-Json::Value::ArrayType& Json::Value::getArray()
+Json::Value::ArrayType& Json::Value::array()
 {
 	if (isArray())
 		return m_value.array;
 	throw InvalidTypeAccess();
 }
 
-const Json::Value::StringType& Json::Value::getString() const
+const Json::Value::StringType& Json::Value::string() const
 {
 	if (isString())
 		return m_value.string;
 	throw InvalidTypeAccess();
 }
 
-Json::Value::FloatType Json::Value::getNumber() const
+Json::Value::FloatType Json::Value::number() const
 {
 	if (isInt())
 		return static_cast<FloatType>(m_value.intNumber);
@@ -474,35 +404,35 @@ Json::Value::FloatType Json::Value::getNumber() const
 	throw InvalidTypeAccess();
 }
 
-Json::Value::FloatType Json::Value::getFloatNumber() const
+Json::Value::FloatType Json::Value::floatNumber() const
 {
 	if (isFloat())
 		return m_value.floatNumber;
 	throw InvalidTypeAccess();
 }
 
-Json::Value::IntType Json::Value::getIntNumber() const
+Json::Value::IntType Json::Value::intNumber() const
 {
 	if (isInt())
 		return m_value.intNumber;
 	throw InvalidTypeAccess();
 }
 
-bool Json::Value::getBoolean() const
+bool Json::Value::boolean() const
 {
 	if (isBoolean())
 		return m_value.boolean;
 	throw InvalidTypeAccess();
 }
 
-const Json::Value::MapType& Json::Value::getObject() const
+const Json::Value::MapType& Json::Value::object() const
 {
 	if (isObject())
 		return m_value.object;
 	throw InvalidTypeAccess();
 }
 
-const Json::Value::ArrayType& Json::Value::getArray() const
+const Json::Value::ArrayType& Json::Value::array() const
 {
 	if (isArray())
 		return m_value.array;

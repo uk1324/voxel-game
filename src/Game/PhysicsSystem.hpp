@@ -38,7 +38,7 @@ public:
 
 	void update(const Time& time, EntityManager& entityManager, const ChunkSystem& chunkSystem);
 
-	Opt<RaycastHit> raycast(Entity entityToExclude, const Vec3& rayStart, const Vec3& rayEnd, const EntityManager& entityManager);
+	static Opt<RaycastHit> raycast(Entity entityToExclude, const Vec3& rayStart, const Vec3& rayEnd, const EntityManager& entityManager);
 
 private:
 

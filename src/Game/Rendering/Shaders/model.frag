@@ -1,5 +1,7 @@
 #version 430 core
 
+uniform sampler2D textureSampler;
+
 in VsOut
 {
 	vec3 normal;
@@ -10,5 +12,5 @@ out vec4 outColor;
 
 void main()
 {
-	outColor = vec4(1, 0, 0, 1);
+	outColor = texture(textureSampler, i.uv);
 }

@@ -24,6 +24,7 @@ GameScene::GameScene(Engine& engine)
 
     entityManager.registerComponent<Position>();
     entityManager.registerComponent<Rotation>();
+    entityManager.registerComponent<ModelComponent>();
 
     m_player = entityManager.createEntity();
     entityManager.addComponent(m_player, Position{ Vec3(0, 40, 0) });
@@ -95,18 +96,18 @@ void GameScene::update()
         }
     }
 
-    if (input.isButtonDown("attack"))
-    {
-        rayStart = playerPos;
-        rayEnd = playerPos + playerRot * Vec3::forward * 3;
-        auto x = m_physicsSystem.raycast(m_player, rayStart, rayEnd, entityManager);
-        if (x.has_value())
-        {
-            std::cout << "hit\n";
-            rayEnd = playerPos + playerRot * Vec3::forward * 3 * x->time;
-        }
-    }
-    Debug::drawLine(rayStart, rayEnd);
+    //if (input.isButtonDown("attack"))
+    //{
+    //    rayStart = playerPos;
+    //    rayEnd = playerPos + playerRot * Vec3::forward * 3;
+    //    auto x = m_physicsSystem.raycast(m_player, rayStart, rayEnd, entityManager);
+    //    if (x.has_value())
+    //    {
+    //        std::cout << "hit t: " << x->time << '\n';
+    //        rayEnd = playerPos + playerRot * Vec3::forward * 3 * x->time;
+    //    }
+    //}
+    //Debug::drawLine(rayStart, rayEnd);
 
     m_physicsSystem.update(time, entityManager, m_blockSystem.chunkSystem);
 

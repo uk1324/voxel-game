@@ -30,13 +30,10 @@ Opt<BlockSystem::RaycastHit> BlockSystem::raycast(const Vec3& start, const Vec3&
 #define FRAC0(x) (x - floorf(x))
 #define FRAC1(x) (1 - x + floorf(x))
 
-    Vec3 ray_start = start;
-    Vec3 ray_end = end;
-
     float tMaxX, tMaxY, tMaxZ, tDeltaX, tDeltaY, tDeltaZ;
 
-    float x1 = ray_start.x, y1 = ray_start.y, z1 = ray_start.z; 
-    float x2 = ray_end.x, y2 = ray_end.y, z2 = ray_end.z;
+    float x1 = start.x, y1 = start.y, z1 = start.z; 
+    float x2 = end.x, y2 = end.y, z2 = end.z;
 
     // Calculates how many d steps does it take to reach the ray end.
     int dx = SIGN(x2 - x1) * Block::SIZE;
@@ -75,6 +72,9 @@ Opt<BlockSystem::RaycastHit> BlockSystem::raycast(const Vec3& start, const Vec3&
     Vec3I currentBlockPos(start.applied(floor));
     Vec3I lastBlockPos = currentBlockPos;
 
+    // Probably don't need to intialize it here.
+    Vec3 lastTMax(tMaxX, tMaxY, tMaxZ);
+
     for (;;)
     {
         auto block = tryGet(currentBlockPos);
@@ -84,15 +84,18 @@ Opt<BlockSystem::RaycastHit> BlockSystem::raycast(const Vec3& start, const Vec3&
             return std::nullopt;
         }
 
+
         if (block->type != BlockType::Air)
         {
             RaycastHit result;
             result.blockPos = currentBlockPos;
             if (Vec3I(start) == currentBlockPos)
             {
+                result.time = 0.0f;
                 result.entryNormal = std::nullopt;
                 return result;
             }
+            result.time = std::min(lastTMax.x, std::min(lastTMax.y, lastTMax.z));
             result.entryNormal = lastBlockPos - currentBlockPos;
             return result;
         }
@@ -104,11 +107,13 @@ Opt<BlockSystem::RaycastHit> BlockSystem::raycast(const Vec3& start, const Vec3&
             if (tMaxX < tMaxZ)
             {
                 currentBlockPos.x += dx;
+                lastTMax = Vec3(tMaxX, tMaxX, tMaxZ);
                 tMaxX += tDeltaX;
             }
             else
             {
                 currentBlockPos.z += dz;
+                lastTMax = Vec3(tMaxX, tMaxX, tMaxZ);
                 tMaxZ += tDeltaZ;
             }
         }
@@ -117,11 +122,13 @@ Opt<BlockSystem::RaycastHit> BlockSystem::raycast(const Vec3& start, const Vec3&
             if (tMaxY < tMaxZ)
             {
                 currentBlockPos.y += dy;
+                lastTMax = Vec3(tMaxX, tMaxX, tMaxZ);
                 tMaxY += tDeltaY;
             }
             else
             {
                 currentBlockPos.z += dz;
+                lastTMax = Vec3(tMaxX, tMaxX, tMaxZ);
                 tMaxZ += tDeltaZ;
             }
         }

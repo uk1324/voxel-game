@@ -14,36 +14,36 @@ Model::Model(std::string_view path)
 
 	try
 	{
-		int defaultScene = model.at("scene").getIntNumber();
-		const Json::Value::ArrayType& rootNodes = model.at("scenes").getArray().at(defaultScene).at("nodes").getArray();
-		const Json::Value::ArrayType& nodes = model.at("nodes").getArray();
-		const Json::Value::ArrayType& meshes = model.at("meshes").getArray();
+		const auto defaultSceneIndex = model.at("scene").intNumber();
+		const Json::Value::ArrayType& rootNodes = model.at("scenes").array().at(defaultSceneIndex).at("nodes").array();
+		const Json::Value::ArrayType& nodes = model.at("nodes").array();
+		const Json::Value::ArrayType& meshes = model.at("meshes").array();
 
 		for (auto node : rootNodes)
 		{
-			Json::Value::IntType nodeIndex = node.getIntNumber();
+			Json::Value::IntType nodeIndex = node.intNumber();
 			root.children.push_back(parseNode(nodes, meshes, nodeIndex));
 		}
 
-		const Json::Value::ArrayType& buffers = model.at("buffers").getArray();
+		const Json::Value::ArrayType& buffers = model.at("buffers").array();
 
 		for (const Json::Value& buffer : buffers)
 		{
-			const Json::Value::MapType& bufferInfo = buffer.getObject();
-			std::string bufferData = stringFromFile((folder / bufferInfo.at("uri").getString()).string());
-			size_t bufferDataLength = static_cast<size_t>(bufferInfo.at("byteLength").getIntNumber());
+			const Json::Value::MapType& bufferInfo = buffer.object();
+			std::string bufferData = stringFromFile((folder / bufferInfo.at("uri").string()).string());
+			size_t bufferDataLength = static_cast<size_t>(bufferInfo.at("byteLength").intNumber());
 			ASSERT(bufferDataLength == bufferData.size());
 			m_buffers.push_back(Vbo(bufferData.data(), bufferData.size()));
 			m_buffers[0].bind();
 			//glBufferSubData(GL_ARRAY_BUFFER, 0, bufferData.size(), bufferData.data());
 		}
 
-		const Json::Value::ArrayType& textures = model.at("images").getArray();
+		const Json::Value::ArrayType& textures = model.at("images").array();
 
 		for (const Json::Value& buffer : textures)
 		{
-			const Json::Value::MapType& bufferInfo = buffer.getObject();
-			std::string bufferPath = (folder / bufferInfo.at("uri").getString()).string();
+			const Json::Value::MapType& bufferInfo = buffer.object();
+			std::string bufferPath = (folder / bufferInfo.at("uri").string()).string();
 			stbi_set_flip_vertically_on_load(false);
 			m_textures.push_back(Texture(bufferPath));
 		}
@@ -63,16 +63,16 @@ Model::Model(std::string_view path)
 
 Model::Node Model::parseNode(const Json::Value::ArrayType& nodes, const Json::Value::ArrayType& meshes, int nodeIndex)
 {
-	Json::Value::MapType node = nodes.at(nodeIndex).getObject();
+	Json::Value::MapType node = nodes.at(nodeIndex).object();
 	Node nodeData;
 
 	auto children = node.find("children");
 	if (children != node.end())
 	{
-		Json::Value::ArrayType childrenNodes = children->second.getArray();
+		Json::Value::ArrayType childrenNodes = children->second.array();
 		for (Json::Value node : childrenNodes)
 		{
-			Json::Value::IntType nodeIndex = node.getIntNumber();
+			Json::Value::IntType nodeIndex = node.intNumber();
 			nodeData.children.push_back(parseNode(nodes, meshes, nodeIndex));
 		}
 	}
@@ -88,24 +88,24 @@ Model::Node Model::parseNode(const Json::Value::ArrayType& nodes, const Json::Va
 
 Model::Mesh::Mesh(std::vector<Vbo>& buffers, const Json::Value& model, int index)
 {
-	const Json::Value::MapType& mesh = model.at("meshes").getArray()[index].getObject();
-	const Json::Value::ArrayType& accessors = model.at("accessors").getArray();
-	const Json::Value::ArrayType& views = model.at("bufferViews").getArray();
+	const Json::Value::MapType& mesh = model.at("meshes").array()[index].object();
+	const Json::Value::ArrayType& accessors = model.at("accessors").array();
+	const Json::Value::ArrayType& views = model.at("bufferViews").array();
 
-	auto primitives = mesh.at("primitives").getArray()[0].at("attributes").getObject();
-	std::cout << mesh.at("primitives").getArray()[0].at("attributes") << '\n';
-	std::cout << mesh.at("primitives").getArray()[0].at("attributes").at("POSITION") << '\n';
+	auto primitives = mesh.at("primitives").array()[0].at("attributes").object();
+	std::cout << mesh.at("primitives").array()[0].at("attributes") << '\n';
+	std::cout << mesh.at("primitives").array()[0].at("attributes").at("POSITION") << '\n';
 	//auto position = primitives.find("POSITION");
 	//if (position == primitives.end())
 	{
 		//int pos = position->second.getIntNumber();
-		int pos = mesh.at("primitives").getArray()[0].at("attributes").at("POSITION").getIntNumber();
+		int pos = mesh.at("primitives").array()[0].at("attributes").at("POSITION").intNumber();
 		auto accessor = accessors.at(pos);
-		auto view = views.at(accessor.at("bufferView").getIntNumber());
+		auto view = views.at(accessor.at("bufferView").intNumber());
 		
 		BufferLayout layout;
-		layout.dataType = static_cast<ShaderDataType>(accessor.at("componentType").getIntNumber());
-		const std::string& type = accessor.at("type").getString();
+		layout.dataType = static_cast<ShaderDataType>(accessor.at("componentType").intNumber());
+		const std::string& type = accessor.at("type").string();
 
 		if (type == "VEC3")
 		{
@@ -117,24 +117,24 @@ Model::Mesh::Mesh(std::vector<Vbo>& buffers, const Json::Value& model, int index
 		}
 
 		layout.isNormalized = false;
-		layout.offset = view.at("byteOffset").getIntNumber() + accessor.at("byteOffset").getIntNumber();
-		layout.stride = view.at("byteStride").getIntNumber();
+		layout.offset = view.at("byteOffset").intNumber() + accessor.at("byteOffset").intNumber();
+		layout.stride = view.at("byteStride").intNumber();
 		vao.bind();
-		buffers.at(view.at("buffer").getIntNumber()).bind();
+		buffers.at(view.at("buffer").intNumber()).bind();
 		vao.setAttribute(0, layout);
 		std::cout << layout.offset << ' ' << layout.stride << '\n';
-		std::cout << view.at("byteOffset").getIntNumber() << ' ' << accessor.at("byteOffset").getIntNumber() << '\n';
+		std::cout << view.at("byteOffset").intNumber() << ' ' << accessor.at("byteOffset").intNumber() << '\n';
 	}
 
 	{
 		//int pos = position->second.getIntNumber();
-		int pos = mesh.at("primitives").getArray()[0].at("attributes").at("NORMAL").getIntNumber();
+		int pos = mesh.at("primitives").array()[0].at("attributes").at("NORMAL").intNumber();
 		auto accessor = accessors.at(pos);
-		auto view = views.at(accessor.at("bufferView").getIntNumber());
+		auto view = views.at(accessor.at("bufferView").intNumber());
 
 		BufferLayout layout;
-		layout.dataType = static_cast<ShaderDataType>(accessor.at("componentType").getIntNumber());
-		const std::string& type = accessor.at("type").getString();
+		layout.dataType = static_cast<ShaderDataType>(accessor.at("componentType").intNumber());
+		const std::string& type = accessor.at("type").string();
 
 		if (type == "VEC3")
 		{
@@ -146,24 +146,24 @@ Model::Mesh::Mesh(std::vector<Vbo>& buffers, const Json::Value& model, int index
 		}
 
 		layout.isNormalized = false;
-		layout.offset = view.at("byteOffset").getIntNumber() + accessor.at("byteOffset").getIntNumber();
-		layout.stride = view.at("byteStride").getIntNumber();
+		layout.offset = view.at("byteOffset").intNumber() + accessor.at("byteOffset").intNumber();
+		layout.stride = view.at("byteStride").intNumber();
 		vao.bind();
-		buffers.at(view.at("buffer").getIntNumber()).bind();
+		buffers.at(view.at("buffer").intNumber()).bind();
 		vao.setAttribute(1, layout);
 		std::cout << layout.offset << ' ' << layout.stride << '\n';
-		std::cout << view.at("byteOffset").getIntNumber() << ' ' << accessor.at("byteOffset").getIntNumber() << '\n';
+		std::cout << view.at("byteOffset").intNumber() << ' ' << accessor.at("byteOffset").intNumber() << '\n';
 	}
 
 	{
 		//int pos = position->second.getIntNumber();
-		int pos = mesh.at("primitives").getArray()[0].at("attributes").at("TEXCOORD_0").getIntNumber();
+		int pos = mesh.at("primitives").array()[0].at("attributes").at("TEXCOORD_0").intNumber();
 		auto accessor = accessors.at(pos);
-		auto view = views.at(accessor.at("bufferView").getIntNumber());
+		auto view = views.at(accessor.at("bufferView").intNumber());
 
 		BufferLayout layout;
-		layout.dataType = static_cast<ShaderDataType>(accessor.at("componentType").getIntNumber());
-		const std::string& type = accessor.at("type").getString();
+		layout.dataType = static_cast<ShaderDataType>(accessor.at("componentType").intNumber());
+		const std::string& type = accessor.at("type").string();
 
 		if (type == "VEC2")
 		{
@@ -175,21 +175,21 @@ Model::Mesh::Mesh(std::vector<Vbo>& buffers, const Json::Value& model, int index
 		}
 
 		layout.isNormalized = false;
-		layout.offset = view.at("byteOffset").getIntNumber() + accessor.at("byteOffset").getIntNumber();
-		layout.stride = view.at("byteStride").getIntNumber();
+		layout.offset = view.at("byteOffset").intNumber() + accessor.at("byteOffset").intNumber();
+		layout.stride = view.at("byteStride").intNumber();
 		vao.bind();
-		buffers.at(view.at("buffer").getIntNumber()).bind();
+		buffers.at(view.at("buffer").intNumber()).bind();
 		vao.setAttribute(2, layout);
 		std::cout << layout.offset << ' ' << layout.stride << '\n';
-		std::cout << view.at("byteOffset").getIntNumber() << ' ' << accessor.at("byteOffset").getIntNumber() << '\n';
+		std::cout << view.at("byteOffset").intNumber() << ' ' << accessor.at("byteOffset").intNumber() << '\n';
 	}
 
 	{
-		int indices = mesh.at("primitives").getArray()[0].at("indices").getIntNumber();
+		int indices = mesh.at("primitives").array()[0].at("indices").intNumber();
 
 		auto accessor = accessors.at(indices);
 		auto view = views[accessor.at("bufferView").intNumber()];
 		count = accessor.at("count").intNumber();
-		offset = view.at("byteOffset").getIntNumber() + accessor.at("byteOffset").getIntNumber();
+		offset = view.at("byteOffset").intNumber() + accessor.at("byteOffset").intNumber();
 	}
 }

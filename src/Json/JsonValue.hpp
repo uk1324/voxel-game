@@ -59,10 +59,14 @@ namespace Json
 		Value& operator[] (StringType&& key) noexcept;
 		const Value& operator[] (const StringType& key) const;
 
+
 		// Throws InvalidTypeAccess when not this->type != Type::Object.
 		// Throws OutOfRangeAccess when key doesn't exist.
 		Value& at(const StringType& key);
 		const Value& at(const StringType& key) const;
+		Value& at(IntType key);
+		const Value& at(IntType  key) const;
+
 
 		bool contains(const StringType& key) const;
 
@@ -75,14 +79,14 @@ namespace Json
 		bool isObject() const;
 		bool isArray() const;
 
-		// Exibits undefined behaviour if the type is not correct
+		// Type checked access
 		StringType& string();
 		FloatType& number();
 		FloatType& floatNumber();
 		IntType& intNumber();
 		bool& boolean();
 		MapType& object();
-		std::vector<Value>& array();
+		ArrayType& array();
 
 		const StringType& string() const;
 		FloatType number() const;
@@ -91,23 +95,6 @@ namespace Json
 		bool boolean() const;
 		const MapType& object() const;
 		const ArrayType& array() const;
-
-		// Type checked access
-		StringType& getString();
-		FloatType& getNumber();
-		FloatType& getFloatNumber();
-		IntType& getIntNumber();
-		bool& getBoolean();
-		MapType& getObject();
-		ArrayType& getArray();
-
-		const StringType& getString() const;
-		FloatType getNumber() const;
-		FloatType getFloatNumber() const;
-		IntType getIntNumber() const;
-		bool getBoolean() const;
-		const MapType& getObject() const;
-		const ArrayType& getArray() const;
 
 	private:
 		template <typename T>

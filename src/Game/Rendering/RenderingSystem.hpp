@@ -16,6 +16,11 @@
 // Some members could be static
 // Make a global debug class that will store the instance of this class.
 
+struct ModelComponent
+{
+
+};
+
 class RenderingSystem
 {
 private:

@@ -12,6 +12,7 @@ public:
 		Vec3I blockPos;
 		// nullopt if the blockPos == startPos
 		Opt<Vec3I> entryNormal;
+		float time;
 	};
 
 public:

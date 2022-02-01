@@ -1,4 +1,5 @@
 #include <Game/Rendering/RenderingSystem.hpp>
+#include <Game/Components/Position.hpp>
 #include <Game/Debug/Debug.hpp>
 
 #include <string>
@@ -111,21 +112,30 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 	//glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 
-	// drawToShadowMap(chunkSystem); 
+	//  drawToShadowMap(chunkSystem); 
 
 	m_fbo.bind();
 
 	drawScene(chunkSystem);
 
-	//m_modelShader.use();
-	//m_modelShader.setMat4("model", Mat4::scale(Vec3(0.02)) * Mat4::translation(cameraPos + Vec3(0, 0, 2)));
-	//m_modelShader.setMat4("view", view);
-	//m_modelShader.setMat4("projection", projection);
-	////m_modelShader.setInt("tex", 0);
-	////m_model.m_textures[0].bind();
-	//m_model.meshes[0].vao.bind();
-	//m_model.m_buffers[0].bindAsIndexBuffer();
-	//glDrawElements(GL_TRIANGLES, m_model.meshes[0].count, GL_UNSIGNED_SHORT, reinterpret_cast<void*>(m_model.meshes[0].offset));
+	for (auto [entity, model] : entityManger.getComponents<ModelComponent>())
+	{
+		const Vec3& pos = entityManger.getComponent<Position>(entity).value;
+
+
+		m_modelShader.use();
+		m_modelShader.setMat4("model", Mat4::scale(Vec3(0.01)) * Mat4::translation(pos + Vec3::down * 1.5));
+		m_modelShader.setMat4("view", view);
+		m_modelShader.setMat4("projection", projection);
+		m_model.m_textures[0].bind();
+		glActiveTexture(GL_TEXTURE0);
+		m_modelShader.setInt("textureSampler", 0);
+		m_model.meshes[0].vao.bind();
+		m_model.m_buffers[0].bindAsIndexBuffer();
+		glFrontFace(GL_CCW);
+		glDrawElements(GL_TRIANGLES, m_model.meshes[0].count, GL_UNSIGNED_SHORT, reinterpret_cast<void*>(m_model.meshes[0].offset));
+		glFrontFace(GL_CW);
+	}
 
 	drawDebugShapes(projection, view);
 

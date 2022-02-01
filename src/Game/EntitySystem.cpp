@@ -1,6 +1,7 @@
 #include <Game/EntitySystem.hpp>
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>
+#include <Game/Rendering/RenderingSystem.hpp>
 
 void EntitySystem::update()
 {
@@ -17,5 +18,6 @@ void EntitySystem::spawnZombie(const Vec3& position, EntityManager& entityManage
 	entityManager.addComponent(entity, collider);
 	entityManager.addComponent(entity, PhysicsVelocity{});
 	entityManager.addComponent(entity, Grounded{});
+	entityManager.addComponent(entity, ModelComponent{});
 }
 
