@@ -5,6 +5,7 @@
 #include <Utils/FileIo.hpp>
 #include <Utils/SmartPointers.hpp>
 #include <Math/Mat4.hpp>
+#include <Math/Quat.hpp>
 
 #include <string_view>
 #include <vector>
@@ -22,11 +23,20 @@ public:
 		ShaderDataType indexType;
 	};
 
+	struct KeyFrame
+	{
+		float time;
+		std::vector<Quat> rotation;
+		std::vector<Vec3> translation;
+		std::vector<Vec3> scale;
+	};
+
 	struct Node
 	{
 		std::vector<Node*> children;
 		Node* parent;
 		Mat4 transform;
+		Mat4 output = Mat4::identity;
 	};
 
 public:
@@ -48,4 +58,6 @@ public:
 	std::vector<Node*> joints;
 
 	std::vector<Mat4> inverseBindMatrices;
+
+	std::vector<KeyFrame> keyframes;
 };

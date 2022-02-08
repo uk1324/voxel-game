@@ -72,7 +72,11 @@ private:
 private:
 	static constexpr size_t DEPTH_MAP_RESOLUTION = 4096;
 		
+
 private:
+
+	size_t keyframe = 0;
+
 	Fbo m_fbo;
 	Texture m_fboTexture;
 	Texture m_fboDepthTexture;

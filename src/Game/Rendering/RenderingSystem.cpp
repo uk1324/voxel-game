@@ -94,7 +94,7 @@ RenderingSystem::RenderingSystem(Scene& scene)
 // Draw skeleton with propagate transform in the model loader.
 static void draw(const Vec3& pos, Model::Node& node, const Vec3& old)
 {
-	Vec3 transformed = node.transform * Vec3(0) + old;
+	Vec3 transformed = node.output * Vec3(0) + old;
 	Debug::drawLine(pos, transformed);
 	for (const auto& child : node.children)
 	{
@@ -103,9 +103,19 @@ static void draw(const Vec3& pos, Model::Node& node, const Vec3& old)
 	}
 }
 
+static Vec3 flip(const Vec3& v)
+{
+	return Vec3(v.z, v.y, v.x);
+}
+
+static Quat flip(const Quat& v)
+{
+	return Quat(v.w, v.z, v.y, v.x);
+}
+
 static void drawSkeleton(const Vec3& translation, Model::Node& node, const Mat4& parentTransform, const Vec3& parentTransformed)
 {
-	const Mat4 thisTransform = node.transform * parentTransform;
+	const Mat4 thisTransform = node.output * parentTransform;
 	const Vec3 transformed = thisTransform * Vec3(0) + translation;
 	Debug::drawLine(parentTransformed, transformed);
 	for (const auto& child : node.children)
@@ -146,15 +156,41 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 	m_fbo.bind();
 
 	drawScene(chunkSystem);
+	//for (m_model.
+	//for (auto& node : m_model.nodes)
+	//{
+	//	node.output = Mat4::identity;
+	//	
+	//}
+
+	keyframe += 1;
+	keyframe %= m_model.keyframes.size() * 2;
+
+	for (size_t i = 0; i < m_model.nodes.size(); i++)
+	{
+		m_model.nodes[i].output = Mat4::scale(m_model.keyframes[keyframe / 2].scale[i])
+			* m_model.keyframes[keyframe / 2].rotation[i].asMatrix()
+			* Mat4::translation(m_model.keyframes[keyframe / 2].translation[i]);
+
+		//std::cout << m_model.nodes[i].output;
+
+		//m_model.nodes[i].output = Mat4::scale(Vec3(1.2))
+		//	* Quat(degToRad(float(keyframe)), (Vec3::xAxis + Vec3::yAxis).normalized()).asMatrix()
+		//	* Mat4::translation(Vec3(0));
+
+		//m_model.nodes[i].output = Mat4::identity;
+	}
+
+	ModelLoader::propagateTransform(m_model.nodes[18]);
 
 	for (auto [entity, model] : entityManger.getComponents<ModelComponent>())
 	{
 		const Vec3& pos = entityManger.getComponent<Position>(entity).value;
 
-		draw(m_model.nodes[18].transform * pos, m_model.nodes[18], pos);
+		draw(m_model.nodes[18].output * pos, m_model.nodes[18], pos);
 		//drawSkeleton(pos, m_model.nodes[18], Mat4::identity, m_model.nodes[18].transform * pos);
 		//Debug::drawCube(m_model.nodes[20].transform * pos);
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 
 		m_modelShader.use();
 		m_modelShader.setMat4("model", Mat4::translation(pos)); 
 		m_modelShader.setMat4("view", view);
@@ -168,7 +204,7 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 		for (size_t i = 0; i < m_model.joints.size(); i++)
 		{
 			m_modelShader.setMat4("jointMatrices[" + std::to_string(i) + "]",
-				m_model.inverseBindMatrices[i] * m_model.joints[i]->transform);
+				m_model.inverseBindMatrices[i] * m_model.joints[i]->output);
 
 			// First the inverseBindMatrix is applied which undoes the bind pose translating every joint to the zero vector
 			// in object space. Then the transform is applied putting the mesh in the skeleton pose.

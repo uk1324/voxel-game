@@ -18,6 +18,7 @@ Model ModelLoader::parse()
 		loadTextures();
 		loadMeshes();
 		loadNodes();
+		loadAnimations();
 	}
 	catch (const Json::Value::InvalidTypeAccess&)
 	{
@@ -39,12 +40,14 @@ void ModelLoader::loadBuffers()
 {
 	for (const auto& buffer : file.at("buffers").array())
 	{
-		// Don't know if data for std::string is properly aligned or not.
-		std::string data = stringFromFile((directory / buffer.at("uri").string()).string());
+		ByteBuffer data = byteBufferFromFile((directory / buffer.at("uri").string()).string());
+		
 		auto size = buffer.at("byteLength").intNumber();
 		if (data.size() != size)
 			LOG_FATAL("buffer data length doesn't match the specified length");
+
 		model.buffers.push_back(Vbo(data.data(), data.size()));
+		buffers.push_back(std::move(data));
 	}
 }
 
@@ -238,21 +241,86 @@ void ModelLoader::loadNodes()
 	for (const auto& node : file.at("scenes").at(0).at("nodes").array())
 	{
 		model.children.push_back(&model.nodes.at(node.intNumber()));
-		propagateTransform(model.nodes.at(node.intNumber()));
+		//propagateTransform(model.nodes.at(node.intNumber()));
 	}
 
 }
 
+// Make a function that takes an accessor and returs a ptr to the data.
 void ModelLoader::loadAnimations()
 {
 	std::string data = stringFromFile((directory / file.at("buffers").at(0).at("uri").string()).string());
+
+	for (const auto& animation : file.at("animations").array())
+	{
+		const auto& samplers = animation.at("samplers").array();
+		for (const auto& channel : animation.at("channels").array())
+		{
+			const auto& sampler = samplers.at(channel.at("sampler").intNumber());
+			const Accessor& accessor = accessors.at(sampler.at("input").intNumber());
+			// ASSERT scalar and float
+
+			auto keyFrames = reinterpret_cast<float*>(data.data() + accessor.byteOffset + accessor.bufferView.byteOffset);
+			auto keyFramesEnd = keyFrames + accessor.count;
+
+			model.keyframes.resize(accessor.count);
+			for (auto& keyframe : model.keyframes)
+			{
+				keyframe.rotation.resize(model.nodes.size());
+				keyframe.translation.resize(model.nodes.size());
+				keyframe.scale.resize(model.nodes.size());
+			}
+
+			const auto& target = channel.at("target");
+
+			size_t nodeIndex = target.at("node").intNumber();
+			const Accessor& a = accessors.at(sampler.at("output").intNumber());
+			ASSERT(a.count == accessor.count);
+			if (target.at("path").string() == "translation")
+			{
+				auto transformations = reinterpret_cast<Vec3*>(data.data() + a.byteOffset + a.bufferView.byteOffset);
+				for (size_t i = 0; i < a.count; i++)
+				{
+					model.keyframes[i].time = keyFrames[i];
+					model.keyframes[i].translation[nodeIndex] = transformations[i];
+				}
+			}
+
+			if (target.at("path").string() == "scale")
+			{
+				auto transformations = reinterpret_cast<Vec3*>(data.data() + a.byteOffset + a.bufferView.byteOffset);
+				for (size_t i = 0; i < a.count; i++)
+				{
+					model.keyframes[i].time = keyFrames[i];
+					model.keyframes[i].scale[nodeIndex] = transformations[i];
+				}
+			}
+
+			if (target.at("path").string() == "rotation")
+			{
+				auto transformations = reinterpret_cast<Quat*>(data.data() + a.byteOffset + a.bufferView.byteOffset);
+				for (size_t i = 0; i < a.count; i++)
+				{
+					model.keyframes[i].time = keyFrames[i];
+					model.keyframes[i].rotation[nodeIndex] = transformations[i];
+				}
+			}
+		}
+	}
 }
 
 void ModelLoader::propagateTransform(Model::Node& parent)
 {
 	for (auto& child : parent.children)
 	{
-		child->transform *= parent.transform;
+		//child->transform *= parent.transform;
+		/*child->output = child->transform * child->output * parent.output;*/
+		child->output = child->output * parent.output;
+		/*child->output = child->output * parent.output * child->transform;*/
+		/*child->output = child->output * child->transform * parent.output;*/
+		//child->output = child->transform * parent.output * child->output;
+		//child->output = parent.output * child->transform * child->output;
+		//child->output = parent.output * child->output * child->transform;
 		propagateTransform(*child);
 	}
 }
