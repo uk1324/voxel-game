@@ -62,13 +62,12 @@ void MenuScene::update()
 
 	auto projection = Mat4::perspective(degToRad(90.0f), m_screenSize.x / m_screenSize.y, 0.1, 100);
 
-
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CCW);
 	Renderer::drawSkybox(
-		Quat(Time::currentTime() / 2.0f, Vec3::up).rotationMatrix(),
-		Quat(degToRad(45.0f), Vec3::xAxis).rotationMatrix(),
+		Quat(Time::currentTime() / 2.0f, Vec3::up).asMatrix(),
+		Quat(degToRad(45.0f), Vec3::xAxis).asMatrix(),
 		m_skyboxData
 	);
 

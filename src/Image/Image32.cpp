@@ -9,6 +9,10 @@ Image32::Image32(const char* path)
 	int channelCount;
 	int width, height;
 	m_data = reinterpret_cast<uint32_t*>(stbi_load(path, &width, &height, &channelCount, STBI_rgb_alpha));
+	if (m_data == nullptr)
+	{
+		LOG_FATAL("failed to load image");
+	}
 	m_width = width;
 	m_height = height;
 }
@@ -107,7 +111,7 @@ void* Image32::allocate(size_t size)
 	void* data = malloc(size);
 	if (data == nullptr)
 	{
-		LOG_FATAL("Failed to allocate memory for image");
+		LOG_FATAL("failed to allocate memory for image");
 	}
 	return data;
 }

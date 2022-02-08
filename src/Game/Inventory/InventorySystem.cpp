@@ -474,7 +474,7 @@ void InventorySystem::setupDrawBlockItem(const BlockData& blockData)
 void InventorySystem::drawBlockItem(const BlockData::Entry& blockInfo, Vec2 pos, float size)
 {
 	// Isometric rotation
-	static const Mat4 rotation = (Quat(degToRad(-35.264), Vec3::xAxis) * Quat(degToRad(45.0f), Vec3::yAxis)).rotationMatrix();
+	static const Mat4 rotation = (Quat(degToRad(-35.264), Vec3::xAxis) * Quat(degToRad(45.0f), Vec3::yAxis)).asMatrix();
 
 	Mat4 mat = rotation;
 	mat *= Mat4::scale(Vec3(yPercentToXPercent(size), size, size));

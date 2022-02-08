@@ -1,6 +1,5 @@
 #include <Engine/Engine.hpp>
 #include <Game/GameScene.hpp>
-#include <TestScene/TestScene.hpp>
 #include <Menu/MenuScene.hpp>
 
 // Making Position use a Vec4 might allow for simd and won't require any extra space

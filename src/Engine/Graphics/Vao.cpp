@@ -71,13 +71,13 @@ void Vao::setAttribute(uint32_t index, const IntBufferLayout& layout)
 	glEnableVertexAttribArray(index);
 }
 
-void Vao::setAttribute(uint32_t index, ShaderDataType dataType, uint32_t dataTypeCountPerVertex, bool isNormalized, size_t stride, intptr_t offset)
+void Vao::setAttribute(uint32_t index, ShaderDataType dataType, uint32_t dataTypeCountPerVertex, bool normalize, size_t stride, intptr_t offset)
 {
 	glVertexAttribPointer(
 		index,
 		dataTypeCountPerVertex,
 		static_cast<GLenum>(dataType),
-		isNormalized,
+		normalize,
 		stride,
 		reinterpret_cast<void*>(offset)
 	);

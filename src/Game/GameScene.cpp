@@ -43,6 +43,7 @@ GameScene::GameScene(Engine& engine)
     input.registerKeyboardButton("testrender", KeyCode::B);
 }
 
+// Maybe make an unloaded component and down update unloaded entites like player and remove unloaded entites that don't need to exist.
 void GameScene::update()
 {
     auto start = std::chrono::high_resolution_clock::now();
@@ -76,7 +77,7 @@ void GameScene::update()
 
     m_blockSystem.chunkSystem.m_worldGen.updateDebugConfig();
 
-    if (input.isButtonDown("testtest"))
+    if (input.isButtonDown("testtest") || time.currentTick() == 1)
     {
         m_entitySystem.spawnZombie(playerPos, entityManager);
         /*m_blockSystem.chunkSystem.regenerateAll();

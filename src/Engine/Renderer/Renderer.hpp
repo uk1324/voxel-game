@@ -4,6 +4,10 @@
 #include <Engine/Graphics/CubeMap.hpp>
 #include <Engine/Graphics/ShaderProgram.hpp>
 
+// Cool font atlases
+// http://dwarffortresswiki.org/index.php/Tileset_repository
+// https://www.gridsagegames.com/rexpaint/resources.html
+
 struct SkyboxData
 {
 	SkyboxData(

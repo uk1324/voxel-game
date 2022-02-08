@@ -6,7 +6,7 @@
 class EntitySystem
 {
 public:
-	void update();
+	void update(EntityManager& entites);
 
 	void spawnZombie(const Vec3& position, EntityManager& entityManager);
 

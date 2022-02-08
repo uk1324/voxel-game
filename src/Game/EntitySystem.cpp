@@ -3,8 +3,9 @@
 #include <Game/Components/Rotation.hpp>
 #include <Game/Rendering/RenderingSystem.hpp>
 
-void EntitySystem::update()
+void EntitySystem::update(EntityManager& entites)
 {
+	
 }
 
 void EntitySystem::spawnZombie(const Vec3& position, EntityManager& entityManager)

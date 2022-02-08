@@ -18,7 +18,7 @@ struct BufferLayout
 {
 public:
 	BufferLayout() = default;
-	BufferLayout(ShaderDataType dataType, uint32_t dataTypeCountPerVertex, intptr_t offset, size_t stride, bool isNormalized);
+	BufferLayout(ShaderDataType dataType, uint32_t dataTypeCountPerVertex, intptr_t offset, size_t stride, bool normalize);
 
 public:
 	ShaderDataType dataType;
@@ -63,7 +63,7 @@ public:
 		uint32_t index,
 		ShaderDataType dataType,
 		uint32_t dataTypeCountPerVertex,
-		bool isNormalized,
+		bool normalize,
 		size_t stride,
 		intptr_t offset);
 

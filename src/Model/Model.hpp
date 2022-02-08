@@ -4,6 +4,7 @@
 #include <Engine/Graphics/Texture.hpp>
 #include <Utils/FileIo.hpp>
 #include <Utils/SmartPointers.hpp>
+#include <Math/Mat4.hpp>
 
 #include <string_view>
 #include <vector>
@@ -11,45 +12,40 @@
 class Model
 {
 public:
-	class SceneData
+	struct Mesh
 	{
-
-	};
-
-	class Node
-	{
-	public:
-		std::vector<Node> children;
-	};
-
-	class Mesh
-	{
-	public:
-		Mesh(std::vector<Vbo>& buffers, const Json::Value& model, int index);
-		
-	public:
 		Vao vao;
-		size_t offset;
-		size_t count;
+		Texture& texture;
+		Vbo& indicesVbo;
+		size_t indicesByteOffset;
+		size_t indicesCount;
+		ShaderDataType indexType;
+	};
+
+	struct Node
+	{
+		std::vector<Node*> children;
+		Node* parent;
+		Mat4 transform;
 	};
 
 public:
-	Model(std::string_view path);
+	void draw();
 
 private:
-	// This could be static
-	Node parseNode(const Json::Value::ArrayType& nodes, const Json::Value::ArrayType& meshes, int nodeIndex);
+	static size_t parseTypeCount(const Json::Value::StringType& type);
+
+	size_t sizeOfShaderDataType(ShaderDataType type);
 
 public:
-	// Make this public
-	Node root;
-
+	std::vector<Vbo> buffers;
 	std::vector<Mesh> meshes;
+	std::vector<Texture> textures;
+	std::vector<Node> nodes;
+	
+	std::vector<Node*> children;
 
-	const Json::Value::ArrayType* accessors;
-	const Json::Value::ArrayType* bufferViews;
+	std::vector<Node*> joints;
 
-	Vao vao;
-	std::vector<Vbo> m_buffers;
-	std::vector<Texture> m_textures;
+	std::vector<Mat4> inverseBindMatrices;
 };

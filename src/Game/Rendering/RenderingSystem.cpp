@@ -1,6 +1,7 @@
 #include <Game/Rendering/RenderingSystem.hpp>
 #include <Game/Components/Position.hpp>
 #include <Game/Debug/Debug.hpp>
+#include <Model/ModelLoader.hpp>
 
 #include <string>
 
@@ -53,7 +54,9 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	, m_fboDepthTexture(Texture::incomplete())
 
 	, m_modelShader("src/Game/Rendering/Shaders/model.vert", "src/Game/Rendering/Shaders/model.frag")
-	, m_model("src/Model/Duck.gltf")
+	//, m_model("assets/models/character/character.gltf")
+	//, m_model(ModelLoader("src/model/duck.gltf").parse())
+	, m_model(ModelLoader("assets/models/character/character.gltf").parse())
 {
 	m_cubeLinesVao.bind();
 	m_cubeLinesVbo.bind();
@@ -86,6 +89,30 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	//shadowMapSetup();
 
 	glEnable(GL_CULL_FACE);
+}
+
+// Draw skeleton with propagate transform in the model loader.
+static void draw(const Vec3& pos, Model::Node& node, const Vec3& old)
+{
+	Vec3 transformed = node.transform * Vec3(0) + old;
+	Debug::drawLine(pos, transformed);
+	for (const auto& child : node.children)
+	{
+		draw(transformed, *child, old);
+		Debug::drawPoint(transformed);
+	}
+}
+
+static void drawSkeleton(const Vec3& translation, Model::Node& node, const Mat4& parentTransform, const Vec3& parentTransformed)
+{
+	const Mat4 thisTransform = node.transform * parentTransform;
+	const Vec3 transformed = thisTransform * Vec3(0) + translation;
+	Debug::drawLine(parentTransformed, transformed);
+	for (const auto& child : node.children)
+	{
+		drawSkeleton(translation, *child, thisTransform, transformed);
+		Debug::drawPoint(transformed);
+	}
 }
 
 void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, const Quat& cameraRot, const EntityManager& entityManger, const ChunkSystem& chunkSystem)
@@ -123,18 +150,30 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 		const Vec3& pos = entityManger.getComponent<Position>(entity).value;
 
 
-		m_modelShader.use();
-		m_modelShader.setMat4("model", Mat4::scale(Vec3(0.01)) * Mat4::translation(pos + Vec3::down * 1.5));
-		m_modelShader.setMat4("view", view);
-		m_modelShader.setMat4("projection", projection);
-		m_model.m_textures[0].bind();
-		glActiveTexture(GL_TEXTURE0);
-		m_modelShader.setInt("textureSampler", 0);
-		m_model.meshes[0].vao.bind();
-		m_model.m_buffers[0].bindAsIndexBuffer();
-		glFrontFace(GL_CCW);
-		glDrawElements(GL_TRIANGLES, m_model.meshes[0].count, GL_UNSIGNED_SHORT, reinterpret_cast<void*>(m_model.meshes[0].offset));
-		glFrontFace(GL_CW);
+		//for (const auto& child : m_model.children)
+		//{
+		//	draw(pos, *child);
+		//}
+		draw(m_model.nodes[18].transform * pos, m_model.nodes[18], pos);
+		//drawSkeleton(pos, m_model.nodes[18], Mat4::identity, m_model.nodes[18].transform * pos);
+		//Debug::drawCube(m_model.nodes[20].transform * pos);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		//m_modelShader.use();
+		////m_modelShader.setMat4("model", Mat4::scale(Vec3(0.01)) * Mat4::translation(pos + Vec3::down * 1.5));
+		////m_modelShader.setMat4("model", Mat4::scale(Vec3(0.25)) * Mat4::translation(pos + Vec3::down * 1.5));
+		//m_modelShader.setMat4("model", Mat4::translation(pos));
+		//m_modelShader.setMat4("view", view);
+		//m_modelShader.setMat4("projection", projection);
+		//glActiveTexture(GL_TEXTURE0);
+		//m_model.textures[0].bind();
+		//m_modelShader.setInt("textureSampler", 0);
+		//m_model.meshes[0].vao.bind();
+		//m_model.buffers[0].bindAsIndexBuffer();
+		//glFrontFace(GL_CCW);
+		//glDrawElements(GL_TRIANGLES, m_model.meshes[0].indicesCount, static_cast<GLenum>(m_model.meshes[0].indexType), reinterpret_cast<void*>(m_model.meshes[0].indicesByteOffset));
+		//glFrontFace(GL_CW);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		/*m_model.buffers[0].*/
 	}
 
 	drawDebugShapes(projection, view);

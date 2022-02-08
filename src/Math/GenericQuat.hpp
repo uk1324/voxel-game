@@ -24,7 +24,7 @@ public:
 
 	GenericQuat conjugate() const;
 
-	GenericMat4<T> rotationMatrix() const;
+	GenericMat4<T> asMatrix() const;
 
 	GenericQuat operator* (const T rhs) const;
 	GenericQuat& operator*= (const T rhs);
@@ -107,7 +107,7 @@ GenericQuat<T> GenericQuat<T>::conjugate() const
 
 
 template<typename T>
-GenericMat4<T> GenericQuat<T>::rotationMatrix() const
+GenericMat4<T> GenericQuat<T>::asMatrix() const
 {
 	return GenericMat4<T>({
 		1 - 2 * y * y - 2 * z * z, 2 * x * y - 2 * z * w, 2 * x * z + 2 * y * w, 0,
@@ -154,12 +154,12 @@ template<typename T>
 GenericVec3<T> GenericQuat<T>::operator* (const GenericVec3<T>& rhs) const
 {
 	// https://blog.molecular-matters.com/2013/05/24/a-faster-quaternion-vector-multiplication/
-	GenericQuat<T> q = (*this * GenericQuat<T>(rhs.x, rhs.y, rhs.z, 0.0)) * conjugate();
+	GenericQuat<T> q = (*this * GenericQuat<T>(rhs.x, rhs.y, rhs.z, 0)) * conjugate();
 	return GenericVec3<T>(q.x, q.y, q.z);
 }
 
 template<typename T>
-const GenericQuat<T> GenericQuat<T>::identity(0.0, 0.0, 0.0, 1.0);
+const GenericQuat<T> GenericQuat<T>::identity(0, 0, 0, 1);
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const GenericQuat<T>& quaternion)

@@ -74,7 +74,7 @@ void PhysicsSystem::update(const Time& time, EntityManager& entityManager, const
 				movement.z = 0.0f;
 			}
 		}
-		Debug::drawCube(entityPos + collider.centerOffset, collider.halfSize * 2);
+		//Debug::drawCube(entityPos + collider.centerOffset, collider.halfSize * 2);
 	}
 }
 
