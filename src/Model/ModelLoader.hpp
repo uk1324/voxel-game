@@ -52,6 +52,7 @@ private:
 	static size_t sizeOfShaderDataType(ShaderDataType type);
 	static size_t parseTypeCount(const Json::Value::StringType& type);
 	void loadNodes();
+	void loadAnimations();
 
 private:
 	static void propagateTransform(Model::Node& parent);

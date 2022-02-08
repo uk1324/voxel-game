@@ -134,7 +134,7 @@ void ModelLoader::loadMeshes()
 		loadVaoAttribute(0, attributes.at("POSITION").intNumber());
 		loadVaoAttribute(1, attributes.at("NORMAL").intNumber());
 		loadVaoAttribute(2, attributes.at("TEXCOORD_0").intNumber());
-		loadVaoAttribute(3, attributes.at("JOINTS_0").intNumber());
+ 		loadVaoAttribute(3, attributes.at("JOINTS_0").intNumber());
 		loadVaoAttribute(4, attributes.at("WEIGHTS_0").intNumber());
 
 		const Accessor& indicesAccessor = accessors.at(primitives.at("indices").intNumber());
@@ -226,7 +226,7 @@ void ModelLoader::loadNodes()
 			std::string data = stringFromFile((directory / file.at("buffers").at(0).at("uri").string()).string());
 			size_t byteOffset = bufferView.byteOffset + accessor.byteOffset;
 			model.inverseBindMatrices.resize(skin.at("joints").array().size());
-			memcpy(data.data() + byteOffset, model.inverseBindMatrices.data(), sizeof(Mat4) * skin.at("joints").array().size());
+			memcpy(model.inverseBindMatrices.data(), data.data() + byteOffset, sizeof(Mat4) * skin.at("joints").array().size());
 
 			for (const auto& jointIndex : skin.at("joints").array())
 			{
@@ -241,6 +241,11 @@ void ModelLoader::loadNodes()
 		propagateTransform(model.nodes.at(node.intNumber()));
 	}
 
+}
+
+void ModelLoader::loadAnimations()
+{
+	std::string data = stringFromFile((directory / file.at("buffers").at(0).at("uri").string()).string());
 }
 
 void ModelLoader::propagateTransform(Model::Node& parent)

@@ -56,7 +56,9 @@ void PlayerMovementSystem::update(Entity& player, const InputManager& input, con
 	if (input.isButtonHeld("back"))
 		movementDirection += Vec3::back;
 
-	playerVel = playerRotation * movementDirection * 0.5f;
+	//playerVel = playerRotation * movementDirection * 0.5f;
+	Vec3& playerPos = entityManager.getComponent<Position>(player).value;
+	playerPos += playerRotation * movementDirection * 0.5f;
 
 	if (input.isButtonHeld("jump"))
 		playerVel.y = 0.5;
