@@ -23,6 +23,7 @@ public:
 	GLuint handle() const;
 
 public:
+	static Texture pixelArt(const char* path);
 	static Texture incomplete();
 	static Texture null();
 

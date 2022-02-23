@@ -23,6 +23,9 @@
 
 // Maybe add a method to Json::Value
 // T at_or(Json::Value::StringType name, T defaultValue);
+
+
+// This class could probably be converted to 1 pure function with lambdas inside.
 class ModelLoader
 {
 private:
@@ -68,9 +71,6 @@ private:
 
 public:
 	static void propagateTransform(Model::Node& parent);
-
-
-
 
 private:
 	static Vec3 parseVec3(const Json::Value& vec);

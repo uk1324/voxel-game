@@ -9,6 +9,9 @@ class ItemStack
 public:
 	ItemStack(Item item, int32_t count);
 
+	bool operator==(const ItemStack& other) const;
+	bool operator!=(const ItemStack& other) const;
+
 public:
 	Item item;
 	// not usigned to prevent overflow

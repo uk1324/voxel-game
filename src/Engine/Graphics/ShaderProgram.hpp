@@ -28,6 +28,8 @@ public:
 
 	void use();
 
+	// Most of the name suffixes are pretty useless.
+	// Could just name these methods set().
 	void setVec2(std::string_view name, const Vec2& vec);
 	void setVec3(std::string_view name, const Vec3& vec);
 	void setVec3I(std::string_view name, const Vec3I& vec);

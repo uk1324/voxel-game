@@ -21,7 +21,7 @@ public:
 	GenericVec2& operator-=(const GenericVec2& rhs);
 	GenericVec2 operator*(T rhs) const;
 	GenericVec2& operator*=(T rhs);
-	GenericVec2 operator*(const GenericVec2<T>& rhs);
+	GenericVec2 operator*(const GenericVec2<T>& rhs) const;
 	GenericVec2 operator/(T rhs) const;
 	GenericVec2& operator/=(T rhs);
 	GenericVec2 operator/(const GenericVec2& rhs) const;
@@ -134,7 +134,7 @@ GenericVec2<T>& GenericVec2<T>::operator*= (T rhs)
 }
 
 template<typename T>
-GenericVec2<T> GenericVec2<T>::operator*(const GenericVec2<T>& rhs)
+GenericVec2<T> GenericVec2<T>::operator*(const GenericVec2<T>& rhs) const
 {
 	return Vec2(x * rhs.x, y * rhs.y);
 }

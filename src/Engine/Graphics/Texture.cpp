@@ -1,5 +1,6 @@
 #include <Engine/Graphics/Texture.hpp>
 #include <Log/Log.hpp>
+#include <Image/Image32.hpp>
 #include <stb_image.h>
 
 Texture::Texture(uint32_t handle)
@@ -58,6 +59,24 @@ void Texture::bind() const
 GLuint Texture::handle() const
 {
 	return m_handle;
+}
+
+Texture Texture::pixelArt(const char* path)
+{
+	auto texture = Texture::incomplete();
+	texture.bind();
+
+	Image32 image(path);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width(), image.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	return texture;
 }
 
 Texture Texture::incomplete()

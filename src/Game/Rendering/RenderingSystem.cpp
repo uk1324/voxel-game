@@ -141,6 +141,8 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 	m_projection = projection;
 	m_view = view;
 
+	glEnable(GL_DEPTH_TEST);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	//const auto lightMatrices = getLightSpaceMatrices(fov, aspectRatio, view, m_directionalLightDir, m_nearPlaneZ, m_farPlaneZ, shadowCascadeLevels);
 	//glBindBuffer(GL_UNIFORM_BUFFER, matricesUBO);
@@ -187,12 +189,8 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 	{
 		const Vec3& pos = entityManger.getComponent<Position>(entity).value;
 
-		draw(m_model.nodes[18].output * pos, m_model.nodes[18], pos);
-		//drawSkeleton(pos, m_model.nodes[18], Mat4::identity, m_model.nodes[18].transform * pos);
-		//Debug::drawCube(m_model.nodes[20].transform * pos);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 
 		m_modelShader.use();
-		m_modelShader.setMat4("model", Mat4::translation(pos)); 
+		m_modelShader.setMat4("model", Mat4::scale(Vec3(0.2)) * Mat4::translation(pos));
 		m_modelShader.setMat4("view", view);
 		m_modelShader.setMat4("projection", projection);
 		glActiveTexture(GL_TEXTURE0);
@@ -206,16 +204,12 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 			m_modelShader.setMat4("jointMatrices[" + std::to_string(i) + "]",
 				m_model.inverseBindMatrices[i] * m_model.joints[i]->output);
 
-			// First the inverseBindMatrix is applied which undoes the bind pose translating every joint to the zero vector
+			// First the inverseBindMatrix is applied which undoes the bind pose translating every joint (not vertex) to the zero vector
 			// in object space. Then the transform is applied putting the mesh in the skeleton pose.
-
-			//m_modelShader.setMat4("jointMatrices[" + std::to_string(i) + "]",
-			//	Mat4::identity);
 		}
 		glFrontFace(GL_CCW);
 		glDrawElements(GL_TRIANGLES, m_model.meshes[0].indicesCount, static_cast<GLenum>(m_model.meshes[0].indexType), reinterpret_cast<void*>(m_model.meshes[0].indicesByteOffset));
 		glFrontFace(GL_CW);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 
 	drawDebugShapes(projection, view);
@@ -237,17 +231,17 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 
 void RenderingSystem::drawChunks(const ChunkSystem& chunkSystem, ShaderProgram& shader)
 {
-	//chunkSystem.m_vao.bind();
-	//for (const auto& chunk : chunkSystem.m_chunksToDraw)
-	//{
-	//	shader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE));
-	//	glDrawArrays(GL_TRIANGLES, chunk->vboByteOffset / sizeof(uint32_t), chunk->vertexCount);
+	chunkSystem.m_vao.bind();
+	for (const auto& chunk : chunkSystem.m_chunksToDraw)
+	{
+		shader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE));
+		glDrawArrays(GL_TRIANGLES, chunk->vboByteOffset / sizeof(uint32_t), chunk->vertexCount);
 
-	//	if (Debug::shouldShowChunkBorders)
-	//	{
-	//		Debug::drawCube(Vec3(chunk->pos) * Chunk::SIZE * Block::SIZE + Vec3(Chunk::SIZE) / 2.0, Vec3(Chunk::SIZE), Vec3(1, 1, 1));
-	//	}
-	//}
+		if (Debug::shouldShowChunkBorders)
+		{
+			Debug::drawCube(Vec3(chunk->pos) * Chunk::SIZE * Block::SIZE + Vec3(Chunk::SIZE) / 2.0, Vec3(Chunk::SIZE), Vec3(1, 1, 1));
+		}
+	}
 }
 
 void RenderingSystem::drawDebugShapes(const Mat4& projection, const Mat4& view)

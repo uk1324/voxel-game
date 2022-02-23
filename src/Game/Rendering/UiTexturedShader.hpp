@@ -1,0 +1,2 @@
+// Maybe later create classes for shaders so the some state is set only on creation.
+// and maybe make a method to draw so even if the shader is changed to code still works or it gives an error if it shouldn't work.

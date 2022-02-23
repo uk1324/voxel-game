@@ -13,6 +13,7 @@ public:
 	static void drawLine(const Vec3& startPos, const Vec3& endPos, const Vec3& color = Vec3(1, 0, 0));
 
 	static bool shouldShowChunkBorders;
+	static bool shouldShowHitboxes;
 
 private:
 	static RenderingSystem* s_renderingSystem;

@@ -27,8 +27,7 @@ GameScene::GameScene(Engine& engine)
     entityManager.registerComponent<ModelComponent>();
 
     m_player = entityManager.createEntity();
-    /*entityManager.addComponent(m_player, Position{ Vec3(0, 40, 0) });*/
-    entityManager.addComponent(m_player, Position{ Vec3(0, 0, 0) });
+    entityManager.addComponent(m_player, Position{ Vec3(0, 40, 0) });
     //entityManager.entityEmplaceComponent<Position>(m_player, Vec3(-31, -7, -237));
     entityManager.addComponent(m_player, Rotation{ Quat::identity });
     entityManager.addComponent(m_player, PlayerMovementComponent{});
@@ -41,7 +40,6 @@ GameScene::GameScene(Engine& engine)
     entityManager.addComponent(m_player, Grounded{ false });
 
     input.registerKeyboardButton("testtest", KeyCode::T);
-    input.registerKeyboardButton("testrender", KeyCode::B);
 }
 
 // Maybe make an unloaded component and down update unloaded entites like player and remove unloaded entites that don't need to exist.
@@ -85,7 +83,7 @@ void GameScene::update()
         std::cout << "playerPos: " << playerPos << '\n';*/
     }
 
-    //m_blockSystem.chunkSystem.update(entityManager.getComponent<Position>(m_player).value);
+    m_blockSystem.chunkSystem.update(entityManager.getComponent<Position>(m_player).value);
 
     Opt<ItemStack> droppedItem = m_inventorySystem.update(m_inventory, engine.window(), input, itemData);
 
@@ -98,20 +96,7 @@ void GameScene::update()
         }
     }
 
-    //if (input.isButtonDown("attack"))
-    //{
-    //    rayStart = playerPos;
-    //    rayEnd = playerPos + playerRot * Vec3::forward * 3;
-    //    auto x = m_physicsSystem.raycast(m_player, rayStart, rayEnd, entityManager);
-    //    if (x.has_value())
-    //    {
-    //        std::cout << "hit t: " << x->time << '\n';
-    //        rayEnd = playerPos + playerRot * Vec3::forward * 3 * x->time;
-    //    }
-    //}
-    //Debug::drawLine(rayStart, rayEnd);
-
-    //m_physicsSystem.update(time, entityManager, m_blockSystem.chunkSystem);
+    m_physicsSystem.update(time, entityManager, m_blockSystem.chunkSystem);
 
     auto end = std::chrono::high_resolution_clock::now();
     std::string title = std::string("frame time: ") + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());

@@ -12,18 +12,24 @@
 #include <Game/Inventory/Inventory.hpp>
 #include <Game/Item/ItemStack.hpp>
 #include <Game/Item/ItemData.hpp>
+#include <Game/Item/CraftingData.hpp>
 #include <Utils/Opt.hpp>
 
 // Probably should rewrite the entire ui system. Working with normalized device coordinates is not good, but I don't know what would be better.
-
-
 class InventorySystem
 {
 private:
-	struct UiElement
+	enum class Mode
 	{
-		Vec2 size;
+		Inventory,
+		Crafting
+	};
+
+	struct ItemBox
+	{
+		Vec2 halfSize;
 		Vec2 pos;
+		Vec2I elementCount;
 	};
 
 public:
@@ -37,8 +43,28 @@ public:
 private:
 	[[nodiscard]] Opt<ItemStack> handleInput(Inventory& inventory, const InputManager& input, const ItemData& itemData);
 
-	void drawHotbar(const Inventory& inventory, const BlockData& blockData, const ItemData& itemData);
-	void drawInventory(const Inventory& inventory, const BlockData& blockData, const ItemData& itemData);
+	void updateCrafting();
+	void craftItem();
+
+	void findSelectedSlot(Inventory& inventory, Vec2 cursorPos);
+	void onItemInserted();
+	void onItemTaken();
+
+	void recalculateUi();
+
+	ItemBox createItemBox(Vec2 pos, Vec2I elementCount);
+	void drawItemBox(
+		const ItemBox& itemBox,
+		const Inventory& inventory,
+		size_t offset,
+		size_t count,
+		const Texture& slotTexture,
+		const BlockData& blockData,
+		const ItemData& itemData);
+	Vec2 getItemBoxItemPos(const ItemBox& itemBox, size_t itemIndex) const;
+	Opt<size_t> getItemBoxItemIndex(const ItemBox& itemBox, Vec2 cursorPos);
+
+	void drawItem(const ItemStack& item, Vec2 pos, const BlockData& blockData, const ItemData& itemData);
 
 	void setupDrawItemNormal(const ItemData& blockData);
 	void drawNormalItem(const ItemData::Entry& itemInfo, Vec2 pos, float size);
@@ -49,54 +75,57 @@ private:
 	void drawTextCentered(std::string_view text, Vec2 pos, float size);
 	void drawTextJustifiedRight(std::string_view text, Vec2 pos, float size);
 
-	void drawUiElementTextured(const UiElement& element, const Vec2& textureCoordScale);
-
-	Opt<size_t> getInventoryItemAt(Vec2 screenPos);
-
-	Vec2 getHotbarSlotPos(size_t pos);
-	Vec2 getInventorySlotPos(size_t pos);
-
-	void recalculateUi();
-
-	float yPercentToXPercent(float yPercent);
+	void drawTextured(Vec2 pos, Vec2 halfSize, Vec2 textureCoordScale, const Texture& texture);
+	void drawColored(Vec2 pos, Vec2 halfSize, Color color);
 
 	Vec2 pixelScreenPosToUiScreenPos(const Vec2& pos);
 
-private:
-	static bool contains(const UiElement& element, const Vec2& point);
+	Vec2 toProportionalSize(const Vec2& vec) const;
 
 public:
 	bool isInventoryOpen;
 
 private:
-
 	size_t m_selectedHotbarSlot;
-	Opt<size_t> m_selectedInventorySlot;
+
 	Opt<ItemStack> m_heldItem;
 
+	struct ItemBoxSlot
+	{
+		Opt<ItemStack>* slot;
+		Vec2 pos;
+		bool canPutItemsInto;
+		// Set to false for crafting output for example
+		bool canTakeNotAllItems;
+		void (InventorySystem::*onItemTakenOrNull)();
+		void (InventorySystem::* onItemInsertedOrNull)();
+	};
+
+	Opt<ItemBoxSlot> m_selectedSlot;
 
 	Vec2 m_screenSize;
 
 	Vec2 m_cursorPos;
 
-	static constexpr float SCREEN_BOTTOM = -1.0f;
+	Mode m_mode;
 
-	static constexpr float INVENTORY_X_ELEMENT_COUNT = 9.0f;
-	static constexpr float INVENTORY_Y_ELEMENT_COUNT = 3.0f;
-	static constexpr float INVENTORY_CELL_SCREEN_SIZE_Y_PERCENT = 0.1f;
-	static constexpr float DISTANCE_BETWEEN_INVENTORY_TOP_AND_INVENTORY_BOTTOM_Y_PERCENT = 0.1f;
-	static constexpr float ITEM_NORMAL_SCREEN_SIZE_Y_PERCENT = 0.08;
-	static constexpr float ITEM_BLOCK_SCREEN_SIZE_Y_PERCENT = 0.1;
-	UiElement m_inventoryTop;
-	UiElement m_inventoryBottom;
+	static constexpr float HALF_CELL_SIZE = 0.08f;
+	static constexpr float CELL_SIZE = HALF_CELL_SIZE * 2;
 
-	static constexpr float HOTBAR_ELEMENT_COUNT = INVENTORY_X_ELEMENT_COUNT;
-	static constexpr float HOTBAR_CELL_SCREEN_SIZE_Y_PERCENT = INVENTORY_CELL_SCREEN_SIZE_Y_PERCENT;
-	UiElement m_hotbar;
+	ItemBox m_hotbarBox;
 
-	static constexpr float ITEM_COUNT_OFFSET_X_CELL_SIZE_PERCENT_Y = 0.65f;
-	static constexpr float ITEM_COUNT_OFFSET_Y_CELL_SIZE_PERCENT_Y = -0.5f;
+	ItemBox m_inventoryTopBox;
+	ItemBox m_inventoryBottomBox;
 
+	Inventory m_craftingInventory;
+	Inventory m_craftedItemInventory;
+
+	ItemBox m_craftingBox;
+	ItemBox m_craftedItemBox;
+
+	Opt<CraftingData::RecipeMatch> m_craftingRecipeMatch;
+
+	CraftingData m_craftingData;
 
 	Vao m_squareTrianglesVao;
 	Vbo m_squareTrianglesVbo;
@@ -112,6 +141,8 @@ private:
 	Texture m_hotbarSlotTexture;
 	Texture m_hotbarSlotSelectedTexture;
 	Texture m_inventorySlotTexture;
+
+	Texture m_inventoryTexture;
 
 	TextureArray m_fontTextureArray;
 };
