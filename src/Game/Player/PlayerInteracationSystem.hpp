@@ -17,7 +17,8 @@ public:
 		Opt<ItemStack>& heldItem,
 		const InputManager& input,
 		EntityManager& entites,
-		BlockSystem& blockSystem);
+		BlockSystem& blockSystem,
+		Inventory& inventory);
 
 public:
 	float playerReachDistance = 5.0f;

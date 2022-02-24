@@ -7,6 +7,7 @@
 #include <Engine/Graphics/ShaderProgram.hpp>
 #include <Engine/Graphics/Fbo.hpp>
 #include <Game/Blocks/ChunkSystem.hpp>
+#include <Game/Item/ItemData.hpp>
 #include <Math/Quat.hpp>
 #include <Engine/Renderer/Renderer.hpp>
 #include <Math/Angles.hpp>
@@ -48,7 +49,7 @@ private:
 public:
 	RenderingSystem(Scene& scene);
 
-	void update(const Vec2& screenSize, const Vec3& cameraPos, const Quat& cameraRot, const EntityManager& entityManger, const ChunkSystem& chunkSystem);
+	void update(const Vec2& screenSize, const Vec3& cameraPos, const Quat& cameraRot, const EntityManager& entityManger, const ChunkSystem& chunkSystem, const ItemData& itemData);
 
 	void drawCube(const Vec3& pos, const Vec3& scale, const Vec3& color);
 	void drawPoint(const Vec3& pos, float size, const Vec3& color);
@@ -61,7 +62,7 @@ private:
 
 	void shadowMapSetup();
 	void drawToShadowMap(const ChunkSystem& chunkSystem);
-	void drawScene(const ChunkSystem& chunkSystem);
+	void drawScene(const ChunkSystem& chunkSystem, const EntityManager& entityManager, const ItemData& itemData);
 
 	void onScreenResize();
 
@@ -71,11 +72,16 @@ private:
 
 private:
 	static constexpr size_t DEPTH_MAP_RESOLUTION = 4096;
-		
 
 private:
 
 	size_t keyframe = 0;
+
+	ShaderProgram m_itemModelShader;
+	ShaderProgram m_itemBlockShader;
+
+	Vao m_cubeTrianglesVao;
+	Vbo m_cubeTrianglesVbo;
 
 	Fbo m_fbo;
 	Texture m_fboTexture;

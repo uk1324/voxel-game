@@ -65,14 +65,15 @@ Image32::~Image32()
 	stbi_image_free(m_data);
 }
 
+// Images are loaded upside down so y is flipped upside down.
 void Image32::set(size_t x, size_t y, Color32 color)
 {
-	*reinterpret_cast<Color32*>(&m_data[y * m_width + x]) = color;
+	*reinterpret_cast<Color32*>(&m_data[(m_width - y - 1) * m_width + x]) = color;
 }
 
 Color32 Image32::get(size_t x, size_t y) const
 {
-	return *reinterpret_cast<Color32*>(&m_data[y * m_width + x]);
+	return *reinterpret_cast<Color32*>(&m_data[(m_width - y - 1) * m_width + x]);
 }
 
 size_t Image32::width() const

@@ -25,6 +25,7 @@ GameScene::GameScene(Engine& engine)
     entityManager.registerComponent<Position>();
     entityManager.registerComponent<Rotation>();
     entityManager.registerComponent<ModelComponent>();
+    entityManager.registerComponent<ItemComponent>();
 
     m_player = entityManager.createEntity();
     entityManager.addComponent(m_player, Position{ Vec3(0, 40, 0) });
@@ -70,7 +71,8 @@ void GameScene::update()
         windowSize,
         playerPos, playerRot,
         entityManager,
-        m_blockSystem.chunkSystem
+        m_blockSystem.chunkSystem,
+        itemData
     );
     m_inventorySystem.render(m_inventory, itemData, m_blockSystem.blockData, Vec2(windowSize));
 
@@ -78,7 +80,7 @@ void GameScene::update()
 
     if (input.isButtonDown("testtest") || time.currentTick() == 1)
     {
-        m_entitySystem.spawnZombie(playerPos, entityManager);
+        m_entitySystem.spawnItemEntity(playerPos, ItemStack(ItemType::Debug, 1), entityManager);
         /*m_blockSystem.chunkSystem.regenerateAll();
         std::cout << "playerPos: " << playerPos << '\n';*/
     }
@@ -92,7 +94,7 @@ void GameScene::update()
         if (m_isGamePaused == false)
         {
             m_playerMovementSystem.update(m_player, input, time, entityManager);
-            m_playerInteractionSystem.update(m_player, itemData, m_inventorySystem.heldItem(m_inventory), input, entityManager, m_blockSystem);
+            m_playerInteractionSystem.update(m_player, itemData, m_inventorySystem.heldItem(m_inventory), input, entityManager, m_blockSystem, m_inventory);
         }
     }
 

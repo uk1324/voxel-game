@@ -82,12 +82,18 @@ public:
 	static Pos posToChunkPosAndPosInChunk(const Vec3I& pos);
 
 public:
-	static constexpr int32_t VERTICAL_RENDER_DISTANCE = 3;
+	static constexpr int32_t LOWEST_CHUNK = -3;
+	static constexpr int32_t HIGHEST_CHUNK = 3;
 	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 3;
-	/*static constexpr int32_t VERTICAL_RENDER_DISTANCE = 4;
-	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 5;*/
-	static constexpr int32_t CHUNKS_IN_RENDER_DISTANCE = (2 * VERTICAL_RENDER_DISTANCE + 1) * (2 * HORIZONTAL_RENDER_DISTANCE + 1) * (2 * HORIZONTAL_RENDER_DISTANCE + 1);
-	static constexpr size_t VERTEX_DATA_PER_CHUNK_BYTE_SIZE = Chunk::SIZE_CUBED * 6 * 3 * 2 * 4;
+
+	static constexpr int32_t CHUNKS_IN_RENDER_DISTANCE = ((HIGHEST_CHUNK - LOWEST_CHUNK + 3)) * (2 * HORIZONTAL_RENDER_DISTANCE + 1) * (2 * HORIZONTAL_RENDER_DISTANCE + 1);
+	static constexpr size_t VERTEX_DATA_PER_CHUNK_BYTE_SIZE = (Chunk::SIZE_CUBED * 6 * 3 * 2 * 4) * 0.2; // * 0.2 for testing
+	// Don't know what is the best way to store vertex data.
+	// When stored in a single vao and vbo it takes up too much space because it preallocates for the worst case scenario. 
+	// It average it uses only around 3% of the total allocated memory.
+	// Could also create an allocator that allocates large buffers and the allocates blocks in those buffers to chunks.
+	// This would make chunks need to store a list of buffer locations. To reduce context changes the vertices would need to be storted based on
+	// The vao which would prevent optimization like sorting the chunks based on distance to reduce the amount of fragments drawn.
 	static constexpr size_t VERTEX_DATA_BYTE_SIZE = CHUNKS_IN_RENDER_DISTANCE * VERTEX_DATA_PER_CHUNK_BYTE_SIZE;
 
 private:

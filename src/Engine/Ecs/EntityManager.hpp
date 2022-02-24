@@ -25,7 +25,7 @@ public:
 	template<typename T>
 	T& getComponent(Entity entity);
 	template<typename T>
-	Opt<T>& getOptComponent(Entity entity);
+	Opt<T*> getOptComponent(Entity entity);
 	template<typename T>
 	const T& getComponent(Entity entity) const;
 	template<typename T>
@@ -138,12 +138,12 @@ T& EntityManager::getComponent(Entity entity)
 }
 
 template<typename T>
-Opt<T*> getOptComponent(Entity entity)
+Opt<T*> EntityManager::getOptComponent(Entity entity)
 {
 	auto component = reinterpret_cast<T*>(m_entityComponent[getComponentIndex<T>()][entity]);
 	if (component == nullptr)
 		return std::nullopt;
-	return *component;
+	return component;
 }
 
 template<typename T>

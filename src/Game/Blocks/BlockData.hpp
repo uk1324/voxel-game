@@ -2,6 +2,7 @@
 
 #include <Game/Blocks/Block.hpp>
 #include <Engine/Graphics/TextureArray.hpp>
+#include <Game/Item/ItemStack.hpp>
 
 #include <string_view>
 #include <vector>
@@ -11,6 +12,8 @@ class BlockData
 public:
 	struct Entry
 	{
+		Entry() : drop(ItemType::Dirt, 0) {};
+
 		union
 		{
 			struct
@@ -22,12 +25,14 @@ public:
 				uint32_t frontTextureIndex;
 				uint32_t backTextureIndex;
 			};
+			// isDecoration
 			uint32_t textureIndex;
 		};
 		float friction;
 		float walkSpeed;
 		bool isSolid;
 		bool isDecoration;
+		ItemStack drop;
 	};
 
 public:

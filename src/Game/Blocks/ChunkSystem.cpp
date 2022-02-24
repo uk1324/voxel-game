@@ -253,9 +253,17 @@ std::vector<uint32_t>& ChunkSystem::meshFromChunk(Chunk& chunk)
 
 void ChunkSystem::update(const Vec3& loadPos)
 {
+
 	const Vec3I chunkPos(floor(loadPos.x / Chunk::SIZE), floor(loadPos.y / Chunk::SIZE), floor(loadPos.z / Chunk::SIZE));
 
 	std::lock_guard lock(mutex);
+
+	//size_t vertexCount = 0;
+	//for (const auto& chunk : m_chunks)
+	//{
+	//	vertexCount += chunk.second->vertexCount;
+	//}
+	//std::cout << "totalVertexCount: " << vertexCount << '\n';
 
 	while (m_generatedChunks.size() > 0)
 	{
@@ -289,8 +297,8 @@ void ChunkSystem::update(const Vec3& loadPos)
 	auto isChunkOutOfRenderDistance = [&chunkPos](const Vec3I& pos)
 	{
 		return (pos.x < (chunkPos.x - HORIZONTAL_RENDER_DISTANCE)) || (pos.x > (chunkPos.x + HORIZONTAL_RENDER_DISTANCE))
-			|| (pos.y < (chunkPos.y - VERTICAL_RENDER_DISTANCE))   || (pos.y > (chunkPos.y + VERTICAL_RENDER_DISTANCE))
-			|| (pos.z < (chunkPos.z - HORIZONTAL_RENDER_DISTANCE)) || (pos.z > (chunkPos.z + HORIZONTAL_RENDER_DISTANCE));
+			|| (pos.z < (chunkPos.z - HORIZONTAL_RENDER_DISTANCE)) || (pos.z > (chunkPos.z + HORIZONTAL_RENDER_DISTANCE))
+			|| (pos.y <= LOWEST_CHUNK) || (pos.y >= HIGHEST_CHUNK);
 	};
 
 	m_chunksToGenerate.erase(
@@ -341,7 +349,7 @@ void ChunkSystem::update(const Vec3& loadPos)
 
 	for (int32_t z = chunkPos.z - HORIZONTAL_RENDER_DISTANCE; z <= chunkPos.z + HORIZONTAL_RENDER_DISTANCE; z++)
 	{
-		for (int32_t y = chunkPos.y - VERTICAL_RENDER_DISTANCE; y <= chunkPos.y + VERTICAL_RENDER_DISTANCE; y++)
+		for (int32_t y = LOWEST_CHUNK; y <= HIGHEST_CHUNK; y++)
 		{
 			for (int32_t x = chunkPos.x - HORIZONTAL_RENDER_DISTANCE; x <= chunkPos.x + HORIZONTAL_RENDER_DISTANCE; x++)
 			{

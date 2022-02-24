@@ -6,8 +6,8 @@
 // TODO: Make Vec4 and alias it to Color
 // TODO: Add a way to make screenshots
 // Maybe make a class OpenGL objects that is non copyable and has move constructor and assignment operator.
-// TODO: Add array index functions to Json::Value
 // https://hg.sr.ht/~runevision/random-numbers-testing/browse/Assets/Implementations/HashFunctions/XXHash.cs?rev=tip
+// TODO: Change components like Postion to inherit from Vec3 instead of storing it.
 
 int main()
 {

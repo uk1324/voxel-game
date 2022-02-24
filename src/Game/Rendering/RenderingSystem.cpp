@@ -2,6 +2,7 @@
 #include <Game/Components/Position.hpp>
 #include <Game/Debug/Debug.hpp>
 #include <Model/ModelLoader.hpp>
+#include <Game/EntitySystem.hpp>
 
 #include <string>
 
@@ -11,6 +12,51 @@ static float cubeLinesVertices[] = { 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5,
 static float squareTrianglesVertices[] = { -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f };
 static float point[] = { 0.0f, 0.0f, 0.0f };
 static float lineData[] = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f };
+
+static const float cubeTriangleVertices[] = {
+									  // Face index
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0,
+	 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0,
+	 0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0,
+	-0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 0,
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0,
+	 0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0,
+
+	 0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 1,
+	-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1,
+	 0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1,
+	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1,
+	 0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1,
+	-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1,
+
+	-0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 2,
+	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 2,
+	-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 2,
+	-0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 2,
+	-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 2,
+	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 2,
+
+	 0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 3,
+	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 3,
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 3,
+	 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 3,
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 3,
+	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 3,
+
+	 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 4,
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 4,
+	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 4,
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 4,
+	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 4,
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 4,
+
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 5,
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 5,
+	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 5,
+	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 5,
+	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 5,
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 5,
+};
 
 static const float squareTrianglesVertices2[] = {
 	// vertexPos  textureCoord
@@ -57,6 +103,9 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	//, m_model("assets/models/character/character.gltf")
 	//, m_model(ModelLoader("src/model/duck.gltf").parse())
 	, m_model(ModelLoader("assets/models/character/character.gltf").parse())
+	, m_itemModelShader("src/Game/Rendering/Shaders/itemModel.vert", "src/Game/Rendering/Shaders/itemModel.frag")
+	, m_itemBlockShader("src/Game/Rendering/Shaders/itemBlock.vert", "src/Game/Rendering/Shaders/itemBlock.frag")
+	, m_cubeTrianglesVbo(cubeTriangleVertices, sizeof(cubeTriangleVertices))
 {
 	m_cubeLinesVao.bind();
 	m_cubeLinesVbo.bind();
@@ -75,6 +124,12 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	m_squareTrianglesVbo2.bind();
 	Vao::setAttribute(0, BufferLayout(ShaderDataType::Float, 2, 0, sizeof(float) * 4, false));
 	Vao::setAttribute(1, BufferLayout(ShaderDataType::Float, 2, sizeof(float) * 2, sizeof(float) * 4, false));
+
+	m_cubeTrianglesVao.bind();
+	m_cubeTrianglesVbo.bind();
+	Vao::setAttribute(0, BufferLayout(ShaderDataType::Float, 3, 0, sizeof(float) * 6, false));
+	Vao::setAttribute(1, BufferLayout(ShaderDataType::Float, 2, sizeof(float) * 3, sizeof(float) * 6, false));
+	Vao::setAttribute(2, BufferLayout(ShaderDataType::Float, 1, sizeof(float) * 5, sizeof(float) * 6, false));
 
 	onScreenResize();
 
@@ -103,16 +158,6 @@ static void draw(const Vec3& pos, Model::Node& node, const Vec3& old)
 	}
 }
 
-static Vec3 flip(const Vec3& v)
-{
-	return Vec3(v.z, v.y, v.x);
-}
-
-static Quat flip(const Quat& v)
-{
-	return Quat(v.w, v.z, v.y, v.x);
-}
-
 static void drawSkeleton(const Vec3& translation, Model::Node& node, const Mat4& parentTransform, const Vec3& parentTransformed)
 {
 	const Mat4 thisTransform = node.output * parentTransform;
@@ -127,7 +172,7 @@ static void drawSkeleton(const Vec3& translation, Model::Node& node, const Mat4&
 
 #include <iostream>
 
-void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, const Quat& cameraRot, const EntityManager& entityManger, const ChunkSystem& chunkSystem)
+void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, const Quat& cameraRot, const EntityManager& entityManger, const ChunkSystem& chunkSystem, const ItemData& itemData)
 {
 	if (m_screenSize != screenSize)
 	{
@@ -152,12 +197,11 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 	//}
 	//glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-
 	//  drawToShadowMap(chunkSystem); 
 
 	m_fbo.bind();
 
-	drawScene(chunkSystem);
+	drawScene(chunkSystem, entityManger, itemData);
 	//for (m_model.
 	//for (auto& node : m_model.nodes)
 	//{
@@ -351,7 +395,7 @@ void RenderingSystem::drawToShadowMap(const ChunkSystem& chunkSystem)
 	m_shadowMapFbo.unbind();
 }
 
-void RenderingSystem::drawScene(const ChunkSystem& chunkSystem)
+void RenderingSystem::drawScene(const ChunkSystem& chunkSystem, const EntityManager& entityManager, const ItemData& itemData)
 {
 	// Only clearing depth buffer because the skybox is drawn.
 	glCullFace(GL_BACK);
@@ -374,6 +418,47 @@ void RenderingSystem::drawScene(const ChunkSystem& chunkSystem)
 	//m_shadowMapTextures.bind();
 	//m_chunkShader.setTexture("shadowMap", 1);
 	drawChunks(chunkSystem, m_chunkShader);
+
+	m_itemModelShader.setMat4("projection", m_projection);
+	m_itemModelShader.setMat4("view", m_view);
+	m_itemBlockShader.setMat4("projection", m_projection);
+	m_itemBlockShader.setMat4("view", m_view);
+	for (const auto& [entity, itemComponent] : entityManager.getComponents<ItemComponent>())
+	{
+		const Vec3& pos = entityManager.getComponent<Position>(entity).value;
+
+		float timeSinceSpawned = Time::currentTime() - itemComponent.spawnTime * 2.0f;
+
+		const auto& itemInfo = itemData[itemComponent.item.item];
+		if (itemInfo.isBlock)
+		{
+			m_itemBlockShader.setMat4("model",
+				Quat(timeSinceSpawned, Vec3::yAxis).asMatrix()
+				* Mat4::scale(Vec3(0.25f))
+				* Mat4::translation(pos + Vec3(0.0f, (sin(timeSinceSpawned) + 1.0f) / 10.0f, 0.0)));
+
+			const auto& blockInfo = chunkSystem.blockData[itemInfo.blockType];
+			m_itemBlockShader.use();
+			m_itemBlockShader.setUnsignedInt("faceTextureIndex[0]", blockInfo.frontTextureIndex);
+			m_itemBlockShader.setUnsignedInt("faceTextureIndex[1]", blockInfo.backTextureIndex);
+			m_itemBlockShader.setUnsignedInt("faceTextureIndex[2]", blockInfo.rightTextureIndex);
+			m_itemBlockShader.setUnsignedInt("faceTextureIndex[3]", blockInfo.leftTextureIndex);
+			m_itemBlockShader.setUnsignedInt("faceTextureIndex[4]", blockInfo.bottomTextureIndex);
+			m_itemBlockShader.setUnsignedInt("faceTextureIndex[5]", blockInfo.topTextureIndex);
+			m_cubeTrianglesVao.bind();
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
+		else
+		{
+			m_itemModelShader.setMat4("model",
+				Quat(timeSinceSpawned, Vec3::yAxis).asMatrix()
+				* Mat4::scale(Vec3(0.5f))
+				* Mat4::translation(pos + Vec3(0.0f, (sin(timeSinceSpawned) + 1.0f) / 10.0f, 0.0)));
+			m_itemModelShader.use();
+			itemData.voxelizedItemModelsVao.bind();
+			glDrawArrays(GL_TRIANGLES, itemInfo.model.vboVertexOffset, itemInfo.model.vertexCount);
+		}
+	}
 }
 
 void RenderingSystem::onScreenResize()

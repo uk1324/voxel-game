@@ -31,7 +31,8 @@ BlockData::BlockData()
 		std::string back,
 		float friction,
 		float walkSpeed,
-		bool isSolid
+		bool isSolid,
+		ItemStack drop
 	)
 	{
 		Entry entry;
@@ -45,6 +46,7 @@ BlockData::BlockData()
 		entry.walkSpeed = walkSpeed;
 		entry.isSolid = isSolid;
 		entry.isDecoration = false;
+		entry.drop = drop;
 		return entry;
 	};
 
@@ -75,7 +77,8 @@ BlockData::BlockData()
 		PATH "stone.png",
 		0.85,
 		1,
-		true
+		true,
+		ItemStack(ItemType::Stone, 1)
 	));
 
 	set(BlockType::Grass, entry(
@@ -87,7 +90,8 @@ BlockData::BlockData()
 		PATH "grass_side.png",
 		0.85,
 		1,
-		true
+		true,
+		ItemStack(ItemType::Grass, 1)
 	));
 
 	set(BlockType::Dirt, entry(
@@ -99,7 +103,8 @@ BlockData::BlockData()
 		PATH "dirt.png",
 		0.85,
 		1,
-		true
+		true,
+		ItemStack(ItemType::Dirt, 1)
 	));
 
 	set(BlockType::WoodenPlanks, entry(
@@ -111,7 +116,8 @@ BlockData::BlockData()
 		PATH "wooden_planks.png",
 		0.85,
 		1,
-		true
+		true,
+		ItemStack(ItemType::WoodenPlanks, 1)
 	));
 
 	set(BlockType::Cobblestone, entry(
@@ -123,7 +129,8 @@ BlockData::BlockData()
 		PATH "cobblestone.png",
 		0.85,
 		1,
-		true
+		true,
+		ItemStack(ItemType::Cobblestone, 1)
 	));
 
 	set(BlockType::Water, entry(
@@ -135,7 +142,8 @@ BlockData::BlockData()
 		PATH "water.png",
 		0.85,
 		1,
-		true
+		true,
+		ItemStack(ItemType::Debug, 1)
 	));
 
 	set(BlockType::Sand, entry(
@@ -147,7 +155,8 @@ BlockData::BlockData()
 		PATH "sand.png",
 		0.85,
 		1,
-		true
+		true,
+		ItemStack(ItemType::Dirt, 1)
 	));
 
 	set(BlockType::Leaves, entry(
@@ -159,7 +168,8 @@ BlockData::BlockData()
 		PATH "leaves.png",
 		0.85,
 		1,
-		true
+		true,
+		ItemStack(ItemType::Dirt, 1)
 	));
 
 
@@ -172,7 +182,8 @@ BlockData::BlockData()
 		PATH "log_side.png",
 		0.85,
 		1,
-		true
+		true,
+		ItemStack(ItemType::Dirt, 1)
 	));
 
 	set(BlockType::Flower, decorationEntry(PATH "flower.png"));
@@ -186,7 +197,8 @@ BlockData::BlockData()
 		PATH "back.png",
 		0.85,
 		1,
-		false
+		false,
+		ItemStack(ItemType::Debug, 1)
 	));
 
 	textureArray = TextureArray(16, 16, std::vector<std::string_view>(texturesNames.begin(), texturesNames.end()));

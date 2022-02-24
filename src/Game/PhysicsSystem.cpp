@@ -18,24 +18,29 @@ void PhysicsSystem::update(const Time& time, EntityManager& entityManager, const
 	{
 		Vec3& entityVel = velocityComponent.value;
 		Vec3& entityPos = entityManager.getComponent<Position>(entity).value;
-		bool& isEntityGrounded = entityManager.getComponent<Grounded>(entity).value;
+		Opt<Grounded*> isEntityGrounded = entityManager.getOptComponent<Grounded>(entity);
 		const PhysicsAabbCollider& collider = entityManager.getComponent<PhysicsAabbCollider>(entity);
 
 		entityVel.y -= gravity * time.deltaTime();
 
 		entityVel.y *= 0.98;
-		if (isEntityGrounded)
+
+		if (isEntityGrounded.has_value())
 		{
-			entityVel.x *= 0.85;
-			entityVel.z *= 0.85;
-		}
-		else
-		{
-			entityVel.x *= 0.98;
-			entityVel.z *= 0.98;
+			if ((*isEntityGrounded)->value)
+			{
+				entityVel.x *= 0.85;
+				entityVel.z *= 0.85;
+			}
+			else
+			{
+				entityVel.x *= 0.98;
+				entityVel.z *= 0.98;
+			}
+
+			(*isEntityGrounded)->value = false;
 		}
 
-		isEntityGrounded = false;
 		Vec3 movement = entityVel;
 		// Doing collsion 3 times so the sliding collision response on one axis doesn't allow to go through blocks.
 		for (int i = 0; i < 3; i++)
@@ -55,7 +60,10 @@ void PhysicsSystem::update(const Time& time, EntityManager& entityManager, const
 
 			if (collision.normal.y == 1.0f)
 			{
-				isEntityGrounded = true;
+				if (isEntityGrounded.has_value())
+				{
+					(*isEntityGrounded)->value = true;
+				}
 			}
 
 			if (collision.normal.x != 0.0f)
