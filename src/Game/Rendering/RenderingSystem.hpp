@@ -12,6 +12,7 @@
 #include <Engine/Renderer/Renderer.hpp>
 #include <Math/Angles.hpp>
 #include <Model/Model.hpp>
+#include <Math/Frustum.hpp>
 
 // If I later need to reuse this I put the main functionality into functions and inherit from it.
 // Some members could be static
@@ -74,6 +75,11 @@ private:
 	static constexpr size_t DEPTH_MAP_RESOLUTION = 2048;
 
 private:
+
+	Frustum m_frustum;
+
+	Vec3 v;
+	float angl;
 
 	size_t keyframe = 0;
 

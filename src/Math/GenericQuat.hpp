@@ -33,6 +33,9 @@ public:
 	GenericVec3<T> operator* (const GenericVec3<T>& rhs) const;
 
 public:
+	static GenericQuat<T> fromEuler(T x, T y, T z);
+
+public:
 	static const GenericQuat identity;
 
 public:
@@ -156,6 +159,24 @@ GenericVec3<T> GenericQuat<T>::operator* (const GenericVec3<T>& rhs) const
 	// https://blog.molecular-matters.com/2013/05/24/a-faster-quaternion-vector-multiplication/
 	GenericQuat<T> q = (*this * GenericQuat<T>(rhs.x, rhs.y, rhs.z, 0)) * conjugate();
 	return GenericVec3<T>(q.x, q.y, q.z);
+}
+
+template<typename T>
+GenericQuat<T> GenericQuat<T>::fromEuler(T x, T y, T z)
+{
+	double cy = cos(z * 0.5);
+	double sy = sin(z * 0.5);
+	double cp = cos(y * 0.5);
+	double sp = sin(y * 0.5);
+	double cr = cos(x * 0.5);
+	double sr = sin(x * 0.5);
+
+	Quat(
+		sr * cp * cy - cr * sp * sy,
+		cr * sp * cy + sr * cp * sy,
+		cr * cp * sy - sr * sp * cy,
+		cr * cp * cy + sr * sp * sy
+	);
 }
 
 template<typename T>

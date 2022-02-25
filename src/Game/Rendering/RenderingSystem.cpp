@@ -171,6 +171,7 @@ static void drawSkeleton(const Vec3& translation, Model::Node& node, const Mat4&
 }
 
 #include <iostream>
+#include <imgui.h>
 
 void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, const Quat& cameraRot, const EntityManager& entityManger, const ChunkSystem& chunkSystem, const ItemData& itemData)
 {
@@ -179,12 +180,15 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 		m_screenSize = screenSize;
 		onScreenResize();
 	}
+	const Vec3 cameraDir = cameraRot * Vec3::forward;
 	float aspectRatio = screenSize.x / screenSize.y;
 	static constexpr float fov = degToRad(90.0f);
 	const Mat4 projection = Mat4::perspective(fov, aspectRatio, m_nearPlaneZ, m_farPlaneZ);
-	const  Mat4 view = Mat4::lookAt(cameraPos, cameraPos + (cameraRot * Vec3::forward), Vec3::up);
+	const  Mat4 view = Mat4::lookAt(cameraPos, cameraPos + cameraDir, Vec3::up);
 	m_projection = projection;
 	m_view = view;
+
+	m_frustum = Frustum::fromCamera(cameraPos, cameraDir, aspectRatio, fov, m_nearPlaneZ, m_farPlaneZ);
 
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_DEPTH_BUFFER_BIT);
@@ -262,22 +266,72 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 	m_fboShader.setFloat("time", Time::currentTime());
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
+	glClear(GL_DEPTH_BUFFER_BIT);
+	m_itemModelShader.setMat4("projection", m_projection);
+	m_itemModelShader.setMat4("view", m_view);
+	//m_itemModelShader.setMat4("model", Mat4::translation(cameraPos));
+	//const auto& itemInfo = itemData[itemComponent.item.item];
+	const auto& itemInfo = itemData[ItemType::DiamondSword];
+	//if (itemInfo.isBlock)
+	//{
+	//	//m_itemBlockShader.setMat4("model",
+	//	//	Quat(timeSinceSpawned, Vec3::yAxis).asMatrix()
+	//	//	* Mat4::scale(Vec3(0.25f))
+	//	//	* Mat4::translation(pos + Vec3(0.0f, (sin(timeSinceSpawned) + 1.0f) / 10.0f, 0.0)));
+
+	//	//const auto& blockInfo = chunkSystem.blockData[itemInfo.blockType];
+	//	//m_itemBlockShader.use();
+	//	//m_itemBlockShader.setUnsignedInt("faceTextureIndex[0]", blockInfo.frontTextureIndex);
+	//	//m_itemBlockShader.setUnsignedInt("faceTextureIndex[1]", blockInfo.backTextureIndex);
+	//	//m_itemBlockShader.setUnsignedInt("faceTextureIndex[2]", blockInfo.rightTextureIndex);
+	//	//m_itemBlockShader.setUnsignedInt("faceTextureIndex[3]", blockInfo.leftTextureIndex);
+	//	//m_itemBlockShader.setUnsignedInt("faceTextureIndex[4]", blockInfo.bottomTextureIndex);
+	//	//m_itemBlockShader.setUnsignedInt("faceTextureIndex[5]", blockInfo.topTextureIndex);
+	//	//m_cubeTrianglesVao.bind();
+	//	//glDrawArrays(GL_TRIANGLES, 0, 36);
+	//}
+	//else
+
+	ImGui::Begin("adfs");
+
+	ImGui::SliderFloat3("abc", v.data(), -2, 2);
+	ImGui::SliderFloat("a", &angl, -180, 180);
+
+	ImGui::End();
+
+	{
+		m_itemModelShader.setMat4("model", 
+			(cameraRot * Quat(degToRad(90.0f), Vec3::yAxis) * Quat(degToRad(angl), Vec3::zAxis)).asMatrix()
+			* Mat4::translation(cameraPos + cameraRot * (Vec3::forward + v)));
+		m_itemModelShader.use();
+		itemData.voxelizedItemModelsVao.bind();
+		glDrawArrays(GL_TRIANGLES, itemInfo.model.vboVertexOffset, itemInfo.model.vertexCount);
+	}
+
 	drawCrosshair(screenSize);
 }
 
 void RenderingSystem::drawChunks(const ChunkSystem& chunkSystem, ShaderProgram& shader)
 {
 	chunkSystem.m_vao.bind();
+	int drawn = 0;
 	for (const auto& chunk : chunkSystem.m_chunksToDraw)
 	{
-		shader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE));
-		glDrawArrays(GL_TRIANGLES, chunk->vboByteOffset / sizeof(uint32_t), chunk->vertexCount);
+		AB a{ Vec3(chunk->pos) * Chunk::SIZE + Vec3(Chunk::SIZE / 2.0f), Vec3(Chunk::SIZE) };
+		if (m_frustum.collision(a))
+		{
+			drawn++;
+			shader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE));
+			glDrawArrays(GL_TRIANGLES, chunk->vboByteOffset / sizeof(uint32_t), chunk->vertexCount);
+		}
 
 		if (Debug::shouldShowChunkBorders)
 		{
 			Debug::drawCube(Vec3(chunk->pos) * Chunk::SIZE * Block::SIZE + Vec3(Chunk::SIZE) / 2.0, Vec3(Chunk::SIZE), Vec3(1, 1, 1));
 		}
 	}
+	std::cout << "total: " << chunkSystem.m_chunksToDraw.size() << " drawn: " << drawn << '\n';
+
 }
 
 void RenderingSystem::drawDebugShapes(const Mat4& projection, const Mat4& view)

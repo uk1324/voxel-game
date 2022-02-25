@@ -49,12 +49,12 @@ void Engine::run(std::unique_ptr<Scene>&& startingScene)
 void Engine::update()
 {
 	m_currentScene->input.update();
-	//ImGui_ImplOpenGL3_NewFrame();
-	//ImGui_ImplGlfw_NewFrame();
-	//ImGui::NewFrame();
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
 	m_currentScene->update();
- //	ImGui::Render();
-	//ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+ 	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	m_window.update();
 	m_currentScene->entityManager.update();
 }
