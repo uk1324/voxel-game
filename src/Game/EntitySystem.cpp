@@ -23,12 +23,12 @@ void EntitySystem::spawnZombie(const Vec3& position, EntityManager& entityManage
 	entityManager.addComponent(entity, ModelComponent{});
 }
 
-Entity EntitySystem::spawnItemEntity(const Vec3& position, ItemStack item, EntityManager& entityManager)
+Entity EntitySystem::spawnItemEntity(EntityManager& entityManager, const Vec3& position, ItemStack item, const Vec3& velocity)
 {
 	Entity entity = entityManager.createEntity();
 	entityManager.addComponent(entity, Position{ position });
 	entityManager.addComponent(entity, ItemComponent{ item, Time::currentTime() });
-	entityManager.addComponent(entity, PhysicsVelocity{});
+	entityManager.addComponent(entity, PhysicsVelocity{ velocity });
 	entityManager.addComponent(entity, Grounded{});
 	entityManager.addComponent(entity, PhysicsAabbCollider{ Vec3(0), Vec3(0.25f) });
 	return entity;

@@ -61,7 +61,7 @@ private:
 	void drawCrosshair(const Vec2& screenSize);
 
 	void shadowMapSetup();
-	void drawToShadowMap(const ChunkSystem& chunkSystem);
+	void drawToShadowMap(const ChunkSystem& chunkSystem, const EntityManager& entityManager, const ItemData& itemData);
 	void drawScene(const ChunkSystem& chunkSystem, const EntityManager& entityManager, const ItemData& itemData);
 
 	void onScreenResize();
@@ -71,7 +71,7 @@ private:
 	std::vector<Mat4> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& shadowCascadeLevels);
 
 private:
-	static constexpr size_t DEPTH_MAP_RESOLUTION = 4096;
+	static constexpr size_t DEPTH_MAP_RESOLUTION = 2048;
 
 private:
 

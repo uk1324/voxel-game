@@ -82,7 +82,7 @@ public:
 	static Pos posToChunkPosAndPosInChunk(const Vec3I& pos);
 
 public:
-	static constexpr int32_t LOWEST_CHUNK = -3;
+	static constexpr int32_t LOWEST_CHUNK = -4;
 	static constexpr int32_t HIGHEST_CHUNK = 3;
 	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 3;
 

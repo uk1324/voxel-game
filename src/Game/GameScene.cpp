@@ -80,7 +80,7 @@ void GameScene::update()
 
     if (input.isButtonDown("testtest") || time.currentTick() == 1)
     {
-        m_entitySystem.spawnItemEntity(playerPos, ItemStack(ItemType::Debug, 1), entityManager);
+        m_entitySystem.spawnZombie(playerPos, entityManager);
         /*m_blockSystem.chunkSystem.regenerateAll();
         std::cout << "playerPos: " << playerPos << '\n';*/
     }
@@ -112,6 +112,8 @@ void GameScene::registerInputActions()
 
     input.registerMouseButton("attack", MouseButton::Left);
     input.registerMouseButton("use", MouseButton::Right);
+
+    input.registerKeyboardButton("dropItem", KeyCode::Q);
 
     input.registerKeyboardButton("forward", KeyCode::W);
     input.registerKeyboardButton("back", KeyCode::S);

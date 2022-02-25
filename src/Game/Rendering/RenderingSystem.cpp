@@ -141,7 +141,7 @@ RenderingSystem::RenderingSystem(Scene& scene)
 
 	m_fbo.unbind();
 
-	//shadowMapSetup();
+	shadowMapSetup();
 
 	glEnable(GL_CULL_FACE);
 }
@@ -189,15 +189,15 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	//const auto lightMatrices = getLightSpaceMatrices(fov, aspectRatio, view, m_directionalLightDir, m_nearPlaneZ, m_farPlaneZ, shadowCascadeLevels);
-	//glBindBuffer(GL_UNIFORM_BUFFER, matricesUBO);
-	//for (size_t i = 0; i < lightMatrices.size(); i++)
-	//{
-	//	glBufferSubData(GL_UNIFORM_BUFFER, i * sizeof(Mat4), sizeof(Mat4), &lightMatrices[i]);
-	//}
-	//glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	const auto lightMatrices = getLightSpaceMatrices(fov, aspectRatio, view, m_directionalLightDir, m_nearPlaneZ, m_farPlaneZ, shadowCascadeLevels);
+	glBindBuffer(GL_UNIFORM_BUFFER, matricesUBO);
+	for (size_t i = 0; i < lightMatrices.size(); i++)
+	{
+		glBufferSubData(GL_UNIFORM_BUFFER, i * sizeof(Mat4), sizeof(Mat4), &lightMatrices[i]);
+	}
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	//  drawToShadowMap(chunkSystem); 
+	drawToShadowMap(chunkSystem, entityManger, itemData); 
 
 	m_fbo.bind();
 
@@ -217,14 +217,6 @@ void RenderingSystem::update(const Vec2& screenSize, const Vec3& cameraPos, cons
 		m_model.nodes[i].output = Mat4::scale(m_model.keyframes[keyframe / 2].scale[i])
 			* m_model.keyframes[keyframe / 2].rotation[i].asMatrix()
 			* Mat4::translation(m_model.keyframes[keyframe / 2].translation[i]);
-
-		//std::cout << m_model.nodes[i].output;
-
-		//m_model.nodes[i].output = Mat4::scale(Vec3(1.2))
-		//	* Quat(degToRad(float(keyframe)), (Vec3::xAxis + Vec3::yAxis).normalized()).asMatrix()
-		//	* Mat4::translation(Vec3(0));
-
-		//m_model.nodes[i].output = Mat4::identity;
 	}
 
 	ModelLoader::propagateTransform(m_model.nodes[18]);
@@ -380,7 +372,7 @@ void RenderingSystem::shadowMapSetup()
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void RenderingSystem::drawToShadowMap(const ChunkSystem& chunkSystem)
+void RenderingSystem::drawToShadowMap(const ChunkSystem& chunkSystem, const EntityManager& entityManager, const ItemData& itemData)
 {
 	m_chunkShadowShader.use();
 	glActiveTexture(GL_TEXTURE0);
@@ -392,6 +384,7 @@ void RenderingSystem::drawToShadowMap(const ChunkSystem& chunkSystem)
 	// Using GL_FRONT so only the back faces of the objects from the direction of the light can have shadows.
 	glCullFace(GL_FRONT);
 	drawChunks(chunkSystem, m_chunkShadowShader);
+	//drawScene(chunkSystem, entityManager, itemData);
 	m_shadowMapFbo.unbind();
 }
 
@@ -414,9 +407,9 @@ void RenderingSystem::drawScene(const ChunkSystem& chunkSystem, const EntityMana
 	glActiveTexture(GL_TEXTURE0);
 	chunkSystem.blockData.textureArray.bind();
 	m_chunkShader.setTexture("blockTextureArray", 0);
-	//glActiveTexture(GL_TEXTURE1);
-	//m_shadowMapTextures.bind();
-	//m_chunkShader.setTexture("shadowMap", 1);
+	glActiveTexture(GL_TEXTURE1);
+	m_shadowMapTextures.bind();
+	m_chunkShader.setTexture("shadowMap", 1);
 	drawChunks(chunkSystem, m_chunkShader);
 
 	m_itemModelShader.setMat4("projection", m_projection);

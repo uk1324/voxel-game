@@ -22,12 +22,12 @@ void PlayerInteractionSystem::update(
 {
 	const Vec3& playerPos = entites.getComponent<Position>(player).value;
 	const Quat& playerRot = entites.getComponent<Rotation>(player).value;
+	const Vec3 playerDir = playerRot * Vec3::forward;
 
-	const Vec3 rayEnd = playerPos + (playerRot * Vec3::forward * playerReachDistance);
+	const Vec3 rayEnd = playerPos + (playerDir * playerReachDistance);
 
 	auto voxelRaycastHit = blockSystem.raycast(playerPos, rayEnd);
 	auto entityRaycastHit = PhysicsSystem::raycast(player, playerPos, rayEnd, entites);
-
 
 	if (input.isButtonDown("attack"))
 	{
@@ -37,10 +37,14 @@ void PlayerInteractionSystem::update(
 			const auto optBlock = blockSystem.tryGet(voxelRaycastHit->blockPos);
 			if (optBlock.has_value())
 			{
-				EntitySystem::spawnItemEntity(
+				Vec3 velocity(0, 0.08, 0);
+
+				Entity item = EntitySystem::spawnItemEntity(
+					entites,
 					Vec3(voxelRaycastHit->blockPos) + Vec3(Block::SIZE) / 2.0f,
 					blockSystem.chunkSystem.blockData[optBlock->type].drop,
-					entites);
+					velocity);
+
 				blockSystem.trySet(voxelRaycastHit->blockPos, BlockType::Air);
 			}
 		}
@@ -76,7 +80,6 @@ void PlayerInteractionSystem::update(
 
 		static constexpr float PICKUP_DISTANCE = 2.0f;
 		static constexpr float PICKUP_COOLDOWN = 2.0f;
-		std::cout << Vec3::distanceSquared(pos, playerPos) << '\n';
 		if (((Time::currentTime() - itemComponent.spawnTime) > PICKUP_COOLDOWN)
 			&& (Vec3::distanceSquared(pos, playerPos) < PICKUP_DISTANCE))
 		{
@@ -91,6 +94,14 @@ void PlayerInteractionSystem::update(
 				entites.destroyEntity(itemEntity);
 			}
 		}
+	}
+
+	if (input.isButtonDown("dropItem") && heldItem.has_value())
+	{
+		EntitySystem::spawnItemEntity(entites, playerPos, ItemStack(heldItem->item, 1), playerDir * 0.15f);
+		heldItem->count -= 1;
+		if (heldItem->count == 0)
+			heldItem = std::nullopt;
 	}
 
 	Debug::drawCube(Vec3(voxelRaycastHit->blockPos) + Vec3(Block::SIZE / 2.0f), Vec3(1), Vec3(1, 1, 1));

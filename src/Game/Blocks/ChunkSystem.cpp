@@ -298,7 +298,7 @@ void ChunkSystem::update(const Vec3& loadPos)
 	{
 		return (pos.x < (chunkPos.x - HORIZONTAL_RENDER_DISTANCE)) || (pos.x > (chunkPos.x + HORIZONTAL_RENDER_DISTANCE))
 			|| (pos.z < (chunkPos.z - HORIZONTAL_RENDER_DISTANCE)) || (pos.z > (chunkPos.z + HORIZONTAL_RENDER_DISTANCE))
-			|| (pos.y <= LOWEST_CHUNK) || (pos.y >= HIGHEST_CHUNK);
+			|| (pos.y < LOWEST_CHUNK) || (pos.y > HIGHEST_CHUNK);
 	};
 
 	m_chunksToGenerate.erase(

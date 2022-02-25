@@ -17,7 +17,7 @@ public:
 
 	void spawnZombie(const Vec3& position, EntityManager& entityManager);
 
-	static Entity spawnItemEntity(const Vec3& position, ItemStack item, EntityManager& entityManager);
+	static Entity spawnItemEntity(EntityManager& entityManager, const Vec3& position, ItemStack item, const Vec3& velocity = Vec3(0.0f));
 
 private:
 
