@@ -85,6 +85,8 @@ private:
 	float m_nearPlaneZ = 0.1f;
 	float m_fov = degToRad(90.0f);
 
+	Fbo ff;
+	Texture s;
 	//enum class GemetryBufferTextures
 	//{
 
@@ -93,7 +95,7 @@ private:
 	Texture m_depthTexture, m_positionTexture, m_normalTexture, m_albedoTexture;
 
 	Fbo m_shadowMapFbo;
-	static constexpr size_t SHADOW_MAP_CASCADE_COUNT = 4;
+	//static constexpr size_t SHADOW_MAP_CASCADE_COUNT = 4;
 	std::vector<Texture> m_shadowMapTextures;
 	std::vector<float> m_cascadeZ;
 
