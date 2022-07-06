@@ -160,16 +160,16 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos) const
 				const Vec3I posInChunk(x, y, z);
 				const Vec3 pos(posInChunk + chunkPos * Chunk::SIZE);
 
-				//if (pos.y == -5)
-				//{
-				//	chunk.set(posInChunk, BlockType::Grass);
-				//}
-				//else
-				//{
-				//	chunk.set(posInChunk, BlockType::Air);
-				//}
+				/*if (pos.y == -5)
+				{
+					chunk.set(posInChunk, BlockType::Grass);
+				}
+				else
+				{
+					chunk.set(posInChunk, BlockType::Air);
+				}
 
-				//continue;
+				continue;*/
 
 				//if (abs(m_noise.value3d(pos * cave1) - cave3) < cave2)
 				//{

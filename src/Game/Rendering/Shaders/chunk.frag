@@ -98,9 +98,10 @@ void main()
 	if (tex.a == 0)
 		discard;
 
-    float shadow = ShadowCalculation(fragPos);                      
-    vec3 lighting = clamp(0.5 + (1.0 - shadow), 0, 1) * tex.xyz;    
-    //vec3 lighting = clamp(0.5 + (1.0 - shadow) + dot(normal, lightDir), 0, 1) * tex.xyz;    
+//    float shadow = ShadowCalculation(fragPos);                      
+//    vec3 lighting = clamp(0.5 + (1.0 - shadow), 0, 1) * tex.xyz;    
+    // vec3 lighting = clamp(0.5 + (1.0 - shadow) + dot(normal, lightDir), 0, 1) * tex.xyz;    
    
-	gl_FragColor = vec4(lighting, 1.0);
+   //gl_FragColor = vec4(lighting, 1.0);
+    gl_FragColor = vec4(tex.xyz, 1.0);
 }

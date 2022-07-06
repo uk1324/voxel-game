@@ -59,7 +59,7 @@ void PlayerInteractionSystem::update(
 		if (voxelRaycastHit.has_value()
 			&& ((entityRaycastHit.has_value() == false) || (voxelRaycastHit->time < entityRaycastHit->time)))
 		{
-			if (heldItem.has_value() && itemData[heldItem->item].isBlock)
+			if (heldItem.has_value() && itemData[heldItem->item].isBlock && voxelRaycastHit->entryNormal.has_value())
 			{
 				blockSystem.trySet(
 					voxelRaycastHit->blockPos + voxelRaycastHit->entryNormal.value(),

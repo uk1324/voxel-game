@@ -63,7 +63,7 @@ GLuint Texture::handle() const
 
 Texture Texture::pixelArt(const char* path)
 {
-	auto texture = Texture::incomplete();
+	auto texture = Texture::generate();
 	texture.bind();
 
 	Image32 image(path);
@@ -79,7 +79,7 @@ Texture Texture::pixelArt(const char* path)
 	return texture;
 }
 
-Texture Texture::incomplete()
+Texture Texture::generate()
 {
 	uint32_t handle;
 	glGenTextures(1, &handle);

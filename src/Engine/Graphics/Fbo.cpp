@@ -40,7 +40,7 @@ uint32_t Fbo::handle() const
 	return m_handle;
 }
 
-Fbo Fbo::incomplete()
+Fbo Fbo::generate()
 {
 	uint32_t handle;
 	glGenFramebuffers(1, &handle);

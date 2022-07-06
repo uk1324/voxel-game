@@ -24,7 +24,7 @@ public:
 
 public:
 	static Texture pixelArt(const char* path);
-	static Texture incomplete();
+	static Texture generate();
 	static Texture null();
 
 private:

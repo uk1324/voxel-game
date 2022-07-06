@@ -50,6 +50,118 @@ private:
 public:
 	RenderingSystem(Scene& scene);
 
+	void update(
+		const Vec2& screenSize, 
+		const Vec3& cameraPos, 
+		const Quat& cameraRot, 
+		const EntityManager& entityManger, 
+		const ChunkSystem& chunkSystem, 
+		const ItemData& itemData);
+private:
+	void onScreenResize();
+	void drawScene(const ChunkSystem& chunkSystem, const Mat4& projection, const Mat4& view, bool test);
+
+public:
+	void drawCube(const Vec3& pos, const Vec3& scale, const Vec3& color);
+	void drawPoint(const Vec3& pos, float size, const Vec3& color);
+	void drawLine(const Vec3& startPos, const Vec3& endPos, const Vec3& color);
+
+private:
+
+	void drawChunks(const ChunkSystem& chunkSystem, ShaderProgram& shader);
+	void drawDebugShapes(const Mat4& projection, const Mat4& view);
+	void drawCrosshair(const Vec2& screenSize);
+
+	void shadowMapSetup();
+	void drawToShadowMap(const ChunkSystem& chunkSystem, const EntityManager& entityManager, const ItemData& itemData);
+	void drawScene(const ChunkSystem& chunkSystem, const EntityManager& entityManager, const ItemData& itemData);
+
+	std::array<Vec3, 8> getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view);
+	Mat4 getLightSpaceMatrix(float fov, float aspectRatio, const float nearPlane, const float farPlane, const Mat4& view, const Vec3& lightDir);
+	std::vector<Mat4> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& shadowCascadeLevels);
+
+private:
+	float m_farPlaneZ = 6.0 * 16.0f;
+	float m_nearPlaneZ = 0.1f;
+	float m_fov = degToRad(90.0f);
+
+	//enum class GemetryBufferTextures
+	//{
+
+	//};
+	Fbo m_geometryBufferFbo;
+	Texture m_depthTexture, m_positionTexture, m_normalTexture, m_albedoTexture;
+
+	Fbo m_shadowMapFbo;
+	static constexpr size_t SHADOW_MAP_CASCADE_COUNT = 4;
+	std::vector<Texture> m_shadowMapTextures;
+	std::vector<float> m_cascadeZ;
+
+	ShaderProgram m_defferedPassShader;
+
+	Vec2 m_screenSize;
+
+	Mat4 m_projection;
+	Mat4 m_view;
+
+	SkyboxData m_skyboxData;
+
+	ShaderProgram m_chunkShader;
+
+	ShaderProgram m_texturedSquareShader;
+	Vao m_squareTrianglesVao2;
+	Vbo m_squareTrianglesVbo2;
+
+	ShaderProgram m_squareShader;
+	Texture m_crosshairTexture;
+
+	ShaderProgram m_debugShader;
+
+	Vao m_cubeLinesVao;
+	Vbo m_cubeLinesVbo;
+
+	Vao m_squareTrianglesVao;
+	Vbo m_squareTrianglesVbo;
+
+	Vao m_pointVao;
+	Vbo m_pointVbo;
+
+	Vao m_LineVao;
+	Vbo m_LineVbo;
+
+	// Have to store them because they would get cleared if I drew them asynchronously.
+	std::vector<Cube> m_cubesToDraw;
+	std::vector<Point> m_pointsToDraw;
+	std::vector<Line> m_linesToDraw;
+};
+
+/*class RenderingSystem
+{
+private:
+	struct Cube
+	{
+		Vec3 pos;
+		Vec3 scale;
+		Vec3 color;
+	};
+
+	struct Point
+	{
+		Vec3 pos;
+		float size;
+		Vec3 color;
+	};
+
+	struct Line
+	{
+		Vec3 startPos;
+		Vec3 scale;
+		Vec3 color;
+	};
+
+public:
+	RenderingSystem(Scene& scene);
+
 	void update(const Vec2& screenSize, const Vec3& cameraPos, const Quat& cameraRot, const EntityManager& entityManger, const ChunkSystem& chunkSystem, const ItemData& itemData);
 
 	void drawCube(const Vec3& pos, const Vec3& scale, const Vec3& color);
@@ -144,3 +256,4 @@ private:
 	std::vector<Point> m_pointsToDraw;
 	std::vector<Line> m_linesToDraw;
 };
+*/

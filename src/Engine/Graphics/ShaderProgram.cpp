@@ -128,7 +128,9 @@ int ShaderProgram::getUniformLocation(std::string_view name)
 	if (location == m_cachedUniformLocations.end())
 	{
 		int location = glGetUniformLocation(m_handle, uniformName.c_str());
-		ASSERT(location != -1);
+		if (location == -1)
+			LOG_WARNING("trying to set variable '%.*s', which doesn't exist", name.max_size(), name.data());
+
 		m_cachedUniformLocations[std::move(uniformName)] = location;
 		return location;
 	}

@@ -13,7 +13,9 @@ template <typename T>
 struct GenericQuat
 {
 public:
+	// TODO: Model loader line 269.
 	GenericQuat();
+	// Could make this private.
 	GenericQuat(T x, T y, T z, T w);
 	GenericQuat(T angle, GenericVec3<T> axis);
 
@@ -22,10 +24,13 @@ public:
 	GenericQuat normalized() const;
 	void normalize();
 
+	GenericQuat inverse() const;
 	GenericQuat conjugate() const;
 
 	GenericMat4<T> asMatrix() const;
 
+	// Not sure if these function should take a reference or not.
+	// Are there any optimziation applied for sizeof(T) < sizeof(T&).
 	GenericQuat operator* (const T rhs) const;
 	GenericQuat& operator*= (const T rhs);
 	GenericQuat operator* (const GenericQuat& rhs) const;
@@ -33,7 +38,8 @@ public:
 	GenericVec3<T> operator* (const GenericVec3<T>& rhs) const;
 
 public:
-	static GenericQuat<T> fromEuler(T x, T y, T z);
+	static GenericQuat fromEuler(T x, T y, T z);
+	static GenericQuat slerp(GenericQuat a, GenericQuat b, T t);
 
 public:
 	static const GenericQuat identity;
@@ -100,6 +106,12 @@ template<typename T>
 void GenericQuat<T>::normalize()
 {
 	*this = normalized();
+}
+
+template<typename T>
+GenericQuat<T> GenericQuat<T>::inverse() const
+{
+	
 }
 
 template<typename T>

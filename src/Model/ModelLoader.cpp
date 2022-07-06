@@ -83,7 +83,7 @@ void ModelLoader::loadTextures()
 	const auto& samplers = file.contains("samplers") ? file.at("samplers") : Json::Value::emptyArray();
 	for (const auto& texture : file.at("textures").array())
 	{
-		auto textureData = Texture::incomplete();
+		auto textureData = Texture::generate();
 		textureData.bind();
 
 		// TODO: Later check if the magFilter, minFilter, wrapS, wrapT are valid.
@@ -266,6 +266,8 @@ void ModelLoader::loadAnimations()
 			model.keyframes.resize(accessor.count);
 			for (auto& keyframe : model.keyframes)
 			{
+				// TODO find a way to resize without default initializing.
+				// Could use std::unique_ptr
 				keyframe.rotation.resize(model.nodes.size());
 				keyframe.translation.resize(model.nodes.size());
 				keyframe.scale.resize(model.nodes.size());

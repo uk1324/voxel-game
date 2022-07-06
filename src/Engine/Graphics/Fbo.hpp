@@ -20,7 +20,7 @@ public:
 	uint32_t handle() const;
 
 public:
-	static Fbo incomplete();
+	static Fbo generate();
 	static Fbo null();
 
 private:

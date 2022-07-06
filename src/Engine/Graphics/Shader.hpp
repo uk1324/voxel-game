@@ -26,5 +26,8 @@ public:
 	GLuint handle() const;
 
 private:
+	std::string preprocess(std::string_view path, int depth);
+
+private:
 	GLuint m_handle;
 };
