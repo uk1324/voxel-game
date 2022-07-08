@@ -3,6 +3,7 @@
 #include <Math/GenericVec2.hpp>
 
 #include <ostream>
+#include <random>
 
 template<typename T>
 struct GenericVec3
@@ -47,6 +48,7 @@ public:
 public:
 	static float distance(const GenericVec3<T>& a, const GenericVec3<T>& b);
 	static float distanceSquared(const GenericVec3<T>& a, const GenericVec3<T>& b);
+	static GenericVec3 randomInRange(const GenericVec3<T>& min, const GenericVec3<T>& max);
 
 public:
 	static const GenericVec3<T> up;
@@ -248,6 +250,17 @@ template<typename T>
 float GenericVec3<T>::distanceSquared(const GenericVec3<T>& a, const GenericVec3<T>& b)
 {
 	return (a - b).lengthSquared();
+}
+
+template<typename T>
+GenericVec3<T> GenericVec3<T>::randomInRange(const GenericVec3<T>& min, const GenericVec3<T>& max)
+{
+	static thread_local std::default_random_engine generator;
+	return GenericVec3<T>(
+		std::uniform_real_distribution<T>(min.x, max.x)(generator),
+		std::uniform_real_distribution<T>(min.y, max.y)(generator),
+		std::uniform_real_distribution<T>(min.z, max.z)(generator)
+	);
 }
 
 // Right handed coorinate system

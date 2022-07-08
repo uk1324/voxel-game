@@ -1,13 +1,13 @@
 #pragma once
 
-#include <Math/Vec3.hpp>
+#include <Math/GenericVec3.hpp>
 
 template<typename T>
 struct GenericAabb
 {
 public:
-	GenericAabb(const Vec3& min, const Vec3& max);
-	//static 
+	GenericAabb(const GenericVec3<T>& min, const GenericVec3<T>& max);
+	bool contains(const GenericVec3<T>& pos);
 
 public:
 	Vec3 min;
@@ -15,7 +15,15 @@ public:
 };
 
 template<typename T>
-GenericAabb<T>::GenericAabb(const Vec3& min, const Vec3& max)
+GenericAabb<T>::GenericAabb(const GenericVec3<T>& min, const GenericVec3<T>& max)
 	: min(min)
 	, max(max)
 {}
+
+template<typename T>
+bool GenericAabb<T>::contains(const GenericVec3<T>& pos)
+{
+	return (pos.x > min.x) && (pos.x < max.x)
+		&& (pos.y > min.y) && (pos.y < max.y)
+		&& (pos.z > min.z) && (pos.z < max.z);
+}

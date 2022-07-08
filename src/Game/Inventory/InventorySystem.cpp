@@ -154,6 +154,7 @@ void InventorySystem::render(const Inventory& inventory, const ItemData& itemDat
 	}
 
 	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	drawItemBox(m_hotbarBox, inventory, 0, 9, m_hotbarSlotTexture, blockData, itemData);
 	
 	drawTextured(
@@ -164,7 +165,7 @@ void InventorySystem::render(const Inventory& inventory, const ItemData& itemDat
 
 	if (isInventoryOpen)
 	{
-		// Dark background
+		// Balck half transparent background
 		drawColored(Vec2(0.0f), Vec2(1.0f), Color(0.0f, 0.0f, 0.0f, 0.5f));
 
 		drawItemBox(m_inventoryTopBox, inventory, 9, 27, m_inventorySlotTexture, blockData, itemData);
@@ -603,8 +604,8 @@ void InventorySystem::drawTextured(Vec2 pos, Vec2 halfSize, Vec2 textureCoordSca
 {
 	m_squareTrianglesVao.bind();
 	m_uiTexturedShader.use();
-	texture.bind();
 	glActiveTexture(GL_TEXTURE0);
+	texture.bind();
 	m_uiTexturedShader.setTexture("textureSampler", 0);
 
 	m_uiTexturedShader.setVec2("pos", pos);

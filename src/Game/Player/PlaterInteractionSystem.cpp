@@ -3,13 +3,12 @@
 #include <Game/Blocks/BlockSystem.hpp>
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>
+#include <Game/Debug/Debug.hpp>
+#include <Math/Aabb.hpp>
 
 PlayerInteractionSystem::PlayerInteractionSystem()
 	: m_lastAutoBreakTime(0.0f)
 {}
-
-#include <Game/Debug/Debug.hpp>
-#include <iostream>
 
 void PlayerInteractionSystem::update(
 	Entity player,
@@ -37,13 +36,13 @@ void PlayerInteractionSystem::update(
 			const auto optBlock = blockSystem.tryGet(voxelRaycastHit->blockPos);
 			if (optBlock.has_value())
 			{
-				Vec3 velocity(0, 0.08, 0);
+				auto velocity = Vec3::randomInRange(Vec3(-0.04, 0.08, -0.04), Vec3(0.04, 0.09, 0.04));
 
 				Entity item = EntitySystem::spawnItemEntity(
 					entites,
 					Vec3(voxelRaycastHit->blockPos) + Vec3(Block::SIZE) / 2.0f,
 					blockSystem.chunkSystem.blockData[optBlock->type].drop,
-					velocity);
+					velocity); 
 
 				blockSystem.trySet(voxelRaycastHit->blockPos, BlockType::Air);
 			}
@@ -73,15 +72,17 @@ void PlayerInteractionSystem::update(
 		}
 	}
 
-
+	const auto& collider = entites.getComponent<PhysicsAabbCollider>(player);
+	auto pickupAabb = AAbb(playerPos - collider.halfSize - Vec3(1, 0.5, 1), playerPos + collider.halfSize + Vec3(1, 0.5, 1));
 	for (auto& [itemEntity, itemComponent] : entites.getComponents<ItemComponent>())
 	{
 		const Vec3& pos = entites.getComponent<Position>(itemEntity).value;
 
 		static constexpr float PICKUP_DISTANCE = 2.0f;
-		static constexpr float PICKUP_COOLDOWN = 2.0f;
+		static constexpr float PICKUP_COOLDOWN = 0.5f;
 		if (((Time::currentTime() - itemComponent.spawnTime) > PICKUP_COOLDOWN)
-			&& (Vec3::distanceSquared(pos, playerPos) < PICKUP_DISTANCE))
+			//&& (Vec3::distanceSquared(pos, playerPos) < PICKUP_DISTANCE))
+			&& (pickupAabb.contains(pos)))
 		{
 			const auto rest = inventory.tryAdd(itemData, itemComponent.item);
 			if (rest.has_value())
@@ -104,5 +105,8 @@ void PlayerInteractionSystem::update(
 			heldItem = std::nullopt;
 	}
 
-	Debug::drawCube(Vec3(voxelRaycastHit->blockPos) + Vec3(Block::SIZE / 2.0f), Vec3(1), Vec3(1, 1, 1));
+	if (voxelRaycastHit.has_value())
+	{
+		Debug::drawCube(Vec3(voxelRaycastHit->blockPos) + Vec3(Block::SIZE / 2.0f), Vec3(1), Vec3(1, 1, 1));
+	}
 }

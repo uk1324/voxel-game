@@ -6,7 +6,8 @@
 #include <ostream>
 
 // Columnwise matrix
-// Multiplication is reversed so a * b means transform a by b.
+// Multiplication is reversed so a * b means transform a by b and to the opposite like it would be mathematically
+// when colum matrices are used.
 template<typename T>
 class GenericMat4
 {
@@ -463,16 +464,15 @@ GenericMat4<T> GenericMat4<T>::orthographic(GenericVec3<T> min, GenericVec3<T> m
 {
 	GenericMat4<T> mat;
 
-	//mat(0, 0) = 2 / (max.x - min.x);
-	//mat(1, 1) = 2 / (max.y - min.y);
-	//mat(2, 2) = 2 / (max.z - min.z);
-	//mat(3, 3) = 1;
+	// Squish to AABB(min = [-1, -1, -1], max = [1, 1, 1]).
 	mat(0, 0) = T(2) / (max.x - min.x);
 	mat(1, 1) = T(2) / (max.y - min.y);
 	mat(2, 2) = T(-2) / (max.z - min.z);
+	// Translate to center.
 	mat(3, 0) = -(max.x + min.x) / (max.x - min.x);
 	mat(3, 1) = -(max.y + min.y) / (max.y - min.y);
 	mat(3, 2) = -(max.z + min.z) / (max.z - min.z);
+
 	mat(3, 3) = T(1);
 
 	return mat;
