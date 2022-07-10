@@ -85,7 +85,7 @@ private:
 	std::vector<Mat4> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& shadowCascadeLevels);
 
 private:
-	float m_farPlaneZ = 6.0 * 16.0f;
+	float m_farPlaneZ = 20.0 * Chunk::SIZE_X;
 	float m_nearPlaneZ = 0.1f;
 	float m_fov = degToRad(90.0f);
 

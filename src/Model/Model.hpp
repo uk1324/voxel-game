@@ -53,6 +53,7 @@ public:
 	std::vector<Texture> textures;
 	std::vector<Node> nodes;
 	
+	// One advantage of using indices instead of pointers is that smaller integer times like uint16_t or uint32_t can be used.
 	std::vector<Node*> children;
 
 	std::vector<Node*> joints;

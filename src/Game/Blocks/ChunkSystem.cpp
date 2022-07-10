@@ -6,7 +6,7 @@
 
 ChunkSystem::ChunkSystem()
 // lastPos is infinity so all the chunks get generated at the start
-	: m_lastChunkPos(Vec3I(std::numeric_limits<int32_t>::infinity(), 0, 0))
+	: m_lastChunkPos(Vec3I(std::numeric_limits<int32_t>::max()))
 	// Preallocating all the vertex data isn't a good idea for open worlds because a lot of space if taken up by empty chunks
 	// but it makes sense for cave worlds where the render distance is smaller.
 	, m_vbo(VERTEX_DATA_BYTE_SIZE)
@@ -37,9 +37,9 @@ void ChunkSystem::addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, s
 {
 	GLuint vertex;
 
-	static constexpr int Y_OFFSET = 5;
-	static constexpr int Z_OFFSET = Y_OFFSET + 5;
-	static constexpr int TEXTURE_INDEX_OFFSET = Z_OFFSET + 5;
+	static constexpr int Y_OFFSET = 4;
+	static constexpr int Z_OFFSET = Y_OFFSET + 7;
+	static constexpr int TEXTURE_INDEX_OFFSET = Z_OFFSET + 4;
 	static constexpr int TEXTURE_POS_INDEX_OFFSET = TEXTURE_INDEX_OFFSET + 10;
 	static constexpr int NORMAL_INDEX_OFFSET = TEXTURE_POS_INDEX_OFFSET + 2;
 
@@ -166,24 +166,24 @@ void ChunkSystem::meshDecoration(uint32_t textureIndex, std::vector<GLuint>& ver
 
 bool ChunkSystem::isInBounds(size_t x, size_t y, size_t z)
 {
-	return ((x >= 0) && (x < Chunk::SIZE))
-		&& ((y >= 0) && (y < Chunk::SIZE))
-		&& ((z >= 0) && (z < Chunk::SIZE));
+	return ((x >= 0) && (x < Chunk::SIZE_X))
+		&& ((y >= 0) && (y < Chunk::SIZE_Y))
+		&& ((z >= 0) && (z < Chunk::SIZE_Z));
 }
 
 ChunkSystem::Pos ChunkSystem::posToChunkPosAndPosInChunk(const Vec3& pos)
 {
 	Pos block;
-	block.chunkPos = Vec3I((pos / Chunk::SIZE).applied(floor));
-	block.posInChunk = Vec3I(pos.applied(floor) - Vec3(block.chunkPos * Chunk::SIZE));
+	block.chunkPos = Vec3I((pos / Chunk::SIZE_V).applied(floor));
+	block.posInChunk = Vec3I(pos.applied(floor) - Vec3(Vec3(block.chunkPos) * Chunk::SIZE_V));
 	return block;
 }
 
 ChunkSystem::Pos ChunkSystem::posToChunkPosAndPosInChunk(const Vec3I& pos)
 {
 	Pos block;
-	block.chunkPos = Vec3I((Vec3(pos) / Chunk::SIZE).applied(floor));
-	block.posInChunk = Vec3I(Vec3(pos).applied(floor) - Vec3(block.chunkPos * Chunk::SIZE));
+	block.chunkPos = Vec3I((Vec3(pos) / Chunk::SIZE_V).applied(floor));
+	block.posInChunk = Vec3I(Vec3(pos).applied(floor) - Vec3(Vec3(block.chunkPos) * Chunk::SIZE_V));
 	return block;
 }
 
@@ -193,11 +193,11 @@ std::vector<uint32_t>& ChunkSystem::meshFromChunk(Chunk& chunk)
 	vertices.clear();
 	//vertices.reserve(16 * 16 * 16 * 6 * 3);
 
-	for (size_t z = 0; z < Chunk::SIZE; z++)
+	for (size_t z = 0; z < Chunk::SIZE_Z; z++)
 	{
-		for (size_t y = 0; y < Chunk::SIZE; y++)
+		for (size_t y = 0; y < Chunk::SIZE_Y; y++)
 		{
-			for (size_t x = 0; x < Chunk::SIZE; x++)
+			for (size_t x = 0; x < Chunk::SIZE_X; x++)
 			{
 				if (chunk(x, y, z).type != BlockType::Air)
 				{
@@ -208,7 +208,7 @@ std::vector<uint32_t>& ChunkSystem::meshFromChunk(Chunk& chunk)
 					}
 					else
 					{
-						auto shouldMesh = [this, chunk](int32_t x, int32_t y, int32_t z)
+						auto shouldMesh = [this, &chunk](int32_t x, int32_t y, int32_t z)
 						{
 							return isInBounds(x, y, z) == false
 								|| chunk(x, y, z).type == BlockType::Air
@@ -253,8 +253,8 @@ std::vector<uint32_t>& ChunkSystem::meshFromChunk(Chunk& chunk)
 
 void ChunkSystem::update(const Vec3& loadPos)
 {
-
-	const Vec3I chunkPos(floor(loadPos.x / Chunk::SIZE), floor(loadPos.y / Chunk::SIZE), floor(loadPos.z / Chunk::SIZE));
+	// TODO change this to Vec3::applied.
+	const Vec3I chunkPos(floor(loadPos.x / Chunk::SIZE_X), floor(loadPos.y / Chunk::SIZE_Y), floor(loadPos.z / Chunk::SIZE_Z));
 
 	std::lock_guard lock(mutex);
 
@@ -297,8 +297,7 @@ void ChunkSystem::update(const Vec3& loadPos)
 	auto isChunkOutOfRenderDistance = [&chunkPos](const Vec3I& pos)
 	{
 		return (pos.x < (chunkPos.x - HORIZONTAL_RENDER_DISTANCE)) || (pos.x > (chunkPos.x + HORIZONTAL_RENDER_DISTANCE))
-			|| (pos.z < (chunkPos.z - HORIZONTAL_RENDER_DISTANCE)) || (pos.z > (chunkPos.z + HORIZONTAL_RENDER_DISTANCE))
-			|| (pos.y < LOWEST_CHUNK) || (pos.y > HIGHEST_CHUNK);
+			|| (pos.z < (chunkPos.z - HORIZONTAL_RENDER_DISTANCE)) || (pos.z > (chunkPos.z + HORIZONTAL_RENDER_DISTANCE));
 	};
 
 	m_chunksToGenerate.erase(
@@ -349,22 +348,19 @@ void ChunkSystem::update(const Vec3& loadPos)
 
 	for (int32_t z = chunkPos.z - HORIZONTAL_RENDER_DISTANCE; z <= chunkPos.z + HORIZONTAL_RENDER_DISTANCE; z++)
 	{
-		for (int32_t y = LOWEST_CHUNK; y <= HIGHEST_CHUNK; y++)
+		for (int32_t x = chunkPos.x - HORIZONTAL_RENDER_DISTANCE; x <= chunkPos.x + HORIZONTAL_RENDER_DISTANCE; x++)
 		{
-			for (int32_t x = chunkPos.x - HORIZONTAL_RENDER_DISTANCE; x <= chunkPos.x + HORIZONTAL_RENDER_DISTANCE; x++)
-			{
-				const Vec3I chunkPos(x, y, z);
-				const auto chunk = m_chunks.find(chunkPos);
+			const Vec3I chunkPos(x, 0, z);
+			const auto chunk = m_chunks.find(chunkPos);
 
-				if (chunk == m_chunks.end()
-  				 && chunksToGenerateSet.find(chunkPos) == chunksToGenerateSet.end())
-				{
-					ASSERT(m_freeChunks.size() != 0 && "Chunk pool should have enough chunks");
-					ChunkData& chunk = *m_freeChunks.back();
-					m_freeChunks.pop_back();
-					chunk.pos = chunkPos;
-					m_chunksToGenerate.push_back(&chunk);
-				}
+			if (chunk == m_chunks.end()
+  				&& chunksToGenerateSet.find(chunkPos) == chunksToGenerateSet.end())
+			{
+				ASSERT(m_freeChunks.size() != 0 && "Chunk pool should have enough chunks");
+				ChunkData& chunk = *m_freeChunks.back();
+				m_freeChunks.pop_back();
+				chunk.pos = chunkPos;
+				m_chunksToGenerate.push_back(&chunk);
 			}
 		}
 	}
@@ -429,7 +425,7 @@ void ChunkSystem::remeshChunksAround(const Pos& pos)
 			if (chunk.has_value())
 				meshChunk(*chunk.value());
 		}
-		if (pos.posInChunk.x == Chunk::SIZE - 1)
+		if (pos.posInChunk.x == Chunk::SIZE_X - 1)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(1, 0, 0));
 			if (chunk.has_value())
@@ -438,7 +434,7 @@ void ChunkSystem::remeshChunksAround(const Pos& pos)
 	}
 	else
 	{
-		if (posInChunk.x == (-static_cast<int32_t>(Chunk::SIZE) - 1))
+		if (posInChunk.x == (-static_cast<int32_t>(Chunk::SIZE_X) - 1))
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(-1, 0, 0));
 			if (chunk.has_value())
@@ -460,7 +456,7 @@ void ChunkSystem::remeshChunksAround(const Pos& pos)
 			if (chunk.has_value())
 				meshChunk(*chunk.value());
 		}
-		if (posInChunk.y == Chunk::SIZE - 1)
+		if (posInChunk.y == Chunk::SIZE_Y - 1)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(0, 1, 0));
 			if (chunk.has_value())
@@ -469,7 +465,7 @@ void ChunkSystem::remeshChunksAround(const Pos& pos)
 	}
 	else
 	{
-		if (posInChunk.y == (-static_cast<int32_t>(Chunk::SIZE) - 1))
+		if (posInChunk.y == (-static_cast<int32_t>(Chunk::SIZE_Y) - 1))
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(-1, 0, 0));
 			if (chunk.has_value())
@@ -490,7 +486,7 @@ void ChunkSystem::remeshChunksAround(const Pos& pos)
 			if (chunk.has_value())
 				meshChunk(*chunk.value());
 		}
-		if (posInChunk.z == Chunk::SIZE - 1)
+		if (posInChunk.z == Chunk::SIZE_Z - 1)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(0, 0, 1));
 			if (chunk.has_value())
@@ -499,7 +495,7 @@ void ChunkSystem::remeshChunksAround(const Pos& pos)
 	}
 	else
 	{
-		if (posInChunk.z == -(static_cast<int32_t>(Chunk::SIZE) - 1))
+		if (posInChunk.z == -(static_cast<int32_t>(Chunk::SIZE_Z) - 1))
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(-1, 0, 0));
 			if (chunk.has_value())
@@ -537,25 +533,45 @@ double totalTime = 0.0f;
 
 void ChunkSystem::generateChunks()
 {
+	// Uses to much space on the stack.
+	auto chunkBlocks = std::make_unique<Chunk>();
 	while (m_isFinished.load() == false)
 	{
+		mutex.lock();
 		if (m_chunksToGenerate.size() != 0)
 		{
-			mutex.lock();
-
 			ChunkData *chunk = m_chunksToGenerate.back();
 			const Vec3I chunkPos = chunk->pos;
+			/*
+			Currently this doesn't directly access the ChunkData becuase I thought it might not work.
+			The issue was that a chunk might not be needed while it is still generating so there wouldn't be enough chunks at the time of finding
+			the chunks that are in render distance.
+			But if I change 
+			m_freeChunks.pop_back();
+			in the chunk generating code to
+			if (m_freeChunks.empty())
+			{
+				break;
+			}
+			m_freeChunks.pop_back();
+			and also put the chunk that is currently generating on some list so the work scheduling doesn't give the same chunk
+			to two different threads.
+			One issue with generating the chunks faster is that the main thread has to mesh them becuase OpenGL is single threded
+			so the worker threads wouldn't be able to send the data to the GPU without synchronzing. Another option would be to
+			store an array of vertices and send it to the main thread, but this would require quite a bit of allocations
+			which isn't that big on a issue if they were pooled. Could also limit the number of chunks the main thread meshes per
+			frame.
+			*/
 
 			mutex.unlock();
 
-			Chunk chunkBlocks;
 			auto start = std::chrono::high_resolution_clock::now();
-			m_worldGen.generateChunk(chunkBlocks, chunkPos);
+			m_worldGen.generateChunk(*chunkBlocks.get(), chunkPos);
 			auto end = std::chrono::high_resolution_clock::now();
-			//std::cout << "generated in: " << std::chrono::duration<double>(end - start).count() << '\n';
-			totalTime += std::chrono::duration<double>(end - start).count();
-			totalChunkGenerated++;
-			//std::cout << "avg gen time: " << totalTime / totalChunkGenerated << '\n';
+			//std::cout << "generated in: " << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
+			//totalTime += std::chrono::duration<double, std::milli>(end - start).count();
+			//totalChunkGenerated++;
+			//std::cout << "avg gen time: " << totalTime / totalChunkGenerated << "ms" << '\n';
 
 			mutex.lock();
 
@@ -568,7 +584,10 @@ void ChunkSystem::generateChunks()
 						}),
 					m_chunksToGenerate.end()
 				);
-				chunk->blocks = chunkBlocks;
+				auto start = std::chrono::high_resolution_clock::now();
+				chunk->blocks = *chunkBlocks.get();
+				auto end = std::chrono::high_resolution_clock::now();
+				//std::cout << "copy took: " << std::chrono::duration<double>(end - start).count() << '\n';
 				m_generatedChunks.push_back(chunk);
 			}
 			else
@@ -577,6 +596,11 @@ void ChunkSystem::generateChunks()
 			}
 
 			mutex.unlock();
+		}
+		else
+		{
+			mutex.unlock();
+			std::this_thread::yield();
 		}
 	}
 }

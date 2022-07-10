@@ -36,7 +36,9 @@ public:
 	GenericVec3& operator-=(const GenericVec3& rhs);
 	GenericVec3 operator*(T rhs) const;
 	GenericVec3& operator*=(T rhs);
+	GenericVec3 operator*(const GenericVec3& rhs) const;
 	GenericVec3 operator/(T rhs) const;
+	GenericVec3 operator/(const GenericVec3& rhs) const;
 	GenericVec3& operator/=(T rhs);
 	GenericVec3 operator-() const;
 
@@ -202,9 +204,21 @@ GenericVec3<T>& GenericVec3<T>::operator*= (T rhs)
 }
 
 template<typename T>
+GenericVec3<T> GenericVec3<T>::operator*(const GenericVec3& rhs) const
+{
+	return GenericVec3(x * rhs.x, y * rhs.y, z * rhs.z);
+}
+
+template<typename T>
 GenericVec3<T> GenericVec3<T>::operator/ (T rhs) const
 {
 	return GenericVec3(x / rhs, y / rhs, z / rhs);
+}
+
+template<typename T>
+GenericVec3<T> GenericVec3<T>::operator/(const GenericVec3& rhs) const
+{
+	return GenericVec3(x / rhs.x, y / rhs.y, z / rhs.z);
 }
 
 template<typename T>

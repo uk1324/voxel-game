@@ -226,7 +226,7 @@ void RenderingSystem::onScreenResize()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, m_screenSize.x, m_screenSize.y, 0, GL_RGB, GL_FLOAT, nullptr);
 
 	m_depthTexture.bind();
-	// Maybe use GL_DEPTH24_STENCIL8 - better driver compatiblity.
+	// Maybe use GL_DEPTH24_STENCIL8 - better driver compatiblity apparently.
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_screenSize.x, m_screenSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
 	m_debugTexture.bind();
@@ -255,10 +255,6 @@ void RenderingSystem::update(
 	const auto projection = Mat4::perspective(fov, aspectRatio, m_nearPlaneZ, m_farPlaneZ);
 	const auto view = Mat4::lookAt(cameraPos, cameraPos + cameraDir, Vec3::up);
 
-	ImGui::Begin("cool");
-	ImGui::SliderFloat("a", &a, 0, 1);
-	ImGui::SliderFloat("b", &b, 0, 1);
-	ImGui::End();
 
 	m_geometryBufferFbo.bind();
 	drawScene(entites, itemData, chunkSystem, projection, view);
@@ -270,8 +266,6 @@ void RenderingSystem::update(
 	m_shadowMapFbo.bind();
 	auto ms = getLightSpaceMatrices(fov, aspectRatio, view, m_directionalLightDir, m_nearPlaneZ, m_farPlaneZ, m_cascadeZ);
 	glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
-	/*glEnable(GL_POLYGON_OFFSET_FILL);
-	glPolygonOffset(0.4, 1.0);*/
 	for (size_t i = 0; i < m_shadowMapTextures.size(); i++)
 	{
 		m_shadowMapTextures[i].bind();
@@ -329,6 +323,8 @@ void RenderingSystem::update(
 
 }
 
+#include <iostream>
+
 void RenderingSystem::drawScene(
 	const EntityManager& entityManager, 
 	const ItemData& itemData,
@@ -348,16 +344,25 @@ void RenderingSystem::drawScene(
 	chunkSystem.blockData.textureArray.bind();
 	m_chunkShader.setTexture("blockTextureArray", 0);
 	chunkSystem.m_vao.bind();
+	Frustum frustum(view * projection);
+	int drawn = 0;
 	for (const auto& chunk : chunkSystem.m_chunksToDraw)
 	{
-		m_chunkShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE));
-		glDrawArrays(GL_TRIANGLES, chunk->vboByteOffset / sizeof(uint32_t), chunk->vertexCount);
+		auto min = Vec3(chunk->pos) * Chunk::SIZE_V;
+		auto max = min + Chunk::SIZE_V;
+		if (frustum.intersects(Aabb(min, max)))
+		{
+			drawn++;
+			m_chunkShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE_V));
+			glDrawArrays(GL_TRIANGLES, chunk->vboByteOffset / sizeof(uint32_t), chunk->vertexCount);
+		}
 
 		if (Debug::shouldShowChunkBorders)
 		{
-			Debug::drawCube(Vec3(chunk->pos) * Chunk::SIZE * Block::SIZE + Vec3(Chunk::SIZE) / 2.0, Vec3(Chunk::SIZE), Vec3(1, 1, 1));
+			Debug::drawCube(Vec3(chunk->pos) * Chunk::SIZE_V * Block::SIZE + Chunk::SIZE_V / 2.0, Chunk::SIZE_V, Vec3(1, 1, 1));
 		}
 	}
+	//std::cout << "draw " << drawn << " / " << chunkSystem.m_chunksToDraw.size() << '\n';
 
 	m_itemModelShader.setMat4("projection", projection);
 	m_itemModelShader.setMat4("view", view);

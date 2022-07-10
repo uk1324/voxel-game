@@ -2,6 +2,7 @@
 #include <Math/Other.hpp>
 #include <Utils/Assertions.hpp>
 #include <imgui.h>
+#include <optional>
 
 #include <random>
 
@@ -137,28 +138,29 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos) const
 
 	structures.erase(
 		std::remove_if(structures.begin(), structures.end(), [this, chunkPos](const Structure& structure) {
-			return (structure.pos.x + structure.data->size.x < chunkPos.x * Chunk::SIZE)
-				|| (structure.pos.x > chunkPos.x * Chunk::SIZE + Chunk::SIZE)
-				|| (structure.pos.y + structure.data->size.y < chunkPos.y * Chunk::SIZE)
-				|| (structure.pos.y > chunkPos.y * Chunk::SIZE + Chunk::SIZE)
-				|| (structure.pos.z + structure.data->size.z < chunkPos.z * Chunk::SIZE)
-				|| (structure.pos.z > chunkPos.z * Chunk::SIZE + Chunk::SIZE);
+			return (structure.pos.x + structure.data->size.x < chunkPos.x * Chunk::SIZE_X)
+				|| (structure.pos.x > chunkPos.x * Chunk::SIZE_X + Chunk::SIZE_X)
+				|| (structure.pos.y + structure.data->size.y < chunkPos.y * Chunk::SIZE_Y)
+				|| (structure.pos.y > chunkPos.y * Chunk::SIZE_Y + Chunk::SIZE_Y)
+				|| (structure.pos.z + structure.data->size.z < chunkPos.z * Chunk::SIZE_Z)
+				|| (structure.pos.z > chunkPos.z * Chunk::SIZE_Z + Chunk::SIZE_Z);
 		}),
 		structures.end()
 	);
-	//std::vector<Structure> structures;
 
-	for (int32_t z = 0; z < Chunk::SIZE; z++)
+	for (int32_t z = 0; z < Chunk::SIZE_Z; z++)
 	{
-		for (int32_t x = 0; x < Chunk::SIZE; x++)
+		for (int32_t x = 0; x < Chunk::SIZE_X; x++)
 		{
-			const Vec2 posXz(x + chunkPos.x * Chunk::SIZE, z + chunkPos.z * Chunk::SIZE);
+			const Vec2 posXz(x + chunkPos.x * Chunk::SIZE_X, z + chunkPos.z * Chunk::SIZE_Z);
 			float heightMapNoiseValue = heightMapNoise(posXz);
 
-			for (int32_t y = 0; y < Chunk::SIZE; y++)
+			const Vec3 pos(Vec3(x, 0, z) + Vec3(chunkPos) * Chunk::SIZE_V - Vec3(0, heightOffset, 0));
+			float nextTerrainNoise = floor(terrainNoise(heightMapNoiseValue, pos));
+			for (int32_t y = 0; y < Chunk::SIZE_Y; y++)
 			{
 				const Vec3I posInChunk(x, y, z);
-				const Vec3 pos(posInChunk + chunkPos * Chunk::SIZE);
+				const Vec3 pos(Vec3(posInChunk) + Vec3(chunkPos) * Chunk::SIZE_V - Vec3(0, heightOffset, 0));
 
 				//if (pos.y == -5)
 				//{
@@ -181,10 +183,10 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos) const
 				//}
 
 				//continue;
-
-				if (pos.y <= floor(terrainNoise(heightMapNoiseValue, pos)))
+				auto n = floor(terrainNoise(heightMapNoiseValue, pos + Vec3::up));
+				if (pos.y <= nextTerrainNoise)
 				{
-					if (pos.y >= floor(terrainNoise(heightMapNoiseValue, pos + Vec3::up)))
+					if (pos.y >= n)
 					{
 						chunk.set(posInChunk, BlockType::Grass);
 					}
@@ -204,20 +206,32 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos) const
 				{
 					chunk.set(posInChunk, BlockType::Air);
 				}
+				nextTerrainNoise = n;
+			}
+		}
+	}
 
-				// TODO: This is stupid just iterate over them after generation and clamp them to the chunk size.
-				// I assume linear search is faster than using a set because only a few chunks contain trees.
-				// It is also hard to benchmark this code because of how quickly it executes.
-				for (const auto& structure : structures)
+	for (const auto& structure : structures)
+	{
+		const auto posInChunk = structure.pos - chunkPos * Chunk::SIZE_INT;
+		const auto minX = std::clamp(posInChunk.x, 0, Chunk::SIZE_X - 1);
+		const auto maxX = std::clamp(posInChunk.x + structure.data->size.x, 0, Chunk::SIZE_X);
+		const auto minY = std::clamp(posInChunk.y, 0, Chunk::SIZE_Y - 1);
+		const auto maxY = std::clamp(posInChunk.y + structure.data->size.y, 0, Chunk::SIZE_Y);
+		const auto minZ = std::clamp(posInChunk.z, 0, Chunk::SIZE_Z - 1);
+		const auto maxZ = std::clamp(posInChunk.z + structure.data->size.z, 0, Chunk::SIZE_Z);
+
+		for (size_t z = minZ; z < maxZ; z++)
+		{
+			for (size_t y = minY; y < maxY; y++)
+			{
+				for (size_t x = minX; x < maxX; x++)
 				{
-					if (pos.x >= structure.pos.x && pos.x < structure.pos.x + structure.data->size.x
-						&& pos.y >= structure.pos.y && pos.y < structure.pos.y + structure.data->size.y
-						&& pos.z >= structure.pos.z && pos.z < structure.pos.z + structure.data->size.x)
+					const Vec3I blockPosInChunk(x, y, z);
+					const auto block = structure.data->get(blockPosInChunk - posInChunk);
+					if (block != BlockType::Air)
 					{
-						Vec3I p = Vec3I(pos) - structure.pos;
-						if (structure.data->get(p) != BlockType::Air)
-							chunk.set(posInChunk, structure.data->get(p));
-						// No "break" here because multiple trees can overlap.
+						chunk.set(blockPosInChunk, block);
 					}
 				}
 			}
@@ -255,8 +269,8 @@ std::vector<Structure> WorldGen::getStructures(const Vec3I& chunkPos) const
 {
 	std::vector<Structure> structures;
 
-	Vec2I start = (Vec2I(chunkPos.x, chunkPos.z) - Vec2I(1)) * Chunk::SIZE;
-	Vec2I end = (Vec2I(chunkPos.x, chunkPos.z) + Vec2I(1)) * Chunk::SIZE;
+	Vec2I start = (Vec2I(chunkPos.x, chunkPos.z) - Vec2I(1)) * Vec2I(Chunk::SIZE_X, Chunk::SIZE_Z);
+	Vec2I end = (Vec2I(chunkPos.x, chunkPos.z) + Vec2I(1)) * Vec2I(Chunk::SIZE_X, Chunk::SIZE_Z);
 
 	for (int32_t x = start.x; x < end.x; x++)
 	{
@@ -280,39 +294,23 @@ std::vector<Structure> WorldGen::getStructures(const Vec3I& chunkPos) const
 
 
 // Takes around 8 iterations to find root.
-// A cool thing about bisection is that it on
+// A cool thing about bisection is that it only finds the roots on one size so trees can't spawn on the bottom of things.
 int32_t WorldGen::findGroundY(const Vec2& posXz) const
 {
 	float heightValue = heightMapNoise(posXz);
 
-	int min = minHeight();
-	int max = maxHeight();
+	int min = 0;
+	int max = Chunk::SIZE_Y;
 
 	auto at = [heightValue, posXz, this](float y) -> float
 	{
+		y -= heightOffset;
 		const float height = terrainNoise(heightValue, Vec3(posXz.x, y, posXz.y));
 		return height - y;
 	};
 
-	int mid = (min + max) / 2.0f;
-	//while (abs(at(mid)) > 1.0f)
-	//pos.y <= static_cast<int32_t>(terrainNoise(heightMapNoiseValue, pos))
-
-	//for (float i = min; i < max; i++)
-	//{
-	//	Vec3 pos(posXz.x, i, posXz.y);
-	//	/*if (i <= int32_t(at(i)) && i > int32_t(at(i + 1)))
-	//		return i;*/
-	//	if (pos.y <= static_cast<int32_t>(terrainNoise(heightValue, pos)))
-	//	{
-	//		if (pos.y >= static_cast<int32_t>(terrainNoise(heightValue, pos + Vec3::up)))
-	//		{
-	//			return pos.y + 1;
-	//		}
-	//	}
-	//}
+	int mid = (min + max) / 2;
 	while (max - min > 1)
-	//while (abs(min - max) > 0.01)
 	{
 		float atM = at(mid);
 		float atA = at(min);
@@ -329,7 +327,7 @@ int32_t WorldGen::findGroundY(const Vec2& posXz) const
 			max = mid;
 		}
 
-		mid = floor((min + max) / 2.0f);
+		mid = (min + max) / 2;
 	}
 
 	return mid + 1;

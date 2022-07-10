@@ -73,7 +73,7 @@ void PlayerInteractionSystem::update(
 	}
 
 	const auto& collider = entites.getComponent<PhysicsAabbCollider>(player);
-	auto pickupAabb = AAbb(playerPos - collider.halfSize - Vec3(1, 0.5, 1), playerPos + collider.halfSize + Vec3(1, 0.5, 1));
+	auto pickupAabb = Aabb(playerPos - collider.halfSize - Vec3(1, 0.5, 1), playerPos + collider.halfSize + Vec3(1, 0.5, 1));
 	for (auto& [itemEntity, itemComponent] : entites.getComponents<ItemComponent>())
 	{
 		const Vec3& pos = entites.getComponent<Position>(itemEntity).value;

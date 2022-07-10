@@ -82,12 +82,10 @@ public:
 	static Pos posToChunkPosAndPosInChunk(const Vec3I& pos);
 
 public:
-	static constexpr int32_t LOWEST_CHUNK = -4;
-	static constexpr int32_t HIGHEST_CHUNK = 3;
-	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 3;
+	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 12;
 
-	static constexpr int32_t CHUNKS_IN_RENDER_DISTANCE = ((HIGHEST_CHUNK - LOWEST_CHUNK + 3)) * (2 * HORIZONTAL_RENDER_DISTANCE + 1) * (2 * HORIZONTAL_RENDER_DISTANCE + 1);
-	static constexpr size_t VERTEX_DATA_PER_CHUNK_BYTE_SIZE = (Chunk::SIZE_CUBED * 6 * 3 * 2 * 4) * 0.2; // * 0.2 for testing
+	static constexpr int32_t CHUNKS_IN_RENDER_DISTANCE = (2 * HORIZONTAL_RENDER_DISTANCE + 1) * (2 * HORIZONTAL_RENDER_DISTANCE + 1);
+	static constexpr size_t VERTEX_DATA_PER_CHUNK_BYTE_SIZE = (Chunk::BLOCK_COUNT * 6 * 3 * 2 * 4) * 0.2; // * 0.2 for testing
 	// Don't know what is the best way to store vertex data.
 	// When stored in a single vao and vbo it takes up too much space because it preallocates for the worst case scenario. 
 	// It average it uses only around 3% of the total allocated memory.

@@ -1,45 +1,23 @@
 #pragma once
 
 #include <Math/Mat4.hpp>
-
-struct AB
-{
-	Vec3 center;
-	Vec3 extents;
-};
-
+#include <Math/Aabb.hpp>
+#include <Math/Plane.hpp>
 
 struct Frustum
 {
 public:
-	struct Plane
-	{
-		Vec3 normal;
-		float distance;
+	Frustum(const Mat4& toNdc);
 
-		Plane() {};
-		Plane(const Vec3& p1, const Vec3& norm)
-			: normal(norm.normalized()),
-			distance(dot(normal, p1))
-		{}
-	};
-	//static Frustum fromViewPerspectiveMat(const Mat4& viewPerspectiveMat);
-
-	Frustum() {};
+private:
+	Plane m_front;
+	Plane m_back;
+	Plane m_left;
+	Plane m_right;
+	Plane m_top;
+	Plane m_bottom;
 
 public:
-	Plane topFace;
-	Plane bottomFace;
 
-	Plane rightFace;
-	Plane leftFace;
-
-	Plane farFace;
-	Plane nearFace;
-
-public:
-	static Frustum fromCamera(const Vec3& pos, const Vec3& forwardDir, float aspectRatio, float fov, float zNear, float zFar);
-	//Vec3 
-
-	bool collision(const AB& ab) const;
+	bool intersects(const Aabb& aabb) const;
 };

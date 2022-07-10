@@ -44,6 +44,7 @@ private:
 	float terrainAmplitude = 144.0f;
 
 	float stoneDepth = 4.0f;
+	float heightOffset = int32_t(Chunk::SIZE_Y / 2);
 
 	float treeSpawnChance = 0.01f;
 

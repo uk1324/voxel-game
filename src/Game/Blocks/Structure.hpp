@@ -27,5 +27,6 @@ public:
 
 public:
 	Vec3I pos;
+	// Has to be pointer becuase of std algorithms.
 	const StructureData* data;
 };

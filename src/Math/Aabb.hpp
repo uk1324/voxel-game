@@ -2,4 +2,4 @@
 
 #include <Math/GenericAabb.hpp>
 
-using AAbb = GenericAabb<float>;
+using Aabb = GenericAabb<float>;

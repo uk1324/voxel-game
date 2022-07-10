@@ -136,7 +136,7 @@ GenericVec2<T>& GenericVec2<T>::operator*= (T rhs)
 template<typename T>
 GenericVec2<T> GenericVec2<T>::operator*(const GenericVec2<T>& rhs) const
 {
-	return Vec2(x * rhs.x, y * rhs.y);
+	return GenericVec2(x * rhs.x, y * rhs.y);
 }
 
 template<typename T>

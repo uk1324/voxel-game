@@ -1,44 +1,69 @@
 #include <Math/Frustum.hpp>
+#include <array>
 
-static bool isOnOrForwardPlan(const AB& a, const const Frustum::Plane& plan)
+Frustum::Frustum(const Mat4& toNdc)
+	:m_front(Vec3(0), 0)
+	, m_back(Vec3(0), 0)
+	, m_left(Vec3(0), 0)
+	, m_right(Vec3(0), 0)
+	, m_top(Vec3(0), 0)
+	, m_bottom(Vec3(0), 0)
 {
-    // Compute the projection interval radius of b onto L(t) = b.c + t * p.n
-    const float r = a.extents.x * std::abs(plan.normal.x) +
-        a.extents.y * std::abs(plan.normal.y) + a.extents.z * std::abs(plan.normal.z);
+	const auto inverse = toNdc.inverse();
 
-    return -r <= dot(plan.normal, a.center) - plan.distance;
+	enum Corners
+	{
+		BackTopRight,
+		BackBottomRight,
+		BackTopLeft,
+		BackBottomLeft,
+		FrontTopRight,
+		FrontBottomRight,
+		FrontTopLeft,
+		FrontBottomLeft,
+	};
+
+	const std::array<Vec3, 8> corners = {
+		inverse * Vec3(1, 1, 1),
+		inverse * Vec3(1, -1, 1),
+		inverse * Vec3(-1, 1, 1),
+		inverse * Vec3(-1, -1, 1),
+		inverse * Vec3(1, 1, -1),
+		inverse * Vec3(1, -1, -1),
+		inverse * Vec3(-1, 1, -1),
+		inverse * Vec3(-1, -1, -1),
+	};
+
+	m_front = Plane::fromPoints(corners[FrontBottomLeft], corners[FrontBottomRight], corners[FrontTopRight]);
+	m_back = Plane::fromPoints(corners[BackTopRight], corners[BackBottomRight], corners[BackBottomLeft]);
+
+	m_bottom = Plane::fromPoints(corners[BackBottomRight], corners[FrontBottomRight], corners[FrontBottomLeft]);
+	m_top = Plane::fromPoints(corners[FrontTopLeft], corners[FrontTopRight], corners[BackTopRight]);
+
+	m_left = Plane::fromPoints(corners[BackBottomLeft], corners[FrontBottomLeft], corners[FrontTopLeft]);
+	m_right = Plane::fromPoints(corners[FrontTopRight], corners[FrontBottomRight], corners[BackBottomRight]);
 }
 
-
-Frustum Frustum::fromCamera(const Vec3& pos, const Vec3& forwardDir, float aspectRatio, float fov, float zNear, float zFar)
+bool Frustum::intersects(const Aabb& aabb) const
 {
-    const Vec3 rightDir = cross(forwardDir, Vec3::up);
-    const Vec3 upDir = cross(rightDir, forwardDir);
+	auto anyPointsInside = [&aabb](const Plane& plane) -> bool
+	{
+		const auto size = aabb.max - aabb.min;
+		return !plane.isOnFrontSide(aabb.min)
+			|| !plane.isOnFrontSide(aabb.max)
+			|| !plane.isOnFrontSide(aabb.min + Vec3(size.x, 0, 0))
+			|| !plane.isOnFrontSide(aabb.min + Vec3(0, size.y, 0))
+			|| !plane.isOnFrontSide(aabb.min + Vec3(0, 0, size.z))
+			|| !plane.isOnFrontSide(aabb.min + Vec3(0, size.y, size.z))
+			|| !plane.isOnFrontSide(aabb.min + Vec3(size.x, 0, size.z))
+			|| !plane.isOnFrontSide(aabb.min + Vec3(size.x, size.y, 0));
+	};
+	
 
-    Frustum     frustum;
-    const float halfVSide = zFar * tanf(fov * .5f);
-    const float halfHSide = halfVSide * aspectRatio;
-    const Vec3 frontMultFar = forwardDir * zFar;
-
-    frustum.nearFace = { pos + forwardDir * zNear, forwardDir };
-    frustum.farFace = { pos + frontMultFar, -forwardDir };
-    frustum.rightFace = { pos,
-                            cross(upDir ,frontMultFar + rightDir * halfHSide) };
-    frustum.leftFace = { pos,
-                            cross(frontMultFar - rightDir * halfHSide, upDir) };
-    frustum.topFace = { pos,
-                            cross(rightDir, frontMultFar - upDir * halfVSide) };
-    frustum.bottomFace = { pos,
-                            cross(frontMultFar + upDir * halfVSide, rightDir) };
-    return frustum;
-}
-
-bool Frustum::collision(const AB& ab) const
-{
-    return isOnOrForwardPlan(ab, leftFace) &&
-        isOnOrForwardPlan(ab, rightFace) &&
-        isOnOrForwardPlan(ab, topFace) &&
-        isOnOrForwardPlan(ab, bottomFace) &&
-        isOnOrForwardPlan(ab, nearFace) &&
-        isOnOrForwardPlan(ab, farFace);
+	return anyPointsInside(m_front)
+		&& anyPointsInside(m_back)
+		&& anyPointsInside(m_bottom)
+		&& anyPointsInside(m_top)
+		&& anyPointsInside(m_left)
+		&& anyPointsInside(m_right);
 }

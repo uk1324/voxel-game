@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <Math/Vec3.hpp>
 #include <Utils/Assertions.hpp>
@@ -14,6 +14,7 @@ class GenericMat4
 public:
 	GenericMat4();
 	GenericMat4(std::initializer_list<T> mat);
+	GenericMat4(const Vec3& xCol, const Vec3& yCol, const Vec3& zCol);
 
 	void set(size_t x, size_t y, T value);
 	const T get(size_t x, size_t y) const;
@@ -79,6 +80,25 @@ GenericMat4<T>::GenericMat4(std::initializer_list<T> mat)
 			set(x, y, mat.begin()[y * WIDTH + x]);
 		}
 	}
+}
+
+template<typename T>
+GenericMat4<T>::GenericMat4(const Vec3& xCol, const Vec3& yCol, const Vec3& zCol)
+{
+	GenericMat4<T> m;
+	m(0, 0) = xCol.x;
+	m(0, 1) = xCol.y;
+	m(0, 2) = xCol.z;
+
+	m(1, 0) = yCol.x;
+	m(1, 1) = yCol.y;
+	m(1, 2) = yCol.z;
+
+	m(2, 0) = zCol.x;
+	m(2, 1) = zCol.y;
+	m(2, 2) = zCol.z;
+
+	m(3, 3) = T(1);
 }
 
 template<typename T>
@@ -424,36 +444,70 @@ GenericMat4<T> GenericMat4<T>::translation(const Vec3& translation)
 	return m;
 }
 
+// Not sure why, but most things use vertical fov instead of horizontal.
 template<typename T>
-GenericMat4<T> GenericMat4<T>::perspective(T fov, T aspectRatio, T nearZ, T farZ)
+GenericMat4<T> GenericMat4<T>::perspective(T verticalFov, T aspectRatio, T nearZ, T farZ)
 {
-	// near and far represent the z position of the clip plane
-
-	// The frustrum is defined by the aspect ratio of the near plane and the fov
-
-	// Maps the points inside the frustrum to the cube from (-1, -1, -1) to (1, 1, 1), because
-	// OpenGL clips all of the triangles outside of the cube.
-	T fovInv = 1.0f / tanf(fov * 0.5f);
 	GenericMat4<T> mat;
-	//mat(0, 0) = fovInv;
-	//mat(1, 1) = aspectRatio * fovInv;
-	//mat(2, 2) = far / (far - near);
-	//mat(3, 2) = (-far * near) / (far - near);
-	//mat(2, 3) = 1.0f;
 
-	mat(0, 0) = T(1) / (aspectRatio * fovInv);
-	mat(1, 1) = T(1) / (fovInv);
-	mat(2, 2) = -(farZ + nearZ) / (farZ - nearZ);
-	mat(2, 3) = -T(1);
-	mat(3, 2) = -(T(2) * farZ * nearZ) / (farZ - nearZ);
+	/*
+	The basic perspective projection matrix looks like this.
+	[1 0 0 0]
+	[0 1 0 0]
+	[0 0 1 0]
+	[0 0 1 0]
+	When the division happens then every point is scaled by 1 / z, becuase for every 1 z there is 1 added to w.
+	Division causes points to get closer to the origin. The further they are the bigger z component they have 
+	so they will get devided by a bigger number so they will get closer to the center and also smaller
+	becuase the bigger the number they more division is going to take away. So points close to the origin will get a bit closer 
+	and points further away will get more close thus scaling the objects.
 
-	//T fovInv = 1.0f / tanf(fov * 0.5f / 180.0f * 3.14159f);
-	//Mat4 mat;
-	//mat(0, 0) = fovInv / aspectRatio;
-	//mat(1, 1) = fov;
-	//mat(2, 2) = (far + near) / (near - far);
-	//mat(3, 2) = (2 * far * near) / (near - far);
-	//mat(2, 3) = 1.0f;
+	The other parts of the matrix are just to map the coordinates so after division the points inside the frustum get mapped
+	to normalized device coordinates, which line inside an AABB from [-1, -1, -1] to [1, 1, 1].
+
+	[1 0 0 0]
+	[0 1 0 0]
+	[0 0 a b]
+	[0 0 1 0]
+	a - scaling z
+	b - translating z
+	a * someZ + b = ?
+	The z values after perspective division should map like this.
+	a * nearZ + b = 1
+	a * farZ + b = -1
+	So before the division it is
+	a * nearZ + b = nearZ
+	a * farZ + b = -farZ
+	subtracting bottom from top
+	a * nearZ - a * farZ = nearZ + farZ
+	a * (nearZ - farZ) = nearZ + farZ
+	a = (nearZ + farZ) / (nearZ - farZ)
+	then substituing a
+	((nearZ + farZ) / (nearZ - farZ)) * farZ + b = -farZ
+	b = -farZ - ((nearZ + farZ) / (nearZ - farZ)) * farZ
+	then simplify
+	-farZ - ((nearZ + farZ) / (nearZ - farZ)) * farZ
+	-farZ - (nearZ * farZ + farZ^2) / (nearZ - farZ)
+	(-farZ * (nearZ - farZ)) / (nearZ - farZ) - (nearZ * farZ + farZ^2) / (nearZ - farZ)
+	(-farZ * nearZ + farZ^2) / (nearZ - farZ) - (nearZ * farZ + farZ^2) / (nearZ - farZ)
+	(-farZ * nearZ + farZ^2 - (nearZ * farZ + farZ^2)) / (nearZ - farZ)
+	(-farZ * nearZ + farZ^2 - nearZ * farZ - farZ^2) / (nearZ - farZ)
+	(-farZ * nearZ - nearZ * farZ) / (nearZ - farZ)
+	(-farZ * nearZ + -farZ * nearZ) / (nearZ - farZ)
+	(-2 * farZ * nearZ) / (nearZ - farZ)
+	*/
+
+	T halfFovTan = tan(verticalFov / 2);
+	// tan(fov) = farPlaneHalfHeight / distanceToFarPlane
+	// when the matrix is applied then y' = y * (farPlaneHalfHeight / distanceToFarPlane)
+
+	mat(1, 1) = halfFovTan;
+	mat(0, 0) = halfFovTan / aspectRatio;
+	mat(2, 2) = (nearZ + farZ) / (nearZ - farZ);
+	// Because Vec3::forward = [0, 0, 1] and OpenGL forward is [0, 0, -1] the z axis and the translation on it has to be flipped.
+	mat(2, 3) = T(-1);
+	mat(3, 2) = (T(2) * farZ * nearZ) / (nearZ - farZ);
+
 
 
 	return mat;
@@ -467,6 +521,7 @@ GenericMat4<T> GenericMat4<T>::orthographic(GenericVec3<T> min, GenericVec3<T> m
 	// Squish to AABB(min = [-1, -1, -1], max = [1, 1, 1]).
 	mat(0, 0) = T(2) / (max.x - min.x);
 	mat(1, 1) = T(2) / (max.y - min.y);
+	// Flip z
 	mat(2, 2) = T(-2) / (max.z - min.z);
 	// Translate to center.
 	mat(3, 0) = -(max.x + min.x) / (max.x - min.x);
@@ -482,20 +537,20 @@ template<typename T>
 GenericMat4<T> GenericMat4<T>::lookAt(GenericVec3<T> position, GenericVec3<T> target, GenericVec3<T> up)
 {
 	// An orthogonal matrix is a matrix with all the basis orthogonal (perpendicular) to each other.
-	// An orthonormal matrix is an orthogonal matrix with basis of length 1.
-
+	// An orthonormal matrix is an orthogonal matrix with all basis of length 1.
 	GenericVec3<T> lookDirection = target - position;
 
-	// Calculate an orthonormal basis using the Gram-Schmidt process.
 
+	// Calculate an orthonormal basis using cross products another way is to use the Gram-Schmidt process which uses projections.
 	GenericVec3<T> forward = lookDirection.normalized();
 	// Forward and up create a plane so the cross product is the right vector.
 	GenericVec3<T> right = (cross(forward, up)).normalized();
 	GenericVec3<T> projectedUp(cross(right, forward));
 
 	Mat4 m;
-	// The inverse of a orthogonal matrix is equal to it's transpose so to transpose it I put the transformed basis into rows
-	// and not columns. 
+	// The look at matrix transforms the world so to make it look like the camera is looking in a direction the world must be transfored in 
+	// the opposite direction so the inverse is used.
+	// The inverse of a orthogonal matrix is equal to it's transpose so to the column vectors are put into rows.
 	m(0, 0) = right.x;
 	m(1, 0) = right.y;
 	m(2, 0) = right.z;
@@ -511,10 +566,9 @@ GenericMat4<T> GenericMat4<T>::lookAt(GenericVec3<T> position, GenericVec3<T> ta
 
 	m(3, 3) = 1;
 
-	// One problem with the Gram-Schmidt process is that if fails when the forward vector and the up vector are
+	// One problem with this method is that if fails when the forward vector and the up vector are
 	// linearly depended (they lie on the same line) because the cross product of up and forward is equal to the zero vector.
 
-	//position.y = -position.y;
 	return GenericMat4<T>::translation(-position) * m;
 }
 
