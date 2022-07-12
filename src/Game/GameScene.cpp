@@ -3,6 +3,7 @@
 #include <Game/Inventory/Inventory.hpp>
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>
+#include <Game/Components/AnimatedModel.hpp>
 #include <Game/Debug/Debug.hpp>
 
 #include <chrono>
@@ -24,8 +25,9 @@ GameScene::GameScene(Engine& engine)
 
     entityManager.registerComponent<Position>();
     entityManager.registerComponent<Rotation>();
-    entityManager.registerComponent<ModelComponent>();
+    entityManager.registerComponent<AnimatedModel>();
     entityManager.registerComponent<ItemComponent>();
+    entityManager.registerComponent<ZombieComponent>();
 
     m_player = entityManager.createEntity();
     entityManager.addComponent(m_player, Position{ Vec3(0, 80, 0) });
@@ -98,8 +100,9 @@ void GameScene::update()
         }
     }
 
+    m_entitySystem.update(entityManager, input, m_blockSystem);
     m_physicsSystem.update(time, entityManager, m_blockSystem.chunkSystem);
-
+     
     auto end = std::chrono::high_resolution_clock::now();
     std::string title = std::string("frame time: ") + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
     engine.window().setTitle(title.c_str());

@@ -21,9 +21,9 @@ public:
 	Opt<Block> tryGet(const Vec3I& blockPos) const;
 	void trySet(const Vec3I& blockPos, Block block);
 
-	bool isSolid(Vec3I& blockPos);
+	bool isSolid(const Vec3I& blockPos) const;
 
-	Opt<RaycastHit> raycast(const Vec3& start, const Vec3& end);
+	Opt<RaycastHit> raycast(const Vec3& start, const Vec3& end) const;
 
 public:
 	ChunkSystem chunkSystem;

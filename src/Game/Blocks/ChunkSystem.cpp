@@ -210,6 +210,11 @@ std::vector<uint32_t>& ChunkSystem::meshFromChunk(Chunk& chunk)
 					{
 						auto shouldMesh = [this, &chunk](int32_t x, int32_t y, int32_t z)
 						{
+							// Don't know if the compiler does this in release mode, but removing the
+							// isInBounds(x, y, z) == false check in debug mode speeds it up significantly.
+							// This check doesn't need to be performed if the edges of the chunk aren't being meshed.
+							// So changing the iteration to range 1 to SIZE_AXIS - 1 and meshing the edges separately
+							// with each edges using a specialized check so the isInBound check on one side could be ommited.
 							return isInBounds(x, y, z) == false
 								|| chunk(x, y, z).type == BlockType::Air
 								|| blockData[chunk(x, y, z).type].isSolid == false;
@@ -515,13 +520,13 @@ void ChunkSystem::regenerateAll()
 	shouldRegenerateAll = true;
 }
 
-
 void ChunkSystem::meshChunk(ChunkData& chunk)
 {
+	//auto start = std::chrono::high_resolution_clock::now();
 	const std::vector<uint32_t>& vertices = meshFromChunk(chunk.blocks);
+	//auto end = std::chrono::high_resolution_clock::now();
+	//std::cout << "meshing took: " << std::chrono::duration<double, std::milli>((end - start)).count() << '\n';
 	chunk.vertexCount = vertices.size();
-	//if (vertices.size() > 0)
-		//std::cout << "test";
 	m_vbo.bind();
 	m_vbo.setData(chunk.vboByteOffset, vertices.data(), vertices.size() * sizeof(uint32_t));
 }

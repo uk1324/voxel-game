@@ -6,6 +6,7 @@
 
 #include <vector>
 
+// TODO: Add versioning of entites.
 class EntityManager
 {
 	template <typename T>

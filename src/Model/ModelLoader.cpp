@@ -18,6 +18,7 @@ Model ModelLoader::parse()
 		loadTextures();
 		loadMeshes();
 		loadNodes();
+		loadSkins();
 		loadAnimations();
 	}
 	catch (const Json::Value::InvalidTypeAccess&)
@@ -210,7 +211,7 @@ void ModelLoader::loadNodes()
 		const Vec3 scale = node.contains("scale") ? parseVec3(node.at("scale")) : Vec3(1);
 		const Quat rotation = node.contains("rotation") ? parseQuat(node.at("rotation")) : Quat::identity;
 		const Vec3 translation = node.contains("translation") ? parseVec3(node.at("translation")) : Vec3(0);
-		model.nodes[i].transform = Mat4::scale(scale) * rotation.asMatrix() * Mat4::translation(translation);
+		model.nodes[i].defaultPosTransform = Mat4::scale(scale) * rotation.asMatrix() * Mat4::translation(translation);
 
 		if (node.contains("children"))
 		{
@@ -219,32 +220,38 @@ void ModelLoader::loadNodes()
 				model.nodes[i].children.push_back(&model.nodes.at(child.intNumber()));
 			}
 		}
-
-		if (node.contains("skin"))
-		{
-			const auto& skin = file.at("skins").at(node.at("skin").intNumber());
-
-			const Accessor& accessor = accessors.at(skin.at("inverseBindMatrices").intNumber());
-			const BufferView& bufferView = accessor.bufferView;
-			std::string data = stringFromFile((directory / file.at("buffers").at(0).at("uri").string()).string());
-			size_t byteOffset = bufferView.byteOffset + accessor.byteOffset;
-			model.inverseBindMatrices.resize(skin.at("joints").array().size());
-			memcpy(model.inverseBindMatrices.data(), data.data() + byteOffset, sizeof(Mat4) * skin.at("joints").array().size());
-
-			for (const auto& jointIndex : skin.at("joints").array())
-			{
-				model.joints.push_back(&model.nodes.at(jointIndex.intNumber())); 
-			}
-		}
 	}
 
 	for (const auto& node : file.at("scenes").at(0).at("nodes").array())
 	{
 		model.children.push_back(&model.nodes.at(node.intNumber()));
-		//propagateTransform(model.nodes.at(node.intNumber()));
 	}
 
+	auto rootNode = file.at("scenes").at(file.at("scene").intNumber()).at("nodes").at(0).intNumber();
+	model.rootNode = &model.nodes[rootNode];
 }
+
+void ModelLoader::loadSkins()
+{
+	if (file.contains("skins") == false)
+		return;
+	const auto& skins = file.at("skins").array();
+	if (skins.empty())
+		return;
+	const auto& skin = skins.at(0);
+	const Accessor& accessor = accessors.at(skin.at("inverseBindMatrices").intNumber());
+	const BufferView& bufferView = accessor.bufferView;
+	const auto data = stringFromFile((directory / file.at("buffers").at(0).at("uri").string()).string());
+	const auto byteOffset = bufferView.byteOffset + accessor.byteOffset;
+	const auto& joints = skin.at("joints").array();
+	model.inverseBindMatrices.resize(joints.size());
+	memcpy(model.inverseBindMatrices.data(), data.data() + byteOffset, sizeof(Mat4) * joints.size());
+	for (const auto& jointIndex : skin.at("joints").array())
+	{
+		model.joints.push_back(&model.nodes.at(jointIndex.intNumber()));
+	}
+}
+
 
 // Make a function that takes an accessor and returs a ptr to the data.
 void ModelLoader::loadAnimations()
@@ -253,77 +260,77 @@ void ModelLoader::loadAnimations()
 
 	for (const auto& animation : file.at("animations").array())
 	{
+		std::vector<Model::KeyFrame> keyframes;
 		const auto& samplers = animation.at("samplers").array();
 		for (const auto& channel : animation.at("channels").array())
 		{
-			const auto& sampler = samplers.at(channel.at("sampler").intNumber());
-			const Accessor& accessor = accessors.at(sampler.at("input").intNumber());
+			const auto& timeSampler = samplers.at(channel.at("sampler").intNumber());
+			const Accessor& timeAccessor = accessors.at(timeSampler.at("input").intNumber());
 			// ASSERT scalar and float
 
-			auto keyFrames = reinterpret_cast<float*>(data.data() + accessor.byteOffset + accessor.bufferView.byteOffset);
-			auto keyFramesEnd = keyFrames + accessor.count;
+			// TODO check if animation size is 0.
 
-			model.keyframes.resize(accessor.count);
-			for (auto& keyframe : model.keyframes)
+			// TODO check if there is enough data in the buffer.
+			// Could also validate if the order of the times is valid.
+			auto time = reinterpret_cast<float*>(data.data() + timeAccessor.byteOffset + timeAccessor.bufferView.byteOffset);
+
+			keyframes.resize(timeAccessor.count);
+			for (size_t i = 0; i < keyframes.size(); i++)
 			{
-				// TODO find a way to resize without default initializing.
-				// Could use std::unique_ptr
-				keyframe.rotation.resize(model.nodes.size());
-				keyframe.translation.resize(model.nodes.size());
-				keyframe.scale.resize(model.nodes.size());
+				keyframes[i].rotation.resize(model.nodes.size());
+				keyframes[i].translation.resize(model.nodes.size());
+				keyframes[i].scale.resize(model.nodes.size());
+				keyframes[i].time = time[i];
 			}
 
 			const auto& target = channel.at("target");
 
 			size_t nodeIndex = target.at("node").intNumber();
-			const Accessor& a = accessors.at(sampler.at("output").intNumber());
-			ASSERT(a.count == accessor.count);
+			const Accessor& transformationAccessor = accessors.at(timeSampler.at("output").intNumber());
+			ASSERT(transformationAccessor.count == timeAccessor.count);
 			if (target.at("path").string() == "translation")
 			{
-				auto transformations = reinterpret_cast<Vec3*>(data.data() + a.byteOffset + a.bufferView.byteOffset);
-				for (size_t i = 0; i < a.count; i++)
+				auto transformations = reinterpret_cast<Vec3*>(data.data() 
+					+ transformationAccessor.byteOffset 
+					+ transformationAccessor.bufferView.byteOffset);
+				for (size_t i = 0; i < transformationAccessor.count; i++)
 				{
-					model.keyframes[i].time = keyFrames[i];
-					model.keyframes[i].translation[nodeIndex] = transformations[i];
+					keyframes[i].translation[nodeIndex] = transformations[i];
 				}
 			}
 
 			if (target.at("path").string() == "scale")
 			{
-				auto transformations = reinterpret_cast<Vec3*>(data.data() + a.byteOffset + a.bufferView.byteOffset);
-				for (size_t i = 0; i < a.count; i++)
+				auto transformations = reinterpret_cast<Vec3*>(data.data() 
+					+ transformationAccessor.byteOffset 
+					+ transformationAccessor.bufferView.byteOffset);
+				for (size_t i = 0; i < transformationAccessor.count; i++)
 				{
-					model.keyframes[i].time = keyFrames[i];
-					model.keyframes[i].scale[nodeIndex] = transformations[i];
+					keyframes[i].scale[nodeIndex] = transformations[i];
 				}
 			}
 
 			if (target.at("path").string() == "rotation")
 			{
-				auto transformations = reinterpret_cast<Quat*>(data.data() + a.byteOffset + a.bufferView.byteOffset);
-				for (size_t i = 0; i < a.count; i++)
+				auto transformations = reinterpret_cast<Quat*>(data.data() 
+					+ transformationAccessor.byteOffset 
+					+ transformationAccessor.bufferView.byteOffset);
+				for (size_t i = 0; i < transformationAccessor.count; i++)
 				{
-					model.keyframes[i].time = keyFrames[i];
-					model.keyframes[i].rotation[nodeIndex] = transformations[i];
+					keyframes[i].rotation[nodeIndex] = transformations[i];
 				}
 			}
 		}
-	}
-}
-
-void ModelLoader::propagateTransform(Model::Node& parent)
-{
-	for (auto& child : parent.children)
-	{
-		//child->transform *= parent.transform;
-		/*child->output = child->transform * child->output * parent.output;*/
-		child->output = child->output * parent.output;
-		/*child->output = child->output * parent.output * child->transform;*/
-		/*child->output = child->output * child->transform * parent.output;*/
-		//child->output = child->transform * parent.output * child->output;
-		//child->output = parent.output * child->transform * child->output;
-		//child->output = parent.output * child->output * child->transform;
-		propagateTransform(*child);
+		// Put a copy of the first keyframe at the and so the animation can smothly loop.
+		if (keyframes.size() >= 3)
+		{
+			const auto& firstKeyframe = keyframes[0];
+			const auto lastFrameTime = keyframes.back().time;
+			const auto lastFramesDelta = keyframes[keyframes.size() - 1].time - keyframes[keyframes.size() - 2].time;
+			keyframes.push_back(firstKeyframe);
+			keyframes.back().time = lastFrameTime + lastFramesDelta;
+		}
+		model.animations.push_back(std::move(keyframes));
 	}
 }
 

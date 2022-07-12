@@ -6,7 +6,7 @@ layout (location = 2) in vec2 vertexUv;
 layout (location = 3) in vec4 vertexJoints;
 layout (location = 4) in vec4 vertexWeights;
 
-uniform mat4 jointMatrices[16];
+uniform mat4 jointMatrices[64];
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;

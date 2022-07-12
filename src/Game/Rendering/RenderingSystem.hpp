@@ -18,11 +18,6 @@
 // Some members could be static
 // Make a global debug class that will store the instance of this class.
 
-struct ModelComponent
-{
-
-};
-
 class RenderingSystem
 {
 private:
@@ -54,7 +49,7 @@ public:
 		const Vec2& screenSize, 
 		const Vec3& cameraPos, 
 		const Quat& cameraRot, 
-		const EntityManager& entityManger, 
+		EntityManager& entityManger, 
 		const ChunkSystem& chunkSystem, 
 		const ItemData& itemData);
 private:
@@ -74,7 +69,7 @@ private:
 	void shadowMapSetup();
 	void drawToShadowMap(const ChunkSystem& chunkSystem, const EntityManager& entityManager, const ItemData& itemData);
 	void drawScene(
-		const EntityManager& entityManager,
+		EntityManager& entityManager,
 		const ItemData& itemData,
 		const ChunkSystem& chunkSystem,
 		const Mat4& projection,
@@ -96,8 +91,10 @@ private:
 
 	Vec3 m_directionalLightDir;
 
-	size_t keyframe = 0;
-	Model m_model;
+	size_t currentKeyframeIndex = 0;
+	float startTime;
+
+	float elapsed = 0;
 
 	Fbo m_debugFbo;
 	Texture m_debugTexture;

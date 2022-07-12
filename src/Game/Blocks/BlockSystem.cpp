@@ -14,17 +14,21 @@ void BlockSystem::trySet(const Vec3I& blockPos, Block block)
 	chunkSystem.trySetBlock(blockPos, block);
 }
 
-bool BlockSystem::isSolid(Vec3I& blockPos)
+bool BlockSystem::isSolid(const Vec3I& blockPos) const
 {
     const auto optBlock = tryGet(blockPos);
-    if (optBlock.has_value())
-        return blockData[optBlock.value().type].isSolid;
-    return false;
+    if (optBlock.has_value() == false)
+        return false;
+    const auto& block = optBlock.value();
+    if (block.type == BlockType::Air)
+        return false;
+
+    return blockData[optBlock.value().type].isSolid;
 }
 
 // Could optimize this by doing the raycast locally inside a chunks instead of calling
 // tryGet each time.
-Opt<BlockSystem::RaycastHit> BlockSystem::raycast(const Vec3& start, const Vec3& end)
+Opt<BlockSystem::RaycastHit> BlockSystem::raycast(const Vec3& start, const Vec3& end) const
 {
 #define SIGN(x) (x > 0 ? 1 : (x < 0 ? -1 : 0))
 #define FRAC0(x) (x - floorf(x))

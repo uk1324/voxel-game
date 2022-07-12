@@ -183,12 +183,55 @@ GenericQuat<T> GenericQuat<T>::fromEuler(T x, T y, T z)
 	double cr = cos(x * 0.5);
 	double sr = sin(x * 0.5);
 
-	Quat(
+	return Quat(
 		sr * cp * cy - cr * sp * sy,
 		cr * sp * cy + sr * cp * sy,
 		cr * cp * sy - sr * sp * cy,
 		cr * cp * cy + sr * sp * sy
 	);
+}
+
+template<typename T>
+GenericQuat<T> GenericQuat<T>::slerp(GenericQuat qa, GenericQuat qb, T t)
+{
+	// quaternion to return
+	Quat qm;
+	// Calculate angle between them.
+	double cosHalfTheta = qa.w * qb.w + qa.x * qb.x + qa.y * qb.y + qa.z * qb.z;
+	// Rotate around the shortest possible angle
+	if (cosHalfTheta < 0)
+	{
+		cosHalfTheta = -cosHalfTheta;
+		qb.x = -qb.x;
+		qb.y = -qb.y;
+		qb.z = -qb.z;
+		qb.w = -qb.w;
+	}
+	// if qa=qb or qa=-qb then theta = 0 and we can return qa
+	if (abs(cosHalfTheta) >= 1.0) {
+		qm.w = qa.w; qm.x = qa.x; qm.y = qa.y; qm.z = qa.z;
+		return qm;
+	}
+	// Calculate temporary values.
+	double halfTheta = acos(cosHalfTheta);
+	double sinHalfTheta = sqrt(1.0 - cosHalfTheta * cosHalfTheta);
+	// if theta = 180 degrees then result is not fully defined
+	// we could rotate around any axis normal to qa or qb
+	if (fabs(sinHalfTheta) < 0.001) { // fabs is floating point absolute
+		qm.w = (qa.w * 0.5 + qb.w * 0.5);
+		qm.x = (qa.x * 0.5 + qb.x * 0.5);
+		qm.y = (qa.y * 0.5 + qb.y * 0.5);
+		qm.z = (qa.z * 0.5 + qb.z * 0.5);
+		return qm;
+	}
+	double ratioA = sin((1 - t) * halfTheta) / sinHalfTheta;
+	double ratioB = sin(t * halfTheta) / sinHalfTheta;
+	//calculate Quaternion.
+	qm.w = (qa.w * ratioA + qb.w * ratioB);
+	qm.x = (qa.x * ratioA + qb.x * ratioB);
+	qm.y = (qa.y * ratioA + qb.y * ratioB);
+	qm.z = (qa.z * ratioA + qb.z * ratioB);
+	return qm;
 }
 
 template<typename T>

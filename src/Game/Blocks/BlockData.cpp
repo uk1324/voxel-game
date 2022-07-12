@@ -204,6 +204,8 @@ BlockData::BlockData()
 	textureArray = TextureArray(16, 16, std::vector<std::string_view>(texturesNames.begin(), texturesNames.end()));
 }
 
+// Maybe having a blockType for air with some random data would allow for some code like for example meshing 
+// to have less branches though it would be more error prone.
 // Functions subtract 1 to skip BlockType::Air.
 BlockData::Entry& BlockData::operator[](BlockType type)
 {

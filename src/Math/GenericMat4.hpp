@@ -508,8 +508,6 @@ GenericMat4<T> GenericMat4<T>::perspective(T verticalFov, T aspectRatio, T nearZ
 	mat(2, 3) = T(-1);
 	mat(3, 2) = (T(2) * farZ * nearZ) / (nearZ - farZ);
 
-
-
 	return mat;
 }
 

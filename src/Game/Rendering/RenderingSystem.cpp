@@ -1,9 +1,11 @@
 #include <Game/Rendering/RenderingSystem.hpp>
 #include <Game/Components/Position.hpp>
+#include <Game/Components/Rotation.hpp>
 #include <Game/Debug/Debug.hpp>
 #include <Model/ModelLoader.hpp>
 #include <Game/EntitySystem.hpp>
 #include <Log/Log.hpp>
+#include <Math/Interpolation.hpp>
 
 #include <string>
 #include <inttypes.h>
@@ -70,31 +72,33 @@ static const float squareTrianglesVertices2[] = {
 	 1.0f, -1.0f, 1.0f, 0.0f,
 };
 
-// Draw skeleton with propagate transform in the model loader.
-static void draw(const Vec3& pos, Model::Node& node, const Vec3& old)
-{
-	Vec3 transformed = node.output * Vec3(0) + old;
-	Debug::drawLine(pos, transformed);
-	for (const auto& child : node.children)
-	{
-		draw(transformed, *child, old);
-		Debug::drawPoint(transformed);
-	}
-}
-
-static void drawSkeleton(const Vec3& translation, Model::Node& node, const Mat4& parentTransform, const Vec3& parentTransformed)
-{
-	const Mat4 thisTransform = node.output * parentTransform;
-	const Vec3 transformed = thisTransform * Vec3(0) + translation;
-	Debug::drawLine(parentTransformed, transformed);
-	for (const auto& child : node.children)
-	{
-		drawSkeleton(translation, *child, thisTransform, transformed);
-		Debug::drawPoint(transformed);
-	}
-}
+//// Draw skeleton with propagate transform in the model loader.
+//static void draw(const Vec3& pos, Model::Node& node, const Vec3& old)
+//{
+//	Vec3 transformed = node.output * Vec3(0) + old;
+//	Debug::drawLine(pos, transformed);
+//	for (const auto& child : node.children)
+//	{
+//		draw(transformed, *child, old);
+//		Debug::drawPoint(transformed);
+//	}
+//}
+//
+//static void drawSkeleton(const Vec3& translation, Model::Node& node, const Mat4& parentTransform, const Vec3& parentTransformed)
+//{
+//	const Mat4 thisTransform = node.output * parentTransform;
+//	const Vec3 transformed = thisTransform * Vec3(0) + translation;
+//	Debug::drawLine(parentTransformed, transformed);
+//	for (const auto& child : node.children)
+//	{
+//		drawSkeleton(translation, *child, thisTransform, transformed);
+//		Debug::drawPoint(transformed);
+//	}
+//}
 
 #define SHADERS_PATH "src/Game/Rendering/Shaders/"
+
+#include <iostream>
 
 RenderingSystem::RenderingSystem(Scene& scene)
 	: m_skyboxData(
@@ -111,9 +115,9 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	, m_modelShader(SHADERS_PATH "Objects/model.vert", SHADERS_PATH "Objects/model.frag")
 
 	, m_crosshairTexture("assets/textures/crosshair.png")
-	, m_squareShader("src/Game/Rendering/Shaders/2dTextured.vert", "src/Game/Rendering/Shaders/2dTextured.frag")
-	, m_debugShader("src/Game/Rendering/Shaders/debug.vert", "src/Game/Rendering/Shaders/debug.frag")
-	, m_texturedSquareShader("src/Game/Inventory/Shaders/uiTextured.vert", "src/Game/Rendering/Shaders/debugDepth.frag")
+	//, m_squareShader("src/Game/Rendering/Shaders/2dTextured.vert", "src/Game/Rendering/Shaders/2dTextured.frag")
+	, m_debugShader(SHADERS_PATH "Other/debugShapes.vert", SHADERS_PATH "Other/debugShapes.frag")
+	//, m_texturedSquareShader("src/Game/Inventory/Shaders/uiTextured.vert", "src/Game/Rendering/Shaders/debugDepth.frag")
 
 	, m_cubeLinesVbo(cubeLinesVertices, sizeof(cubeLinesVertices))
 	, m_squareTrianglesVbo(squareTrianglesVertices, sizeof(squareTrianglesVertices))
@@ -135,8 +139,6 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	, m_cascadeZ({ 10, 30, 50, 60 })
 	, m_debugFbo(Fbo::generate())
 	, m_debugTexture(Texture::generate())
-
-	, m_model(ModelLoader("assets/models/character/character.gltf").parse())
 {
 	m_cubeLinesVao.bind();
 	m_cubeLinesVbo.bind();
@@ -239,7 +241,7 @@ void RenderingSystem::update(
 	const Vec2& screenSize, 
 	const Vec3& cameraPos,
 	const Quat& cameraRot, 
-	const EntityManager& entites,
+	EntityManager& entites,
 	const ChunkSystem& chunkSystem, 
 	const ItemData& itemData)
 {
@@ -310,8 +312,6 @@ void RenderingSystem::update(
 	m_defferedPassShader.setFloat("farPlane", m_farPlaneZ);
 	m_defferedPassShader.setMat4("worldToView", view);
 	m_defferedPassShader.setVec3("directionalLightDir", m_directionalLightDir);
-	m_defferedPassShader.setFloat("a", a);
-	m_defferedPassShader.setFloat("b", b);
 
 	m_squareTrianglesVao2.bind();
 	glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -319,14 +319,10 @@ void RenderingSystem::update(
 
 	Fbo::unbind();
 	glViewport(0, 0, screenSize.x, screenSize.y);
-	keyframe += 1;
-
 }
 
-#include <iostream>
-
 void RenderingSystem::drawScene(
-	const EntityManager& entityManager, 
+	EntityManager& entityManager, 
 	const ItemData& itemData,
 	const ChunkSystem& chunkSystem, 
 	const Mat4& projection, 
@@ -405,42 +401,36 @@ void RenderingSystem::drawScene(
 		}
 	}
 
-	//keyframe = 0;
-	keyframe %= m_model.keyframes.size();
-
-	for (size_t i = 0; i < m_model.nodes.size(); i++)
-	{
-		m_model.nodes[i].output = Mat4::scale(m_model.keyframes[keyframe / 2].scale[i])
-			* m_model.keyframes[keyframe / 2].rotation[i].asMatrix()
-			* Mat4::translation(m_model.keyframes[keyframe / 2].translation[i]);
-	}
-
-	ModelLoader::propagateTransform(m_model.nodes[18]);
-
-	for (auto [entity, model] : entityManager.getComponents<ModelComponent>())
+	m_modelShader.setMat4("view", view);
+	m_modelShader.setMat4("projection", projection);
+	for (auto& [entity, model] : entityManager.getComponents<AnimatedModel>())
 	{
 		const Vec3& pos = entityManager.getComponent<Position>(entity).value;
+		const Quat& rotation = entityManager.getComponent<Rotation>(entity).value;
+		model.update();
 
 		m_modelShader.use();
-		m_modelShader.setMat4("model", Mat4::scale(Vec3(0.2)) * Mat4::translation(pos));
-		m_modelShader.setMat4("view", view);
-		m_modelShader.setMat4("projection", projection);
+		m_modelShader.setMat4("model", rotation.asMatrix() * Mat4::translation(pos - Vec3(0, 0.15f, 0)));
 		glActiveTexture(GL_TEXTURE0);
-		m_model.textures[0].bind();
+		model.model.textures[1].bind();
 		m_modelShader.setInt("textureSampler", 0);
-		m_model.meshes[0].vao.bind();
-		m_model.buffers[0].bindAsIndexBuffer();
+		model.model.meshes[0].vao.bind();
+		model.model.buffers[0].bindAsIndexBuffer();
 
-		for (size_t i = 0; i < m_model.joints.size(); i++)
+		for (size_t i = 0; i < model.model.joints.size(); i++)
 		{
-			m_modelShader.setMat4("jointMatrices[" + std::to_string(i) + "]",
-				m_model.inverseBindMatrices[i] * m_model.joints[i]->output);
-
+			m_modelShader.setMat4(
+				"jointMatrices[" + std::to_string(i) + "]", 
+				model.model.inverseBindMatrices[i] * model.nodeTransforms[model.model.nodeIndex(model.model.joints[i])]);
 			// First the inverseBindMatrix is applied which undoes the bind pose translating every joint (not vertex) to the zero vector
-			// in object space. Then the transform is applied putting the mesh in the skeleton pose.
+			// in object space. Then the transform is applied putting the mesh in the animated pose.
 		}
 		glFrontFace(GL_CCW);
-		glDrawElements(GL_TRIANGLES, m_model.meshes[0].indicesCount, static_cast<GLenum>(m_model.meshes[0].indexType), reinterpret_cast<void*>(m_model.meshes[0].indicesByteOffset));
+		glDrawElements(
+			GL_TRIANGLES, 
+			model.model.meshes[0].indicesCount, 
+			static_cast<GLenum>(model.model.meshes[0].indexType), 
+			reinterpret_cast<void*>(model.model.meshes[0].indicesByteOffset));
 		glFrontFace(GL_CW);
 	}
 }
@@ -472,6 +462,7 @@ Mat4 RenderingSystem::getLightSpaceMatrix(float fov, float aspectRatio, const fl
 	}
 
 	// Maybe just set the max.z of the non transformed AABB to max height.
+	// Also include geometry the is behind the camera because it can also cast shadows.
 	constexpr float zMult = 160.0f;
 	if (min.z < 0)
 	{

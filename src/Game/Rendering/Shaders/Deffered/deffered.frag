@@ -96,6 +96,10 @@ void main()
     vec3 normal = texture(geometryNormal, texturePos).xyz;
 
     float shadow = shadow(posWorld, normal);
+    float ambient = 0.5;
+    float diffuse = max(1, dot(normal, -directionalLightDir));
+    float specular = clamp(pow(dot(reflect(-directionalLightDir, normal), normal), 2), 0, 1);
     color *= (1 - shadow / 2);
+    // color *= (ambient + diffuse + specular);
     outColor = vec4(color, 1);
 }
