@@ -9,7 +9,7 @@ uniform int cascadeCount;
 uniform mat4 worldToView;
 uniform float farPlane;
 
-float shadow(vec3 posWorldSpace, vec3 normal)
+float shadow(vec3 posWorldSpace)
 {
     vec4 fragPosViewSpace = worldToView * vec4(posWorldSpace, 1.0);
     // This value should be negated or not based on the sign of the forward vector.
@@ -67,9 +67,9 @@ float shadow(vec3 posWorldSpace, vec3 normal)
     // Average texels around the point. This is also called percentage-closer filtering.
     float shadow = 0.0;
     vec2 texelSize = 1.0 / vec2(textureSize(shadowMaps[layer], 0));
-    for(int x = -1; x <= 1; x++)
+    for (int x = -1; x <= 1; x++)
     {
-        for(int y = -1; y <= 1; y++)
+        for (int y = -1; y <= 1; y++)
         {
             float closestDepth = texture2D(shadowMaps[layer], posLightSpace.xy + vec2(x, y) * texelSize).r;
             shadow += (currentDepth - bias) > closestDepth ? 1.0 : 0.0;        
@@ -84,7 +84,6 @@ uniform sampler2D geometryAlbedo;
 uniform sampler2D geometryNormal;
 uniform sampler2D geometryDepth;
 
-
 in vec2 texturePos;
 
 out vec4 outColor;
@@ -93,13 +92,16 @@ void main()
 {
     vec3 color = texture2D(geometryAlbedo, texturePos).rgb;
     vec3 posWorld = texture2D(geometryPosWorld, texturePos).xyz;
-    vec3 normal = texture(geometryNormal, texturePos).xyz;
+    vec3 normal = normalize(texture(geometryNormal, texturePos).xyz);
+    float depth = texture2D(geometryDepth, texturePos).r;
 
-    float shadow = shadow(posWorld, normal);
-    float ambient = 0.5;
-    float diffuse = max(1, dot(normal, -directionalLightDir));
-    float specular = clamp(pow(dot(reflect(-directionalLightDir, normal), normal), 2), 0, 1);
-    color *= (1 - shadow / 2);
-    // color *= (ambient + diffuse + specular);
+    float shadow = shadow(posWorld);
+    float ambient = 0.3;
+    float diffuse = clamp(dot(normal, -directionalLightDir), 0, 1);
+    float specular = clamp(pow(dot(reflect(-directionalLightDir, normal), normal), 1), 0, 1);
+    const float constantFactor = 1;
+    color *= constantFactor;
+    color *= ambient + ((1 - shadow) * diffuse);
     outColor = vec4(color, 1);
+    gl_FragDepth = depth;
 }

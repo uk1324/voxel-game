@@ -2,13 +2,17 @@
 
 layout (location = 0) in uint vert;
 
-vec3 normals[] = {
- 	vec3(1, 0, 0), // Left
+const vec3 normals[] = {
  	vec3(-1, 0, 0), // Right
+ 	vec3(1, 0, 0), // Left
  	vec3(0, 1, 0), // Top
  	vec3(0, -1, 0), // Bottom
  	vec3(0, 0, 1), // Back
- 	vec3(0, 0, -1) // Front
+ 	vec3(0, 0, -1), // Front
+ 	normalize(vec3(-1, 0, 1)), 
+	normalize(vec3(1, 0, 1)), 
+ 	-normalize(vec3(-1, 0, 1)),
+ 	-normalize(vec3(1, 0, 1)), 
  };
 
 vec2 texCoords[] = {
@@ -30,7 +34,8 @@ vec2 texCoords[] = {
 #define Z_MASK ~((~0) << (Z_OFFSET + 4))
 #define TEXTURE_INDEX_MASK ~((~0) << (TEXTURE_INDEX_OFFSET + 10))
 #define TEXTURE_POS_INDEX_MASK ~((~0) << (TEXTURE_POS_INDEX_OFFSET + 2))
-#define NORMAL_INDEX_MASK ~((~0) << (NORMAL_INDEX_OFFSET + 3))
+// #define NORMAL_INDEX_MASK ~((~0) << (NORMAL_INDEX_OFFSET + 4))
+#define NORMAL_INDEX_MASK ~0
 
 // Rename to world to model
 // world to clip

@@ -57,6 +57,7 @@ struct Model
 	size_t nodeIndex(const Node* node) const;
 
 	std::vector<Vbo> buffers;
+	std::vector<Vbo> additionalBuffers;
 	std::vector<Mesh> meshes;
 	std::vector<Texture> textures;
 	std::vector<Node> nodes;
@@ -67,6 +68,8 @@ struct Model
 	std::vector<Node*> joints;
 
 	std::vector<Mat4> inverseBindMatrices;
+
+	float boundingSphereRadius;
 
 	Node* rootNode;
 };

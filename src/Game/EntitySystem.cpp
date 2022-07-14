@@ -15,6 +15,7 @@ void EntitySystem::update(EntityManager& entites, const InputManager& input, con
 	{
 		auto& model = entites.getComponent<AnimatedModel>(entity);
 		const auto elapsed = Time::currentTime() - zombie.start;
+		//continue;
 		if (zombie.idle)
 		{
 			if (elapsed > 2.0f)

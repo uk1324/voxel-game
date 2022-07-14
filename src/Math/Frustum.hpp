@@ -2,6 +2,7 @@
 
 #include <Math/Mat4.hpp>
 #include <Math/Aabb.hpp>
+#include <Math/Sphere.hpp>
 #include <Math/Plane.hpp>
 
 struct Frustum
@@ -20,4 +21,5 @@ private:
 public:
 
 	bool intersects(const Aabb& aabb) const;
+	bool intersects(const Sphere& sphere) const;
 };

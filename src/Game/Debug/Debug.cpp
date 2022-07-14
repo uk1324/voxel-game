@@ -7,6 +7,7 @@ void Debug::init(InputManager& input, RenderingSystem& renderingSystem)
 	input.registerKeyboardButton("debug", KeyCode::F3);
 	input.registerKeyboardButton("debugShowChunkBorders", KeyCode::G);
 	input.registerKeyboardButton("shouldShowHitboxes", KeyCode::B);
+	input.registerKeyboardButton("shouldDisplayRendererSettings", KeyCode::R);
 }
 
 void Debug::update(const InputManager& input)
@@ -21,6 +22,11 @@ void Debug::update(const InputManager& input)
 		if (input.isButtonDown("shouldShowHitboxes"))
 		{
 			shouldShowHitboxes = !shouldShowHitboxes;
+		}
+
+		if (input.isButtonDown("shouldDisplayRendererSettings"))
+		{
+			shouldDisplayRendererSettings = !shouldDisplayRendererSettings;
 		}
 	}
 }
@@ -44,3 +50,4 @@ RenderingSystem* Debug::s_renderingSystem = nullptr;
 
 bool Debug::shouldShowChunkBorders = false;
 bool Debug::shouldShowHitboxes = false;
+bool Debug::shouldDisplayRendererSettings = false;

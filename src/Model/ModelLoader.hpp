@@ -20,6 +20,7 @@ private:
 	struct BufferView
 	{
 		Vbo& buffer;
+		ByteBuffer& data;
 		size_t byteOffset;
 		size_t byteLength;
 		// If not specified data must be tightly packed. The data type information is inside the accessor.
@@ -33,6 +34,21 @@ private:
 		ShaderDataType componentType;
 		Json::Value::StringType type;
 		size_t count;
+	};
+
+	template<typename T>
+	class Buffer
+	{
+	public:
+		Buffer(void* data, size_t stride, size_t count);
+		const T& operator[](size_t index) const;
+
+		size_t count() const;
+
+	private:
+		char* m_data;
+		size_t m_stride;
+		size_t m_count;
 	};
 
 public:
@@ -56,12 +72,10 @@ private:
 	void loadAnimations();
 
 	template<typename T>
-	T* bufferSlice(size_t bufferIndex, size_t byteOffset, size_t count) const;
+	T* bufferSlice(size_t bufferAccessorIndex, size_t byteOffset, size_t count) const;
+	template<typename T>
+	Buffer<T> createBuffer(size_t bufferViewIndex);
 
-public:
-	static void propagateTransform(Model::Node& parent);
-
-private:
 	static Vec3 parseVec3(const Json::Value& vec);
 	static Quat parseQuat(const Json::Value& quat);
 
@@ -85,4 +99,40 @@ T* ModelLoader::bufferSlice(size_t bufferIndex, size_t byteOffset, size_t count)
 		throw std::out_of_range();
 	}
 	return buffer.data() + byteOffset;
+}
+
+template<typename T>
+ModelLoader::Buffer<T> ModelLoader::createBuffer(size_t bufferAccessorIndex)
+{
+	const Accessor& accessor = accessors.at(bufferAccessorIndex);
+	const BufferView& bufferView = accessor.bufferView;
+
+	const auto byteOffset = bufferView.byteOffset + accessor.byteOffset;
+
+	const auto componentTypePreVertexCount = parseTypeCount(accessor.type);
+	const auto componentTypeSize = sizeOfShaderDataType(accessor.componentType);
+	const auto byteStride = bufferView.byteStride.value_or(componentTypePreVertexCount * componentTypeSize);
+
+	return Buffer<T>(bufferView.data.data() + byteOffset, byteStride, accessor.count);
+}
+
+template<typename T>
+ModelLoader::Buffer<T>::Buffer(void* data, size_t stride, size_t count)
+	: m_data(reinterpret_cast<char*>(data))
+	, m_stride(stride)
+	, m_count(count)
+{
+	ASSERT(m_stride > alignof(T));
+}
+
+template<typename T>
+const T& ModelLoader::Buffer<T>::operator[](size_t index) const
+{
+	return m_data[index * m_stride];
+}
+
+template<typename T>
+size_t ModelLoader::Buffer<T>::count() const
+{
+	return m_count;
 }

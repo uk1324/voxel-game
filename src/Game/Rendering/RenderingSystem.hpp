@@ -52,6 +52,7 @@ public:
 		EntityManager& entityManger, 
 		const ChunkSystem& chunkSystem, 
 		const ItemData& itemData);
+
 private:
 	void onScreenResize();
 
@@ -61,19 +62,17 @@ public:
 	void drawLine(const Vec3& startPos, const Vec3& endPos, const Vec3& color);
 
 private:
-
 	void drawChunks(const ChunkSystem& chunkSystem, ShaderProgram& shader);
 	void drawDebugShapes(const Mat4& projection, const Mat4& view);
 	void drawCrosshair(const Vec2& screenSize);
 
-	void shadowMapSetup();
-	void drawToShadowMap(const ChunkSystem& chunkSystem, const EntityManager& entityManager, const ItemData& itemData);
 	void drawScene(
 		EntityManager& entityManager,
 		const ItemData& itemData,
 		const ChunkSystem& chunkSystem,
 		const Mat4& projection,
 		const Mat4& view);
+	void resetStatistics();
 
 	std::array<Vec3, 8> getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view);
 	Mat4 getLightSpaceMatrix(float fov, float aspectRatio, const float nearPlane, const float farPlane, const Mat4& view, const Vec3& lightDir);
@@ -86,15 +85,7 @@ private:
 
 	static constexpr size_t SHADOW_MAP_SIZE = 2048;
 
-	float a = 0.0;
-	float b = 0.0;
-
 	Vec3 m_directionalLightDir;
-
-	size_t currentKeyframeIndex = 0;
-	float startTime;
-
-	float elapsed = 0;
 
 	Fbo m_debugFbo;
 	Texture m_debugTexture;
@@ -112,6 +103,17 @@ private:
 	std::vector<float> m_cascadeZ;
 
 	ShaderProgram m_defferedPassShader;
+	ShaderProgram m_defferedDrawNormals;
+	ShaderProgram m_defferedDrawAlbedo;
+	ShaderProgram m_defferedDrawDepth;
+
+	Fbo m_postProcessFbo;
+	Texture m_postprocessTexture;
+	// Postprocess has to have a texture because after the deffered pass the skybox and debug shapes are drawn.
+	// It also makes it easier to make togglable SSAO and other postprocessing effects although they could be implemented
+	// in the deffered pass.
+	Texture m_postprocessDepthTexture;
+	ShaderProgram m_postProcessShader;
 
 	Vec2 m_screenSize;
 
@@ -145,4 +147,15 @@ private:
 	std::vector<Cube> m_cubesToDraw;
 	std::vector<Point> m_pointsToDraw;
 	std::vector<Line> m_linesToDraw;
+
+	int m_selectedDefferedDrawItem;
+	bool m_enableShadowMapPass;
+	size_t m_totalChunksToDraw;
+	size_t m_chunksDrawn;
+	size_t m_totalBlockItemsToDraw;
+	size_t m_blockItemsDrawn;
+	size_t m_totalVoxelizedTextureItemsToDraw;
+	size_t m_voxelizedTextureItemsDrawn;
+	size_t m_totalMeshesToDraw;
+	size_t m_meshesDrawn;
 };

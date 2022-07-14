@@ -75,7 +75,7 @@ void AnimatedModel::playAnimation(size_t index, AnimatedModelPlayType type, floa
 
 static Mat4 interpoleKeyframes(const Model::KeyFrame& a, const Model::KeyFrame& b, size_t nodeIndex, float t)
 {
-	ASSERT(t >= 0 && t <= 1);
+	//ASSERT(t >= 0 && t <= 1);
 	const auto scale = lerp(a.scale[nodeIndex], b.scale[nodeIndex], t);
 	const auto translation = lerp(a.translation[nodeIndex], b.translation[nodeIndex], t);
 	const auto rotation = Quat::slerp(a.rotation[nodeIndex], b.rotation[nodeIndex], t);

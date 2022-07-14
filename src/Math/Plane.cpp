@@ -9,7 +9,7 @@ Plane Plane::fromPoints(const Vec3& a, const Vec3& b, const Vec3& c)
 {
 	const auto edge0 = c - a;
 	const auto edge1 = b - a;
-	const auto normal = cross(edge0, edge1);
+	const auto normal = cross(edge0, edge1).normalized();
 	/*
 	The shortest vector from a point to a plane is always perpendicular to the plane.
 	If you draw a line segment perpendicular a line in 2D from any point then if you draw any other line to a 
@@ -23,7 +23,7 @@ Plane Plane::fromPoints(const Vec3& a, const Vec3& b, const Vec3& c)
 
 float Plane::signedDistance(const Vec3& p) const
 {
-	return distance - dot(p, normal) > 0;
+	return distance - dot(p, normal);
 }
 
 // This is also called half space test.

@@ -30,6 +30,7 @@ ChunkSystem::ChunkSystem()
 ChunkSystem::~ChunkSystem()
 {
 	m_isFinished.store(true);
+	// Cannot detatch becuase the worldGeneration thread might still be reading data from the main thread.
 	m_worldGenerationThread.join();
 }
 
@@ -131,37 +132,40 @@ void ChunkSystem::addCubeBack(Block block, std::vector<GLuint>& vertices, size_t
 void ChunkSystem::meshDecoration(uint32_t textureIndex, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z)
 {
 	auto a = static_cast<BlockType>(textureIndex);
-	addVertex(vertices, x, y, z, a, 2, 1);
-	addVertex(vertices, x + 1, y, z + 1, a, 3, 1);
-	addVertex(vertices, x + 1, y + 1, z + 1, a, 1, 1);
+	// (0, 0) to (1, 1)
+	addVertex(vertices, x, y, z, a, 2, 8);
+	addVertex(vertices, x + 1, y, z + 1, a, 3, 8);
+	addVertex(vertices, x + 1, y + 1, z + 1, a, 1, 8);
 
-	addVertex(vertices, x, y, z, a, 2, 1);
-	addVertex(vertices, x, y + 1, z, a, 0, 1);
-	addVertex(vertices, x + 1, y + 1, z + 1, a, 1, 1);
+	addVertex(vertices, x, y, z, a, 2, 8);
+	addVertex(vertices, x + 1, y + 1, z + 1, a, 1, 8);
+	addVertex(vertices, x, y + 1, z, a, 0, 8);
 
-	addVertex(vertices, x + 1, y, z, a, 2, 1);
-	addVertex(vertices, x, y, z + 1, a, 3, 1);
-	addVertex(vertices, x, y + 1, z + 1, a, 1, 1);
+	// (1, 0) to (0, 1)
+	addVertex(vertices, x + 1, y, z, a, 2, 7);
+	addVertex(vertices, x, y, z + 1, a, 3, 7);
+	addVertex(vertices, x, y + 1, z + 1, a, 1, 7);
+	addVertex(vertices, x + 1, y, z, a, 2, 7);
+	addVertex(vertices, x, y + 1, z + 1, a, 1, 7);
+	addVertex(vertices, x + 1, y + 1, z, a, 0, 7);
 
-	addVertex(vertices, x + 1, y, z, a, 2, 1);
-	addVertex(vertices, x + 1, y + 1, z, a, 0, 1);
-	addVertex(vertices, x, y + 1, z + 1, a, 1, 1);
+	// (0, 0) to (1, 1)
+	addVertex(vertices, x, y, z, a, 2, 6);
+	addVertex(vertices, x + 1, y + 1, z + 1, a, 1, 6);
+	addVertex(vertices, x + 1, y, z + 1, a, 3, 6);
 
-	addVertex(vertices, x, y, z, a, 2, 1);
-	addVertex(vertices, x + 1, y + 1, z + 1, a, 1, 1);
-	addVertex(vertices, x + 1, y, z + 1, a, 3, 1);
+	addVertex(vertices, x, y, z, a, 2, 6);
+	addVertex(vertices, x, y + 1, z, a, 0, 6);
+	addVertex(vertices, x + 1, y + 1, z + 1, a, 1, 6);
 
-	addVertex(vertices, x, y, z, a, 2, 1);
-	addVertex(vertices, x + 1, y + 1, z + 1, a, 1, 1);
-	addVertex(vertices, x, y + 1, z, a, 0, 1);
+	// (1, 0) to (0, 1)
+	addVertex(vertices, x + 1, y, z, a, 2, 9);
+	addVertex(vertices, x, y + 1, z + 1, a, 1, 9);
+	addVertex(vertices, x, y, z + 1, a, 3, 9);
 
-	addVertex(vertices, x + 1, y, z, a, 2, 1);
-	addVertex(vertices, x, y + 1, z + 1, a, 1, 1);
-	addVertex(vertices, x, y, z + 1, a, 3, 1);
-
-	addVertex(vertices, x + 1, y, z, a, 2, 1);
-	addVertex(vertices, x, y + 1, z + 1, a, 1, 1);
-	addVertex(vertices, x + 1, y + 1, z, a, 0, 1);
+	addVertex(vertices, x + 1, y, z, a, 2, 9);
+	addVertex(vertices, x + 1, y + 1, z, a, 0, 9);
+	addVertex(vertices, x, y + 1, z + 1, a, 1, 9);
 }
 
 bool ChunkSystem::isInBounds(size_t x, size_t y, size_t z)

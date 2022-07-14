@@ -8,6 +8,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <imgui.h>
 
 GameScene::GameScene(Engine& engine)
     : Scene(engine, 100)

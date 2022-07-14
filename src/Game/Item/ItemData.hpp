@@ -48,7 +48,6 @@ public:
 
 	void set(ItemType type, Entry&& entry);
 
-
 public:
 	std::vector<Entry> items;
 
@@ -58,6 +57,7 @@ public:
 	{
 		Vec3 pos;
 		Vec3 color;
+		Vec3 normal;
 	};
 	std::unordered_map<ItemType, VoxelizedItemModel> voxelizedItemModels;
 

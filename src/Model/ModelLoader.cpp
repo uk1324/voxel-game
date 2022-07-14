@@ -3,6 +3,8 @@
 #include <Log/Log.hpp>
 #include <Image/Image32.hpp>
 
+#include <algorithm>
+
 ModelLoader::ModelLoader(std::string_view path)
 	: file(jsonFromFile(path))
 	, directory(std::filesystem::path(path).parent_path())
@@ -56,11 +58,13 @@ void ModelLoader::loadBufferViews()
 {
 	for (const auto& bufferView : file.at("bufferViews").array())
 	{
-		Vbo& buffer = model.buffers.at(bufferView.at("buffer").intNumber());
+		const auto& bufferIndex = bufferView.at("buffer").intNumber();
+		Vbo& buffer = model.buffers.at(bufferIndex);
+		ByteBuffer& data = buffers.at(bufferIndex);
 		size_t byteOffset = bufferView.contains("byteOffset") ? bufferView.at("byteOffset").intNumber() : 0;
 		size_t byteLength = bufferView.at("byteLength").intNumber();
 		auto byteStride = bufferView.contains("byteStride") ? Opt<size_t>(bufferView.at("byteStride").intNumber()) : std::nullopt;
-		bufferViews.push_back(BufferView{ buffer, byteOffset, byteLength, byteStride });
+		bufferViews.push_back(BufferView{ buffer, data, byteOffset, byteLength, byteStride });
 	}
 }
 
@@ -119,6 +123,8 @@ void ModelLoader::loadTextures()
 	}
 }
 
+#include <iostream>
+
 void ModelLoader::loadMeshes()
 {
 	const auto& materials = file.at("materials").array();
@@ -131,19 +137,64 @@ void ModelLoader::loadMeshes()
 		// No default material supported.
 		const auto& material = materials.at(primitives.at("material").intNumber());
 		Texture& texture = model.textures.at(material.at("pbrMetallicRoughness").at("baseColorTexture").at("index").intNumber());
+		
+		const auto positionAccessorIndex = attributes.at("POSITION").intNumber();
 
+		const auto& positionAccessor = file.at("accessors").at(positionAccessorIndex);
+		const auto min = parseVec3(positionAccessor.at("min"));
+		const auto max = parseVec3(positionAccessor.at("max"));
+		model.boundingSphereRadius = std::max(
+			abs(std::min(min.x, std::min(min.y, min.z))),
+			std::max(max.x, std::max(max.y, max.z)));
+
+		// Position always has min max properites defined so I can create some bounding shape for frustrum culling.
+		// TODO Check if the types and sizes are correct.
 		Vao vao;
 		vao.bind();
-		// Position always has min max properites defined so I can create some bounding shape for frustrum culling.
-		loadVaoAttribute(0, attributes.at("POSITION").intNumber());
+		loadVaoAttribute(0, positionAccessorIndex);
 		loadVaoAttribute(1, attributes.at("NORMAL").intNumber());
 		loadVaoAttribute(2, attributes.at("TEXCOORD_0").intNumber());
  		loadVaoAttribute(3, attributes.at("JOINTS_0").intNumber());
 		loadVaoAttribute(4, attributes.at("WEIGHTS_0").intNumber());
+		loadVaoAttribute(4, attributes.at("WEIGHTS_0").intNumber());
+		loadVaoAttribute(5, attributes.at("TANGENT").intNumber());
 
-		const Accessor& indicesAccessor = accessors.at(primitives.at("indices").intNumber());
+		const auto indicesAccessorIndex = primitives.at("indices").intNumber();
+		const Accessor& indicesAccessor = accessors.at(indicesAccessorIndex);
 		const BufferView& indicesBufferView = indicesAccessor.bufferView;
 
+		//const auto normals = createBuffer<Vec3>(normalsAccessorIndex);
+		/*
+		Could calculate tangent vectors here for meshes that don't have them.
+		For each triangle with vertices v0, v1, v2 and UVs (u0, v0), (u1, v1), (u2, v2) to compute the tangent.
+		v1 = (u1 - u0) * t + (v1 - v0) * b
+		v2 = (u2 - u0) * t + (v2 - v0) * b
+		where t is the tangnet vector and b is the bitangent.
+		du0 = u1 - u0
+		du1 = u2 - u0
+		dv0 = v1 - v0
+		dv1 = v2 - v0
+
+		du0 * t + dv0 * b - v1 = 0
+		du1 * t + dv1 * b - v2 = 0
+
+		(du0 * t) / dv0 + b - v1 / dv0 = 0 | / dv0
+		(du1 * t) / dv1 + b - v2 / dv1 = 0 | / dv1
+
+		(du0 * t) / dv0 - v1 / dv0 - ((du1 * t) / dv1 - v2 / dv1) = 0
+		(du0 * t) / dv0 - v1 / dv0 - (du1 * t) / dv1 + v2 / dv1 = 0 | * dv0
+		du0 * t - v1 - (du1 * dv0 * t) / dv1 + (v2 * dv0) / dv1 = 0 | * dv1
+		du0 * dv1 * t - dv1 * v1 - du1 * dv0 * t + v2 * dv0 = 0
+		(du0 * dv1 - du1 * dv0) * t = dv1 * v1 - v2 * dv0
+		t = (dv1 * v1 - v2 * dv0) / (du0 * dv1 - du1 * dv0)
+		The geometric interpretation is that
+		[du0 dv0][-t-] = [-v0-]
+		[du1 dv1][-b-]   [-v1-]
+
+                                -1
+		[-t-] = [-v0-][du0 dv0]
+		[-b-] = [-v1-][du1 dv1]
+		*/
 		model.meshes.push_back(Model::Mesh{
 			std::move(vao),
 			texture,

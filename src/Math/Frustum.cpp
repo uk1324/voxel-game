@@ -58,7 +58,6 @@ bool Frustum::intersects(const Aabb& aabb) const
 			|| !plane.isOnFrontSide(aabb.min + Vec3(size.x, 0, size.z))
 			|| !plane.isOnFrontSide(aabb.min + Vec3(size.x, size.y, 0));
 	};
-	
 
 	return anyPointsInside(m_front)
 		&& anyPointsInside(m_back)
@@ -66,4 +65,28 @@ bool Frustum::intersects(const Aabb& aabb) const
 		&& anyPointsInside(m_top)
 		&& anyPointsInside(m_left)
 		&& anyPointsInside(m_right);
+}
+
+bool Frustum::intersects(const Sphere& sphere) const
+{
+	//return intersects(Aabb(sphere.center - Vec3(sphere.radius), sphere.center + Vec3(sphere.radius)));
+
+	return (m_front.signedDistance(sphere.center) < sphere.radius)
+		&& (m_back.signedDistance(sphere.center) < sphere.radius)
+		&& (m_bottom.signedDistance(sphere.center) < sphere.radius)
+		&& (m_top.signedDistance(sphere.center) < sphere.radius)
+		&& (m_left.signedDistance(sphere.center) < sphere.radius)
+		&& (m_right.signedDistance(sphere.center) < sphere.radius);
+
+	// This one also works
+	/*const auto distanceFront = m_front.signedDistance(sphere.center);
+	const auto distanceBack = m_back.signedDistance(sphere.center);
+	const auto distanceBottom = m_bottom.signedDistance(sphere.center);
+	const auto distanceTop = m_top.signedDistance(sphere.center);
+	const auto distanceLeft = m_left.signedDistance(sphere.center);
+	const auto distanceRight = m_right.signedDistance(sphere.center);
+
+	return (distanceLeft < 0 && distanceRight < 0) || abs(distanceLeft) <= sphere.radius || abs(distanceRight) <= sphere.radius
+		&& (distanceBack < 0 && distanceFront < 0) || abs(distanceFront) <= sphere.radius || abs(distanceBack) <= sphere.radius
+		&& (distanceTop < 0 && distanceBottom < 0) || abs(distanceTop) <= sphere.radius || abs(distanceBottom) <= sphere.radius;*/
 }

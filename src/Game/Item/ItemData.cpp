@@ -3,6 +3,8 @@
 
 #include <unordered_map>
 
+#include <iostream>
+
 ItemData::ItemData()
 	: textureArray(TextureArray::null())
 {
@@ -63,9 +65,9 @@ ItemData::ItemData()
 	voxelizedItemModelsVao.bind();
 	voxelizedItemModelsVbo = Vbo(voxelizedItemsVertices.data(), voxelizedItemsVertices.size() * sizeof(VoxelizedItemModelVertex));
 	voxelizedItemModelsVbo.bind();
-	Vao::setAttribute(0, ShaderDataType::Float, 3, false, sizeof(VoxelizedItemModelVertex), 0);
-	Vao::setAttribute(1, ShaderDataType::Float, 3, false, sizeof(VoxelizedItemModelVertex), sizeof(VoxelizedItemModelVertex::pos));
-	
+	Vao::setAttribute(0, ShaderDataType::Float, 3, false, sizeof(VoxelizedItemModelVertex), offsetof(VoxelizedItemModelVertex, pos));
+	Vao::setAttribute(1, ShaderDataType::Float, 3, false, sizeof(VoxelizedItemModelVertex), offsetof(VoxelizedItemModelVertex, color));
+	Vao::setAttribute(2, ShaderDataType::Float, 3, false, sizeof(VoxelizedItemModelVertex), offsetof(VoxelizedItemModelVertex, normal));
 	textureArray = TextureArray(16, 16, std::vector<std::string_view>(texturesNames.begin(), texturesNames.end()));
 }
 
@@ -108,81 +110,87 @@ ItemData::VoxelizedItemModel ItemData::generateVoxelizedItemModel(std::vector<Vo
 
 			const Vec3 color(color32.r / 255.0f, color32.g / 255.0f, color32.b / 255.0f);
 
-			auto add = [&vertices, &color, &image](float x, float y, float z) -> void
+			auto add = [&vertices, &color, &image](float x, float y, float z, const Vec3& normal) -> void
 			{
 				Vec3 pos(x - image.width() / 2.0f, y - image.height() / 2.0f, z);
 				pos.x /= image.width();
 				pos.y /= image.width();
 				pos.z /= 16.0f;
 
-				vertices.push_back(VoxelizedItemModelVertex{ pos, color });
+				vertices.push_back(VoxelizedItemModelVertex{ pos, color, normal });
 			};
 
 			// Could just compute the offsets.
 			auto addFront = [&add](float x, float y) -> void
 			{
-				add(x, y, 0.5f);
-				add(x + 1.0f, y + 1.0f, 0.5f);
-				add(x + 1.0f, y, 0.5f);
+				const auto& n = Vec3::forward;
+				add(x, y, 0.5f, n);
+				add(x + 1.0f, y + 1.0f, 0.5f, n);
+				add(x + 1.0f, y, 0.5f, n);
 
-				add(x, y, 0.5f);
-				add(x, y + 1.0f, 0.5f);
-				add(x + 1.0f, y + 1.0f, 0.5f);
+				add(x, y, 0.5f, n);
+				add(x, y + 1.0f, 0.5f, n);
+				add(x + 1.0f, y + 1.0f, 0.5f, n);
 			};
 
 			auto addBack = [&add](float x, float y) -> void
 			{
-				add(x, y, -0.5f);
-				add(x + 1.0f, y, -0.5f);
-				add(x + 1.0f, y + 1.0f, -0.5f);
+				const auto& n = Vec3::back;
+				add(x, y, -0.5f, n);
+				add(x + 1.0f, y, -0.5f, n);
+				add(x + 1.0f, y + 1.0f, -0.5f, n);
 
-				add(x, y, -0.5f);
-				add(x + 1.0f, y + 1.0f, -0.5f);
-				add(x, y + 1.0f, -0.5f);
+				add(x, y, -0.5f, n);
+				add(x + 1.0f, y + 1.0f, -0.5f, n);
+				add(x, y + 1.0f, -0.5f, n);
 			};
 
 			auto addLeft = [&add](float x, float y) -> void
 			{
-				add(x, y, -0.5f);
-				add(x, y + 1.0f, 0.5f);
-				add(x, y, 0.5f);
+				const auto& n = Vec3::left;
+				add(x, y, -0.5f, n);
+				add(x, y + 1.0f, 0.5f, n);
+				add(x, y, 0.5f, n);
 
-				add(x, y, -0.5f);
-				add(x, y + 1.0f, -0.5f);
-				add(x, y + 1.0f, 0.5f);
+				add(x, y, -0.5f, n);
+				add(x, y + 1.0f, -0.5f, n);
+				add(x, y + 1.0f, 0.5f, n);
 			};
 
 			auto addRight = [&add](float x, float y) -> void
 			{
-				add(x + 1.0f, y, -0.5f);
-				add(x + 1.0f, y, 0.5f);
-				add(x + 1.0f, y + 1.0f, 0.5f);
+				const auto& n = Vec3::right;
+				add(x + 1.0f, y, -0.5f, n);
+				add(x + 1.0f, y, 0.5f, n);
+				add(x + 1.0f, y + 1.0f, 0.5f, n);
 
-				add(x + 1.0f, y, -0.5f);
-				add(x + 1.0f, y + 1.0f, 0.5f);
-				add(x + 1.0f, y + 1.0f, -0.5f);
+				add(x + 1.0f, y, -0.5f, n);
+				add(x + 1.0f, y + 1.0f, 0.5f, n);
+				add(x + 1.0f, y + 1.0f, -0.5f, n);
 			};
 
 			auto addBottom = [&add](float x, float y) -> void
 			{
-				add(x, y, -0.5f);
-				add(x, y, 0.5f);
-				add(x + 1.0f, y, 0.5f);
+				const auto& n = Vec3::down;
+				add(x, y, -0.5f, n);
+				add(x, y, 0.5f, n);
+				add(x + 1.0f, y, 0.5f, n);
 
-				add(x, y, -0.5f);
-				add(x + 1.0f, y, 0.5f);
-				add(x + 1.0f, y, -0.5f);
+				add(x, y, -0.5f, n);
+				add(x + 1.0f, y, 0.5f, n);
+				add(x + 1.0f, y, -0.5f, n);
 			};
 
 			auto addTop = [&add](float x, float y) -> void
 			{
-				add(x, y + 1.0f, -0.5f);
-				add(x + 1.0f, y + 1.0f, 0.5f);
-				add(x, y + 1.0f, 0.5f);
+				const auto& n = Vec3::up;
+				add(x, y + 1.0f, -0.5f, n);
+				add(x + 1.0f, y + 1.0f, 0.5f, n);
+				add(x, y + 1.0f, 0.5f, n);
 
-				add(x, y + 1.0f, -0.5f);
-				add(x + 1.0f, y + 1.0f, -0.5f);
-				add(x + 1.0f, y + 1.0f, 0.5f);
+				add(x, y + 1.0f, -0.5f, n);
+				add(x + 1.0f, y + 1.0f, -0.5f, n);
+				add(x + 1.0f, y + 1.0f, 0.5f, n);
 			};
 
 			addFront(x, y);

@@ -31,8 +31,14 @@ public:
 	const Model& model;
 	AnimatedModelState state;
 	AnimatedModelPlayType playType;
+
+	// There is no reason to store those inside each animator. There could be array of transforms in the renderer that would be reused
+	// across entites.
 	std::vector<Mat4> nodeTransforms;
 
+	// Not sure what is a better way to do this. How to handle cases when blending of an animation is interrupted and then that blending
+	// is also interrupted and so on. Could finish the interpolating to one animation and only then start the new one, but that would probably
+	// look weird.
 	Model::KeyFrame keyframeBeforeTransition;
 	float transitionTime;
 };

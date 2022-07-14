@@ -100,6 +100,7 @@ void ShaderProgram::setUnsignedInt(std::string_view name, uint32_t value)
 	glProgramUniform1ui(m_handle, getUniformLocation(name.data()), value);
 }
 
+// TODO make a utility function that takes the actual texture and an index and call glActiveTexture.
 void ShaderProgram::setTexture(std::string_view name, int value)
 {
 	setInt(name, value);
