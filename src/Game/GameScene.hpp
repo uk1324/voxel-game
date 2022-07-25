@@ -10,6 +10,7 @@
 #include <Engine/Graphics/TextureArray.hpp>
 #include <Game/Inventory/InventorySystem.hpp>
 #include <Game/Rendering/RenderingSystem.hpp>
+#include <Game/Console/Console.hpp>
 #include <Game/EntitySystem.hpp>
 
 class GameScene : public Scene
@@ -42,4 +43,5 @@ private:
 	PhysicsSystem m_physicsSystem;
 	BlockSystem m_blockSystem;
 	EntitySystem m_entitySystem;
+	Console m_console;
 };

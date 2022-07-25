@@ -53,18 +53,23 @@ void GameScene::update()
 
     Debug::update(input);
 
-    if (input.isButtonDown("exit"))
+    if (input.isButtonDown("exit") && (ImGui::GetIO().WantCaptureKeyboard == false))
     {
         engine.stop();
     }
 
     if (input.isButtonDown("pause"))
     {
-        if (m_isGamePaused)
-            engine.window().hideCursor();
+        if (m_inventorySystem.isInventoryOpen)
+            m_inventorySystem.isInventoryOpen = false;
         else
-            engine.window().showCursor();
-        m_isGamePaused = !m_isGamePaused;
+        {
+            if (m_isGamePaused)
+                engine.window().hideCursor();
+            else
+                engine.window().showCursor();
+            m_isGamePaused = !m_isGamePaused;
+        }
     }
 
     const Vec3 playerPos = entityManager.getComponent<Position>(m_player).value;
@@ -79,26 +84,30 @@ void GameScene::update()
     );
     m_inventorySystem.render(m_inventory, itemData, m_blockSystem.blockData, Vec2(windowSize));
 
-    m_blockSystem.chunkSystem.m_worldGen.updateDebugConfig();
-
-    if (input.isButtonDown("testtest") || time.currentTick() == 1)
+    m_console.update();
+    Debug::shouldDisplayDeveloperConsole = true;
+    if (Debug::shouldDisplayDeveloperConsole && m_isGamePaused)
     {
-        m_entitySystem.spawnZombie(playerPos, entityManager);
-        /*m_blockSystem.chunkSystem.regenerateAll();
-        std::cout << "playerPos: " << playerPos << '\n';*/
+        m_console.draw();
     }
+
+    m_blockSystem.chunkSystem.m_worldGen.updateDebugConfig();
 
     m_blockSystem.chunkSystem.update(entityManager.getComponent<Position>(m_player).value);
 
-    Opt<ItemStack> droppedItem = m_inventorySystem.update(m_inventory, engine.window(), input, itemData);
 
-    if (m_inventorySystem.isInventoryOpen == false)
+    if ((m_isGamePaused == false) && (m_inventorySystem.isInventoryOpen == false))
     {
-        if (m_isGamePaused == false)
+        m_playerMovementSystem.update(m_player, input, time, entityManager);
+        m_playerInteractionSystem.update(m_player, itemData, m_inventorySystem.heldItem(m_inventory), input, entityManager, m_blockSystem, m_inventory);
+        if (input.isButtonDown("testtest") || time.currentTick() == 1)
         {
-            m_playerMovementSystem.update(m_player, input, time, entityManager);
-            m_playerInteractionSystem.update(m_player, itemData, m_inventorySystem.heldItem(m_inventory), input, entityManager, m_blockSystem, m_inventory);
+            m_entitySystem.spawnZombie(playerPos, entityManager);
         }
+    }
+    if (m_isGamePaused == false)
+    {
+        Opt<ItemStack> droppedItem = m_inventorySystem.update(m_inventory, engine.window(), input, itemData);
     }
 
     m_entitySystem.update(entityManager, input, m_blockSystem);

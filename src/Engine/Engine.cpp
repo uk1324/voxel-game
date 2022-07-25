@@ -67,11 +67,18 @@ void Engine::stop()
 void Engine::changeScene(std::unique_ptr<Scene> scene)
 {
 	m_currentScene = std::move(scene);
-	// TODO: Fix this. Don't know why but I need to reregister the callbacks here even though they are registed in the constructor.
-	glfwSetKeyCallback(m_window.handle(), InputManager::keyboardCallback);
-	glfwSetCursorPosCallback(m_window.handle(), InputManager::mouseMoveCallback);
-	glfwSetMouseButtonCallback(m_window.handle(), InputManager::mouseButtonCallback);
-	glfwSetScrollCallback(m_window.handle(), InputManager::mouseScrollCallback);
+	//// TODO: Fix this. Don't know why but I need to reregister the callbacks here even though they are registed in the constructor.
+	//glfwSetKeyCallback(m_window.handle(), InputManager::keyboardCallback);
+	//glfwSetCursorPosCallback(m_window.handle(), InputManager::mouseMoveCallback);
+	//glfwSetMouseButtonCallback(m_window.handle(), InputManager::mouseButtonCallback);
+	//glfwSetScrollCallback(m_window.handle(), InputManager::mouseScrollCallback);
+
+	// If enter and backspace inputs are not working it is probably caused by calling ImGui_ImplGlfw_InitForOpenGL before
+	// registering my own callbacks.
+	// If I wanted to change the callbacks multiple times then I would need to write my own function becuase
+	// this function has an assert and can only be called once.
+	// Each scene has it's own input so this function has to be called here.
+	ImGui_ImplGlfw_InitForOpenGL(m_window.handle(), true);
 }
 
 Window Engine::init(int windowWidth, int windowHeight, std::string_view windowTitle)
@@ -142,7 +149,7 @@ void Engine::initImGui(Window& window)
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui::StyleColorsDark();
-	ImGui_ImplGlfw_InitForOpenGL(window.handle(), true);
+	//ImGui_ImplGlfw_InitForOpenGL(window.handle(), true);
 	ImGui_ImplOpenGL3_Init("#version 430");
 }
 

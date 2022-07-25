@@ -1,5 +1,6 @@
 #include <Engine/Input/InputManager.hpp>
 #include <Utils/Assertions.hpp>
+#include <imgui.h>
 
 InputManager* InputManager::self = nullptr;
 
@@ -85,7 +86,9 @@ float InputManager::scrollOffset() const
 
 void InputManager::keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	auto button = InputManager::self->m_keyToAction.find(static_cast<KeyCode>(key));
+	auto keycode = static_cast<KeyCode>(key);
+	auto button = InputManager::self->m_keyToAction.find(keycode);
+
 	if (button != InputManager::self->m_keyToAction.end())
 	{
 		if (action == GLFW_PRESS)

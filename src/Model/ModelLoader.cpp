@@ -191,9 +191,9 @@ void ModelLoader::loadMeshes()
 		[du0 dv0][-t-] = [-v0-]
 		[du1 dv1][-b-]   [-v1-]
 
-                                -1
-		[-t-] = [-v0-][du0 dv0]
-		[-b-] = [-v1-][du1 dv1]
+                         -1
+		[-t-] = [du0 dv0]  [-v0-]
+		[-b-] = [du1 dv1]  [-v1-]
 		*/
 		model.meshes.push_back(Model::Mesh{
 			std::move(vao),

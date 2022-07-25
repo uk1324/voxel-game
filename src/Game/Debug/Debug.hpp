@@ -15,6 +15,7 @@ public:
 	static bool shouldShowChunkBorders;
 	static bool shouldShowHitboxes;
 	static bool shouldDisplayRendererSettings;
+	static bool shouldDisplayDeveloperConsole;
 
 private:
 	static RenderingSystem* s_renderingSystem;

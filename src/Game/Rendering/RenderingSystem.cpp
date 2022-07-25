@@ -243,6 +243,9 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	glReadBuffer(GL_NONE);
 }
 
+// Sometimes when the rendering happens the framebuffer is still incomplete.
+// This is probably caused by this function not being called. 
+// TODO: To fix this call this function with some screen size like 1x1 in the constructor.
 void RenderingSystem::onScreenResize()
 {
 	// When outputting from a fragment shader the texture format doesn't matter. Every output has to be a vec4.

@@ -8,6 +8,8 @@ enum class KeyCode
 	LeftControl = GLFW_KEY_LEFT_CONTROL,
 	Escape = GLFW_KEY_ESCAPE,
 	LeftShift = GLFW_KEY_LEFT_SHIFT,
+	Enter = GLFW_KEY_ENTER,
+	Backspace = GLFW_KEY_BACKSPACE,
 	Alpha0 = GLFW_KEY_0,
 	Alpha1 = GLFW_KEY_1,
 	Alpha2 = GLFW_KEY_2,

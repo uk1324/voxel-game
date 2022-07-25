@@ -108,7 +108,7 @@ Opt<ItemStack> InventorySystem::update(Inventory& inventory, Window& window, con
 	if (input.isButtonDown("hotbar8")) m_selectedHotbarSlot = 8;
 
 	int selectedHotbarSlot = static_cast<int>(m_selectedHotbarSlot) - input.scrollOffset();
-	if (m_selectedHotbarSlot < 0)
+	if (selectedHotbarSlot < 0)
 		m_selectedHotbarSlot = static_cast<size_t>(selectedHotbarSlot) + static_cast<size_t>(m_hotbarBox.elementCount.x);
 	else
 		m_selectedHotbarSlot = selectedHotbarSlot;

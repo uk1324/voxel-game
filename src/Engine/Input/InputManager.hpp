@@ -20,6 +20,7 @@ public:
 	void registerKeyboardButton(std::string name, KeyCode key);
 	void registerMouseButton(std::string name, MouseButton button);
 
+	// Also add functions for checking actual keyboard buttons. This is useful for debugging.
 	bool isButtonDown(const std::string name) const;
 	bool isButtonUp(const std::string name) const;
 	bool isButtonHeld(const std::string name) const;

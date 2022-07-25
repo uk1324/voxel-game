@@ -15,6 +15,6 @@ int main()
 		Window window = Engine::init(800, 600, "game");
 		Engine engine(60, window);
 		engine.run(std::make_unique<GameScene>(engine));
- 	}
+ 	} // Engine gets destroyed before systems are terminated.
 	Engine::terminate();
 }
