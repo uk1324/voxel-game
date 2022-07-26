@@ -134,20 +134,6 @@ void WorldGen::updateDebugConfig()
 // Iteration order x z y or z x y
 void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos) const
 {
-	auto structures = getStructures(chunkPos);
-
-	structures.erase(
-		std::remove_if(structures.begin(), structures.end(), [this, chunkPos](const Structure& structure) {
-			return (structure.pos.x + structure.data->size.x < chunkPos.x * Chunk::SIZE_X)
-				|| (structure.pos.x > chunkPos.x * Chunk::SIZE_X + Chunk::SIZE_X)
-				|| (structure.pos.y + structure.data->size.y < chunkPos.y * Chunk::SIZE_Y)
-				|| (structure.pos.y > chunkPos.y * Chunk::SIZE_Y + Chunk::SIZE_Y)
-				|| (structure.pos.z + structure.data->size.z < chunkPos.z * Chunk::SIZE_Z)
-				|| (structure.pos.z > chunkPos.z * Chunk::SIZE_Z + Chunk::SIZE_Z);
-		}),
-		structures.end()
-	);
-
 	for (int32_t z = 0; z < Chunk::SIZE_Z; z++)
 	{
 		for (int32_t x = 0; x < Chunk::SIZE_X; x++)
@@ -161,6 +147,21 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos) const
 			{
 				const Vec3I posInChunk(x, y, z);
 				const Vec3 pos(Vec3(posInChunk) + Vec3(chunkPos) * Chunk::SIZE_V - Vec3(0, heightOffset, 0));
+
+				// Only water
+				/*if (pos.y == 0)
+				{
+					chunk.set(posInChunk, BlockType::Grass);
+				}
+				else if (pos.y == 1)
+				{
+					chunk.set(posInChunk, BlockType::Water);
+				}
+				else
+				{
+					chunk.set(posInChunk, BlockType::Air);
+				}
+				continue;*/
 
 				//if (pos.y == -5)
 				//{
@@ -204,13 +205,37 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos) const
 				}
 				else
 				{
-					chunk.set(posInChunk, BlockType::Air);
+					if (y < maxHeight() / 2)
+					{
+						chunk.set(posInChunk, BlockType::Water);
+					}
+					else
+					{
+						chunk.set(posInChunk, BlockType::Air);
+					}
 				}
 				nextTerrainNoise = n;
 			}
 		}
 	}
 
+	// @Performance
+	// Make a cache so that previously generated values can be reused. I the value hasn't been generated yet.
+	// Store some invalid value like NaN or infinity.
+	// This array could be passed into the structure generation code to make it faster.
+
+	auto structures = getStructures(chunkPos);
+	structures.erase(
+		std::remove_if(structures.begin(), structures.end(), [this, chunkPos](const Structure& structure) {
+			return (structure.pos.x + structure.data->size.x < chunkPos.x * Chunk::SIZE_X)
+				|| (structure.pos.x > chunkPos.x * Chunk::SIZE_X + Chunk::SIZE_X)
+				|| (structure.pos.y + structure.data->size.y < chunkPos.y * Chunk::SIZE_Y)
+				|| (structure.pos.y > chunkPos.y * Chunk::SIZE_Y + Chunk::SIZE_Y)
+				|| (structure.pos.z + structure.data->size.z < chunkPos.z * Chunk::SIZE_Z)
+				|| (structure.pos.z > chunkPos.z * Chunk::SIZE_Z + Chunk::SIZE_Z);
+		}),
+		structures.end()
+	);
 	for (const auto& structure : structures)
 	{
 		const auto posInChunk = structure.pos - chunkPos * Chunk::SIZE_INT;

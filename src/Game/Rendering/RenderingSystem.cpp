@@ -340,6 +340,7 @@ void RenderingSystem::update(
 		glActiveTexture(GL_TEXTURE3);
 		m_depthTexture.bind();
 		m_defferedPassShader.setTexture("geometryDepth", 3);
+		m_defferedPassShader.setFloat("time", Time::currentTime());
 		for (size_t i = 0; i < m_shadowMapTextures.size(); i++)
 		{
 			constexpr size_t START = 4;

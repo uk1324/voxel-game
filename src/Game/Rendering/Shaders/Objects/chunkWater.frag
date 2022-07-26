@@ -126,45 +126,50 @@ float noise( in vec2 p )
     return dot( n, vec3(70.0) );
 }
 
+float norm(float n) 
+{
+	return (n + 1) / 2;
+}
+
+float waterNoise(vec3 fragPosWorld)
+{
+    vec2 pos = fragPosWorld.xz + (time * 0.5);
+    vec2 lineNormal1 = normalize(vec2(-1, -1));
+    vec2 lineNormal2 = normalize(vec2(1, -1));
+	float signedDistanceFromLine2 = dot(pos, lineNormal2);
+	vec2 waveOffset = vec2(norm(fbm(signedDistanceFromLine2 * 0.2, 6, 0.5)));
+	float waveOffsetScale = clamp(norm(perlinNoise1D(time * 0.3)) + 0.2, 0.0, 1.2);
+    return norm(perlinNoise1D(dot(pos + waveOffset * waveOffsetScale, lineNormal1)));
+}
 
 void main()
 {
 	vec3 directionalLightDir = normalize(vec3(-0.5, -1, -0.5));
 
-	vec3 normal = normalize(vec3(sin(texturePos.x), 1, 1));
+	vec3 pos1 = fragPosWorld;
+	vec3 pos2 = fragPosWorld + vec3(2.5, 0, 2.5);
+	float n1 = waterNoise(pos1);
+	float n2 = waterNoise(pos2);
+	pos1.y += n1;
+	pos2.y += n2;
 
-	float ambient = 0.3;
-	float diffuse = clamp(dot(normal, -directionalLightDir), 0, 1);
+	vec3 line = normalize(pos1 - pos2);
+
+	vec3 nor = normalize(fragNormal - dot(line, fragNormal) * line);
+
+	vec3 waterColor = vec3(0, 0.7, 1);
+	float waterAlpha = 0.8;
+
+	outColor = vec4(n1 * vec3(0, 0.7, 1), 0.8);
+
 	vec3 viewDir = normalize(viewPos - fragPosWorld);
-	vec3 reflectionDir = reflect(-directionalLightDir, normal);
-    float specular = clamp(pow(dot(reflectionDir, viewDir), 100), 0, 1);
-	// 
-	vec3 color = texture(blockTextureArray, vec3(texturePos, textureIndex)).rgb;
-	// color *= ambient + (diffuse * specular);
-	//color *= specular;
-	// float axis = (fbm(time + fragPosWorld.x, 6, 0.1) + 1) / 2;
-	vec3 pos = fragPosWorld + vec3(time);
-	float d = sqrt(pos.x * pos.x + pos.z * pos.z);
-	float n = noise(vec2(pos.x, pos.z));
-	//float axis = (noise((vec2(d, -1/d)) * 0.5) + 1);
-	float axis = (noise((vec2(d, -1/d)) * n) + 1);
+	vec3 reflectionDir = reflect(directionalLightDir, nor);
+    float specular = clamp(pow(dot(reflectionDir, viewDir), 10), 0, 1);
 
+	// 1D noise going in the direction perpendicular to the waves.
+	float na = norm(perlinNoise1D(dot(normalize(vec2(-1, 1)), fragPosWorld.xz) + time * 2));
 
-	outColor = vec4(vec3(axis) * vec3(0, 0, 1), 0.6);
-
-	// Check this again later.
-	// float axis = (noise((vec2(d, -1/d) + vec2(time)) * 0.5) + 1);
-//	if (texturePos.y > axis)
-//	{
-//		outColor = vec4(1);
-//	}
-//	else
-//	{
-//		outColor = vec4(vec3(0), 1);
-//	}
-
-	// outColor = vec4(0, 0, 0.8, 0.6);
-	// outColor = vec4(color.rgb, 0.6);
-	// outColor = vec4(normal, 1);
-	// outColor = vec4(viewDir, 1);
+	outColor = vec4(0.2 * waterColor * (norm(n1) + 0.2 + na * 0.5) + vec3(0.7) * specular, waterAlpha);
+//	outColor = vec4(0.6 * vec3(1) * (norm(n1) + 0.2 + na * 0.5), 1);
+	//outColor = vec4(vec3(norm(perlinNoise1D(dot(normalize(vec2(1, -1)), fragPosWorld.xz)))), 1);
 }
