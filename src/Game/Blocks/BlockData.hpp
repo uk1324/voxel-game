@@ -25,7 +25,6 @@ public:
 				uint32_t frontTextureIndex;
 				uint32_t backTextureIndex;
 			};
-			// isDecoration
 			uint32_t textureIndex;
 		};
 		float friction;

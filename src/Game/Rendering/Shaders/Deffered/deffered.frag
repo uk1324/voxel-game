@@ -99,8 +99,6 @@ void main()
     float ambient = 0.3;
     float diffuse = clamp(dot(normal, -directionalLightDir), 0, 1);
     float specular = clamp(pow(dot(reflect(-directionalLightDir, normal), normal), 1), 0, 1);
-    const float constantFactor = 1;
-    color *= constantFactor;
     color *= ambient + ((1 - shadow) * diffuse);
     outColor = vec4(color, 1);
     gl_FragDepth = depth;

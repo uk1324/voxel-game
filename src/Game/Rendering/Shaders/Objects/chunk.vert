@@ -47,7 +47,7 @@ uniform mat4 camera;
 out flat uint textureIndex;
 out vec2 texturePos;
 out vec3 fragNormal;
-out vec4 fragPosWorld;
+out vec3 fragPosWorld;
 
 void main()
 {
@@ -63,6 +63,6 @@ void main()
 	// This doesn't change the normal's rotation based on the model matrix.
 	// It might be better to just pass the chunks position then it won't be necessary.
 	fragNormal = normals[normalIndex];
-	fragPosWorld = (model * vec4(vertPos, 1));
+	fragPosWorld = (model * vec4(vertPos, 1)).xyz;
 	gl_Position = projection * camera * model * vec4(vertPos, 1.0);
 }

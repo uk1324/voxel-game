@@ -18,6 +18,7 @@ Inventory::Inventory(size_t size)
 			item = ItemStack(static_cast<ItemType>(rand() % (static_cast<size_t>(ItemType::Count) - 1)), rand() % 11 + 1);
 		}
 	}
+	m_data[0] = ItemStack(ItemType::Water, 64);
 }
 
 Opt<ItemStack> Inventory::tryAdd(const ItemData& itemData, const ItemStack& itemStack)

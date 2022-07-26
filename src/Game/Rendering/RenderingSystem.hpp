@@ -94,11 +94,13 @@ private:
 	Texture m_depthTexture, m_positionTexture, m_normalTexture, m_albedoTexture;
 
 	ShaderProgram m_chunkShader;
+	ShaderProgram m_chunkWaterShader;
 	ShaderProgram m_itemBlockShader;
 	ShaderProgram m_itemModelShader;
 	ShaderProgram m_modelShader;
 
 	Fbo m_shadowMapFbo;
+	// Make shadowMapTextures store depth and color so stained glass casts colored shadows.
 	std::vector<Texture> m_shadowMapTextures;
 	std::vector<float> m_cascadeZ;
 
@@ -150,12 +152,12 @@ private:
 
 	int m_selectedDefferedDrawItem;
 	bool m_enableShadowMapPass;
-	size_t m_totalChunksToDraw;
-	size_t m_chunksDrawn;
-	size_t m_totalBlockItemsToDraw;
-	size_t m_blockItemsDrawn;
-	size_t m_totalVoxelizedTextureItemsToDraw;
-	size_t m_voxelizedTextureItemsDrawn;
-	size_t m_totalMeshesToDraw;
-	size_t m_meshesDrawn;
+	size_t m_totalChunksToDraw = 0;
+	size_t m_chunksDrawn = 0;
+	size_t m_totalBlockItemsToDraw = 0;
+	size_t m_blockItemsDrawn = 0;
+	size_t m_totalVoxelizedTextureItemsToDraw = 0;
+	size_t m_voxelizedTextureItemsDrawn = 0;
+	size_t m_totalMeshesToDraw = 0;
+	size_t m_meshesDrawn = 0;
 };

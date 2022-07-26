@@ -22,6 +22,8 @@ void PlayerInteractionSystem::update(
 	const Vec3& playerPos = entites.getComponent<Position>(player).value;
 	const Quat& playerRot = entites.getComponent<Rotation>(player).value;
 	const Vec3 playerDir = playerRot * Vec3::forward;
+	const auto& collider = entites.getComponent<PhysicsAabbCollider>(player);
+	const auto& colliderPos = playerPos + collider.centerOffset;
 
 	const Vec3 rayEnd = playerPos + (playerDir * playerReachDistance);
 
@@ -56,12 +58,20 @@ void PlayerInteractionSystem::update(
 	else if (input.isButtonDown("use"))
 	{
 		if (voxelRaycastHit.has_value()
-			&& ((entityRaycastHit.has_value() == false) || (voxelRaycastHit->time < entityRaycastHit->time)))
+			&& ((entityRaycastHit.has_value() == false) || (voxelRaycastHit->time < entityRaycastHit->time))
+			&& heldItem.has_value()
+			&& itemData[heldItem->item].isBlock
+			&& voxelRaycastHit->entryNormal.has_value())
 		{
-			if (heldItem.has_value() && itemData[heldItem->item].isBlock && voxelRaycastHit->entryNormal.has_value())
+			// TODO this test has to be applied to all entites with a collider not just the player.
+			const auto playerAabb = Aabb(colliderPos - collider.halfSize, colliderPos + collider.halfSize);
+			const auto blockPos = voxelRaycastHit->blockPos + *voxelRaycastHit->entryNormal;
+			const auto blockAAbb = Aabb(Vec3(blockPos), Vec3(blockPos) + Vec3(1));
+
+			if (playerAabb.intersects(blockAAbb) == false )
 			{
-				blockSystem.trySet(
-					voxelRaycastHit->blockPos + voxelRaycastHit->entryNormal.value(),
+				blockSystem.trySet( 
+					blockPos,
 					itemData[heldItem->item].blockType
 				);
 
@@ -69,11 +79,10 @@ void PlayerInteractionSystem::update(
 				if (heldItem->count == 0)
 					heldItem = std::nullopt;
 			}
-		}
+		}  
 	}
 
-	const auto& collider = entites.getComponent<PhysicsAabbCollider>(player);
-	auto pickupAabb = Aabb(playerPos - collider.halfSize - Vec3(1, 0.5, 1), playerPos + collider.halfSize + Vec3(1, 0.5, 1));
+	auto pickupAabb = Aabb(colliderPos - collider.halfSize - Vec3(1, 0.5, 1), colliderPos + collider.halfSize + Vec3(1, 0.5, 1));
 	for (auto& [itemEntity, itemComponent] : entites.getComponents<ItemComponent>())
 	{
 		const Vec3& pos = entites.getComponent<Position>(itemEntity).value;
@@ -107,6 +116,8 @@ void PlayerInteractionSystem::update(
 
 	if (voxelRaycastHit.has_value())
 	{
-		Debug::drawCube(Vec3(voxelRaycastHit->blockPos) + Vec3(Block::SIZE / 2.0f), Vec3(1), Vec3(1, 1, 1));
+		const auto block = blockSystem.tryGet(voxelRaycastHit->blockPos);
+		if (!(block.has_value() && (block->type == BlockType::Water)))
+			Debug::drawCube(Vec3(voxelRaycastHit->blockPos) + Vec3(Block::SIZE / 2.0f), Vec3(1), Vec3(1, 1, 1));
 	}
 }

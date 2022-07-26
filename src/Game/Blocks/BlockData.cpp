@@ -57,8 +57,6 @@ BlockData::BlockData()
 	{
 		Entry entry;
 		entry.textureIndex = getTextureIndex(texture);
-		/*entry.friction = friction;
-		entry.walkSpeed = walkSpeed;*/
 		entry.isSolid = false;
 		entry.isDecoration = true;
 		return entry;
@@ -142,7 +140,7 @@ BlockData::BlockData()
 		PATH "water.png",
 		0.85,
 		1,
-		true,
+		false,
 		ItemStack(ItemType::Debug, 1)
 	));
 

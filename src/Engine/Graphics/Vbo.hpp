@@ -12,6 +12,8 @@ public:
 	Vbo(const void* data, size_t dataByteSize);
 	~Vbo();
 
+	static Vbo generate();
+
 	Vbo(const Vbo&) = delete;
 	Vbo& operator= (const Vbo&) = delete;
 
@@ -19,7 +21,8 @@ public:
 	Vbo& operator= (Vbo&& other) noexcept;
 
 	// The VertexBuffer must be bound before calling.
-	void setData(intptr_t offset, const void* data, size_t dataSize);
+	static void setData(intptr_t offset, const void* data, size_t dataByteSize);
+	static void allocateData(const void* data, size_t dataByteSize);
 
 	void bind() const;
 	void bindAsIndexBuffer() const;

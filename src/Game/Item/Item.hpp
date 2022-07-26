@@ -15,6 +15,7 @@ enum class ItemType
 	WoodenPlanks,
 	Cobblestone,
 	Debug,
+	Water,
 	Count
 };
 

@@ -59,6 +59,7 @@ ItemData::ItemData()
 	set(ItemType::WoodenPlanks, blockEntry("Wodden Planks", BlockType::WoodenPlanks, 64));
 	set(ItemType::Cobblestone, blockEntry("Cobblestone", BlockType::Cobblestone, 64));
 	set(ItemType::Debug, blockEntry("Debug", BlockType::Debug, 64));
+	set(ItemType::Water, blockEntry("Water", BlockType::Water, 64));
 
 #undef PATH
 

@@ -18,6 +18,10 @@ struct ChunkData
 	size_t vertexCount;
 	size_t vboByteOffset;
 	Vec3I pos;
+	size_t waterVertexCount;
+	size_t waterVertexCapacity;
+	Vao waterVao;
+	Vbo waterVbo;
 };
 
 namespace std {
@@ -36,6 +40,9 @@ namespace std {
 // I could store the vertices of the chunk in the vector and upload them when a chunk that wasn't loaded gets loaded.
 // I could just remesh every chunk around when a chunk gets loaded.
 
+// TODO: Implement some better way for allocating chunk data. Block allocator maybe.
+// Don't know how expensive are state changes. The simplest thing would be to just allocate a Vao and Vbo per chunk
+// and reallocate a bigger amount if needed.
 class ChunkSystem
 {
 public:
@@ -66,7 +73,11 @@ private:
 
 	void generateChunks();
 
-	std::vector<uint32_t>& meshFromChunk(Chunk& chunk);
+	struct ChunkVertices 
+	{
+		std::vector<uint32_t>& vertices;
+		std::vector<uint32_t>& waterVertices;
+	} meshFromChunk(Chunk& chunk);
 	void addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex, size_t normalIndex);
 	void addCubeTop(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
 	void addCubeBottom(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);

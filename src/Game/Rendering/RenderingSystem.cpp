@@ -112,6 +112,7 @@ RenderingSystem::RenderingSystem(Scene& scene)
 		"assets/textures/skybox/back.png")
 
 	, m_chunkShader(SHADERS_PATH "Objects/chunk.vert", SHADERS_PATH "Objects/chunk.frag")
+	, m_chunkWaterShader(SHADERS_PATH "Objects/chunkWater.vert", SHADERS_PATH "Objects/chunkWater.frag")
 	, m_itemBlockShader(SHADERS_PATH "Objects/itemBlock.vert", SHADERS_PATH "Objects/itemBlock.frag")
 	, m_itemModelShader(SHADERS_PATH "Objects/itemModel.vert", SHADERS_PATH "Objects/itemModel.frag")
 	, m_modelShader(SHADERS_PATH "Objects/model.vert", SHADERS_PATH "Objects/model.frag")
@@ -283,6 +284,7 @@ void RenderingSystem::update(
 		m_screenSize = screenSize;
 		onScreenResize();
 	}
+	glDisable(GL_BLEND);
 
 	static constexpr auto fov = degToRad(90.0f);
 	const auto cameraDir = cameraRot * Vec3::forward;
@@ -392,7 +394,65 @@ void RenderingSystem::update(
 		m_squareTrianglesVao2.bind();
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		drawDebugShapes(projection, view);
+
 		Renderer::drawSkybox(view, projection, m_skyboxData);
+
+		// TODO: Move to forward draw function.
+		// For rendering transparent objects it is best to disable writing to the depth buffer.
+		glDepthFunc(GL_LESS);
+		m_chunkWaterShader.use();
+		m_chunkWaterShader.setMat4("projection", projection);
+		m_chunkWaterShader.setMat4("camera", view);
+		m_chunkWaterShader.setVec3("viewPos", cameraPos);
+		m_chunkWaterShader.setFloat("time", Time::currentTime());
+		glActiveTexture(GL_TEXTURE0);
+		chunkSystem.blockData.textureArray.bind();
+		m_chunkWaterShader.setTexture("blockTextureArray", 0);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		glDisable(GL_CULL_FACE);
+		// Using a second loop to reduce the amount of state changes.
+		for (const auto& chunk : chunkSystem.m_chunksToDraw)
+		{
+			auto min = Vec3(chunk->pos) * Chunk::SIZE_V;
+			auto max = min + Chunk::SIZE_V;
+			/*if (frustum.intersects(Aabb(min, max)) == false)
+				continue;*/
+
+			m_chunkWaterShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE_V));
+			chunk->waterVao.bind();
+			glDrawArrays(GL_TRIANGLES, 0, chunk->waterVertexCount);
+		}
+		glEnable(GL_CULL_FACE);
+		glDisable(GL_BLEND);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glDepthFunc(GL_LEQUAL);
+
+
+		m_chunkWaterShader.use();
+		m_chunkWaterShader.setMat4("projection", projection);
+		m_chunkWaterShader.setMat4("camera", view);
+		glActiveTexture(GL_TEXTURE0);
+		chunkSystem.blockData.textureArray.bind();
+		m_chunkWaterShader.setTexture("blockTextureArray", 0);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_CULL_FACE);
+		// Using a second loop to reduce the amount of state changes.
+		for (const auto& chunk : chunkSystem.m_chunksToDraw)
+		{
+			auto min = Vec3(chunk->pos) * Chunk::SIZE_V;
+			auto max = min + Chunk::SIZE_V;
+			/*if (frustum.intersects(Aabb(min, max)) == false)
+				continue;*/
+
+			m_chunkWaterShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE_V));
+			chunk->waterVao.bind();
+			glDrawArrays(GL_TRIANGLES, 0, chunk->waterVertexCount);
+		}
+		glEnable(GL_CULL_FACE);
+		glDisable(GL_BLEND);
 	};
 
 	enum DefferedType
@@ -471,6 +531,7 @@ void RenderingSystem::drawScene(
 	const Mat4& projection, 
 	const Mat4& view)
 {
+	// TODO: Disable blend for faster rendering.
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -503,6 +564,29 @@ void RenderingSystem::drawScene(
 				Debug::drawCube(Vec3(chunk->pos) * Chunk::SIZE_V * Block::SIZE + Chunk::SIZE_V / 2.0, Chunk::SIZE_V, Vec3(1, 1, 1));
 			}
 		}
+
+		//m_chunkWaterShader.use();
+		//m_chunkWaterShader.setMat4("projection", projection);
+		//m_chunkWaterShader.setMat4("camera", view);
+		//glActiveTexture(GL_TEXTURE0);
+		//chunkSystem.blockData.textureArray.bind();
+		//m_chunkWaterShader.setTexture("blockTextureArray", 0);
+		//glEnable(GL_BLEND);
+		//glDisable(GL_CULL_FACE);
+		//// Using a second loop to reduce the amount of state changes.
+		//for (const auto& chunk : chunkSystem.m_chunksToDraw)
+		//{
+		//	auto min = Vec3(chunk->pos) * Chunk::SIZE_V;
+		//	auto max = min + Chunk::SIZE_V;
+		//	if (frustum.intersects(Aabb(min, max)) == false)
+		//		continue;
+
+		//	m_chunkWaterShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE_V));
+		//	chunk->waterVao.bind();
+		//	glDrawArrays(GL_TRIANGLES, 0, chunk->waterVertexCount);
+		//}
+		//glEnable(GL_CULL_FACE);
+		//glDisable(GL_BLEND);
 	};
 
 	auto drawItems = [&]

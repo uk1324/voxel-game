@@ -168,7 +168,7 @@ void Engine::openGlErrorCallback(GLenum source, GLenum type, GLuint id, GLenum s
 	if (id == 2)
 		return;
 
-	// glLineWidth depracated.
+	// glLineWidth deprecated.
 	if (id == 7)
 		return;
 
@@ -208,9 +208,14 @@ void Engine::openGlErrorCallback(GLenum source, GLenum type, GLuint id, GLenum s
 		case GL_DEBUG_SEVERITY_LOW:          errorMessage += "low"; break;
 		case GL_DEBUG_SEVERITY_NOTIFICATION: errorMessage += "notification"; break;
 	} 
+
 	errorMessage += " message: ";
 	errorMessage += message;
-	LOG_FATAL("OpenGL error %s", errorMessage.c_str());
+	if (id == 1286)
+		LOG_ERROR("OpenGL error %s", errorMessage.c_str());
+	else
+		LOG_FATAL("OpenGL error %s", errorMessage.c_str());
+
 }
 
 bool Engine::s_isInitialized = false;
