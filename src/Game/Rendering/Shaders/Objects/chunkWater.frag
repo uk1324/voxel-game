@@ -131,45 +131,70 @@ float norm(float n)
 	return (n + 1) / 2;
 }
 
-float waterNoise(vec3 fragPosWorld)
+uniform int octaves;
+uniform float persistence;
+uniform float diagonalNormalOffset;
+uniform float inputNoiseScale;
+uniform int specularIntensity;
+uniform float diagonalScale;
+uniform float diagonalNoiseScale;
+uniform vec3 colorWater;
+uniform vec3 colorSpecular;
+uniform float timeScale;
+
+uniform sampler2D background;
+
+float on(vec2 pos)
 {
-    vec2 pos = fragPosWorld.xz + (time * 0.5);
-    vec2 lineNormal1 = normalize(vec2(-1, -1));
-    vec2 lineNormal2 = normalize(vec2(1, -1));
-	float signedDistanceFromLine2 = dot(pos, lineNormal2);
-	vec2 waveOffset = vec2(norm(fbm(signedDistanceFromLine2 * 0.2, 6, 0.5)));
-	float waveOffsetScale = clamp(norm(perlinNoise1D(time * 0.3)) + 0.2, 0.0, 1.2);
-    return norm(perlinNoise1D(dot(pos + waveOffset * waveOffsetScale, lineNormal1)));
+	float accumulator = 0, scale = 1;
+	for (int i = 0; i < octaves; i++)
+	{
+		accumulator += noise(pos * scale);
+		scale *= persistence;
+	}
+	return accumulator;
 }
+
+vec4 blend(vec4 src, vec4 dest)
+{
+	return vec4(src.a * src.rgb + (1 - src.a) * dest.rgb, 1);
+}
+
+uniform vec2 screenSize;
 
 void main()
 {
 	vec3 directionalLightDir = normalize(vec3(-0.5, -1, -0.5));
 
-	vec3 pos1 = fragPosWorld;
-	vec3 pos2 = fragPosWorld + vec3(2.5, 0, 2.5);
-	float n1 = waterNoise(pos1);
-	float n2 = waterNoise(pos2);
-	pos1.y += n1;
-	pos2.y += n2;
-
-	vec3 line = normalize(pos1 - pos2);
-
-	vec3 nor = normalize(fragNormal - dot(line, fragNormal) * line);
-
-	vec3 waterColor = vec3(0, 0.7, 1);
-	float waterAlpha = 0.8;
-
-	outColor = vec4(n1 * vec3(0, 0.7, 1), 0.8);
+	float offset = dot(fragPosWorld.xz, normalize(vec2(1, -1)));
+	vec3 v1 = fragPosWorld;
+	vec3 v2 = v1 + vec3(diagonalNormalOffset, 0, 0); 
+	vec3 v3 = v1 + vec3(0, 0, diagonalNormalOffset);
+	float diagonalDistance = dot(normalize(vec2(1, 1)), v1.xz);
+	float noiseScale = perlinNoise1D(diagonalDistance * diagonalScale + time * timeScale) * diagonalNoiseScale;
+	// Try with more octaves
+	v1.y += on(v1.xz * inputNoiseScale) * noiseScale;
+	v2.y += on(v2.xz * inputNoiseScale) * noiseScale;
+	v3.y += on(v3.xz * inputNoiseScale) * noiseScale;
+	vec3 normal = normalize(cross(v2 - v1, v3 - v1));
 
 	vec3 viewDir = normalize(viewPos - fragPosWorld);
-	vec3 reflectionDir = reflect(directionalLightDir, nor);
-    float specular = clamp(pow(dot(reflectionDir, viewDir), 10), 0, 1);
+	vec3 reflectionDir = reflect(directionalLightDir, normal);
+    float specular = clamp(pow(dot(reflectionDir, viewDir), specularIntensity) + 0.2, 0, 1);
+	specular = (specular + 1) / 2;
+	//float specular = clamp(pow(dot(reflect(-directionalLightDir, normal), normal), specularIntensity), 0, 1);
 
-	// 1D noise going in the direction perpendicular to the waves.
-	float na = norm(perlinNoise1D(dot(normalize(vec2(-1, 1)), fragPosWorld.xz) + time * 2));
+	// outColor = vec4(vec3(v1.y - fragPosWorld.y), 1);
+//	outColor = vec4(vec3(colorWater) + colorSpecular * specular / 2, 0.6);
+	vec4 color = texture(background, gl_FragCoord.xy / screenSize + noiseScale * 0.01);
+//	vec4 color = texture(background, gl_FragCoord.xy / screenSize);
+	outColor = blend(vec4(vec3(colorWater) + colorSpecular * specular / 2, 0.6), color);
+	//vec2 pos = gl_FragCoord.xy / screenSize + noiseScale * 0.02;
 
-	outColor = vec4(0.2 * waterColor * (norm(n1) + 0.2 + na * 0.5) + vec3(0.7) * specular, waterAlpha);
-//	outColor = vec4(0.6 * vec3(1) * (norm(n1) + 0.2 + na * 0.5), 1);
-	//outColor = vec4(vec3(norm(perlinNoise1D(dot(normalize(vec2(1, -1)), fragPosWorld.xz)))), 1);
+	//outColor = texture(background, pos);
+	
+	// outColor = vec4((gl_FragCoord.xy / screenSize + noiseScale * 0.02), 0, 1);
+	//outColor = vec4((gl_FragCoord.xy / 2 + 0.5) / vec2(800, 600), 0, 1);
+	//outColor = color;
+	//outColor = vec4(vec3(colorWater * (0.3 + specular)), 0.6);
 }

@@ -232,12 +232,20 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	m_postprocessTexture.bind();
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_postprocessTexture.handle(), 0);
 	// Is this needed?
 	//glDrawBuffer(GL_COLOR_ATTACHMENT0);
 	m_postprocessDepthTexture.bind();
+	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);*/
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_postprocessDepthTexture.handle(), 0);
 	Fbo::unbind();
 
@@ -397,63 +405,6 @@ void RenderingSystem::update(
 		drawDebugShapes(projection, view);
 
 		Renderer::drawSkybox(view, projection, m_skyboxData);
-
-		// TODO: Move to forward draw function.
-		// For rendering transparent objects it is best to disable writing to the depth buffer.
-		glDepthFunc(GL_LESS);
-		m_chunkWaterShader.use();
-		m_chunkWaterShader.setMat4("projection", projection);
-		m_chunkWaterShader.setMat4("camera", view);
-		m_chunkWaterShader.setVec3("viewPos", cameraPos);
-		m_chunkWaterShader.setFloat("time", Time::currentTime());
-		glActiveTexture(GL_TEXTURE0);
-		chunkSystem.blockData.textureArray.bind();
-		m_chunkWaterShader.setTexture("blockTextureArray", 0);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-		glDisable(GL_CULL_FACE);
-		// Using a second loop to reduce the amount of state changes.
-		for (const auto& chunk : chunkSystem.m_chunksToDraw)
-		{
-			auto min = Vec3(chunk->pos) * Chunk::SIZE_V;
-			auto max = min + Chunk::SIZE_V;
-			/*if (frustum.intersects(Aabb(min, max)) == false)
-				continue;*/
-
-			m_chunkWaterShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE_V));
-			chunk->waterVao.bind();
-			glDrawArrays(GL_TRIANGLES, 0, chunk->waterVertexCount);
-		}
-		glEnable(GL_CULL_FACE);
-		glDisable(GL_BLEND);
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		glDepthFunc(GL_LEQUAL);
-
-
-		m_chunkWaterShader.use();
-		m_chunkWaterShader.setMat4("projection", projection);
-		m_chunkWaterShader.setMat4("camera", view);
-		glActiveTexture(GL_TEXTURE0);
-		chunkSystem.blockData.textureArray.bind();
-		m_chunkWaterShader.setTexture("blockTextureArray", 0);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glDisable(GL_CULL_FACE);
-		// Using a second loop to reduce the amount of state changes.
-		for (const auto& chunk : chunkSystem.m_chunksToDraw)
-		{
-			auto min = Vec3(chunk->pos) * Chunk::SIZE_V;
-			auto max = min + Chunk::SIZE_V;
-			/*if (frustum.intersects(Aabb(min, max)) == false)
-				continue;*/
-
-			m_chunkWaterShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE_V));
-			chunk->waterVao.bind();
-			glDrawArrays(GL_TRIANGLES, 0, chunk->waterVertexCount);
-		}
-		glEnable(GL_CULL_FACE);
-		glDisable(GL_BLEND);
 	};
 
 	enum DefferedType
@@ -496,6 +447,114 @@ void RenderingSystem::update(
 		}
 		ImGui::End();
 	}
+
+	const auto test = [&]
+	{
+		// TODO: Move to forward draw function.
+// For rendering transparent objects it is best to disable writing to the depth buffer.
+		glDepthFunc(GL_LESS);
+		m_chunkWaterShader.use();
+		m_chunkWaterShader.setMat4("projection", projection);
+		m_chunkWaterShader.setMat4("camera", view);
+		m_chunkWaterShader.setVec3("viewPos", cameraPos);
+		m_chunkWaterShader.setFloat("time", Time::currentTime());
+		glActiveTexture(GL_TEXTURE0);
+		chunkSystem.blockData.textureArray.bind();
+		m_chunkWaterShader.setTexture("blockTextureArray", 0);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		glDisable(GL_CULL_FACE);
+		// Using a second loop to reduce the amount of state changes.
+		for (const auto& chunk : chunkSystem.m_chunksToDraw)
+		{
+			auto min = Vec3(chunk->pos) * Chunk::SIZE_V;
+			auto max = min + Chunk::SIZE_V;
+			/*if (frustum.intersects(Aabb(min, max)) == false)
+				continue;*/
+
+			m_chunkWaterShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE_V));
+			chunk->waterVao.bind();
+			glDrawArrays(GL_TRIANGLES, 0, chunk->waterVertexCount);
+		}
+		glEnable(GL_CULL_FACE);
+		glDisable(GL_BLEND);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glDepthFunc(GL_LEQUAL);
+
+		static int octaves = 1;
+		static float persistence = 0.5;
+		static float diagonalNormalOffset = 1;
+		static float inputNoiseScale = 0.5;
+		static int specularIntensity = 10;
+		static float diagonalScale = 1;
+		static float diagonalNoiseScale = 0.2;
+		static Vec3 colorWater = Vec3(24 / 256.0, 134 / 256.0, 226 / 256.0);
+		static Vec3 colorSpecular(0.7);
+		static float timeScale = 1;		
+		static Vec3 color;
+
+		using namespace ImGui;
+
+
+		Begin("water");
+
+		SliderInt("octaves", &octaves, 1, 6);
+		SliderFloat("persistence", &persistence, 0.1, 2);
+		SliderFloat("diagonalNormalOffset", &diagonalNormalOffset, 0.1, 5);
+		SliderFloat("inputNoiseScale", &inputNoiseScale, 0.05, 2);
+		SliderInt("specularIntensity", &specularIntensity, 1, 256);
+		SliderFloat("diagonalScale", &diagonalScale, 0.1, 2);
+		SliderFloat("diagonalNoiseScale", &diagonalNoiseScale, 0.1, 2);
+		ColorPicker3("colorWater", colorWater.data());
+		ColorPicker3("colorSpecular", colorSpecular.data());
+		SliderFloat("timeScale", &timeScale, 0.1, 10);
+
+		End();
+
+		m_chunkWaterShader.setInt("octaves", octaves);
+		m_chunkWaterShader.setFloat("persistence", persistence);
+		m_chunkWaterShader.setFloat("diagonalNormalOffset", diagonalNormalOffset);
+		m_chunkWaterShader.setFloat("inputNoiseScale", inputNoiseScale);
+		m_chunkWaterShader.setInt("specularIntensity", specularIntensity);
+		m_chunkWaterShader.setFloat("diagonalScale", diagonalScale);
+		m_chunkWaterShader.setFloat("diagonalNoiseScale", diagonalNoiseScale);
+		m_chunkWaterShader.setVec3("colorWater", colorWater);
+		m_chunkWaterShader.setVec3("colorSpecular", colorSpecular);
+		m_chunkWaterShader.setFloat("timeScale", timeScale);
+
+		m_chunkWaterShader.use();
+		m_chunkWaterShader.setMat4("projection", projection);
+		m_chunkWaterShader.setMat4("camera", view);
+		glActiveTexture(GL_TEXTURE0);
+		chunkSystem.blockData.textureArray.bind();
+		m_chunkWaterShader.setTexture("blockTextureArray", 0);
+
+		glActiveTexture(GL_TEXTURE1);
+		m_postprocessTexture.bind();
+		m_chunkWaterShader.setTexture("background", 1);
+
+		m_chunkWaterShader.setVec2("screenSize", screenSize);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_CULL_FACE);
+		// Using a second loop to reduce the amount of state changes.
+		for (const auto& chunk : chunkSystem.m_chunksToDraw)
+		{
+			auto min = Vec3(chunk->pos) * Chunk::SIZE_V;
+			auto max = min + Chunk::SIZE_V;
+			/*if (frustum.intersects(Aabb(min, max)) == false)
+				continue;*/
+
+			m_chunkWaterShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE_V));
+			chunk->waterVao.bind();
+			glDrawArrays(GL_TRIANGLES, 0, chunk->waterVertexCount);
+		}
+		glEnable(GL_CULL_FACE);
+		glDisable(GL_BLEND);
+	};
+
 	resetStatistics();
 
 	drawToGeometryBuffer();
@@ -518,9 +577,13 @@ void RenderingSystem::update(
 	glActiveTexture(GL_TEXTURE0);
 	m_postprocessTexture.bind();
 	m_postProcessShader.setTexture("inputColorTexture", 0);
+	glActiveTexture(GL_TEXTURE1);
+	m_postprocessDepthTexture.bind();
+	m_postProcessShader.setTexture("inputDepthTexture", 1);
 	glViewport(0, 0, screenSize.x, screenSize.y);
 	m_squareTrianglesVao2.bind();
 	glDrawArrays(GL_TRIANGLES, 0, 6);
+	test();
 
 	drawCrosshair(screenSize);
 }
