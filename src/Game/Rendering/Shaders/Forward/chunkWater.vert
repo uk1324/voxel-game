@@ -1,9 +1,9 @@
 #version 430 core
 
 #include "../chunkCommon.glsl"
+#include "../Util/noise.glsl"
 
 layout (location = 0) in uint vert;
-
 
 // Rename to world to model
 // world to clip
@@ -11,6 +11,8 @@ layout (location = 0) in uint vert;
 uniform mat4 model;
 uniform mat4 projection;
 uniform mat4 camera;
+
+uniform float time;
 
 out flat uint textureIndex;
 out vec2 texturePos;
@@ -32,5 +34,10 @@ void main()
 	// It might be better to just pass the chunks position then it won't be necessary.
 	fragNormal = normals[normalIndex];
 	fragPosWorld = (model * vec4(vertPos, 1)).xyz;
-	gl_Position = projection * camera * model * vec4(vertPos, 1.0);
+
+	float waveScale = 0.2;
+	fragPosWorld.y -= waveScale;
+    fragPosWorld.y += perlin01((vec2(fragPosWorld.xz) + vec2(time)) * 0.5) * waveScale;
+
+	gl_Position = projection * camera * vec4(fragPosWorld, 1);
 }

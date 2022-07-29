@@ -4,6 +4,7 @@
 #include <Game/Components/Position.hpp>
 #include <Game/Components/Rotation.hpp>
 #include <Game/Components/AnimatedModel.hpp>
+#include <Game/Player/PlayerAnimationComponent.hpp>
 #include <Game/Debug/Debug.hpp>
 
 #include <chrono>
@@ -29,12 +30,14 @@ GameScene::GameScene(Engine& engine)
     entityManager.registerComponent<AnimatedModel>();
     entityManager.registerComponent<ItemComponent>();
     entityManager.registerComponent<ZombieComponent>();
+    entityManager.registerComponent<PlayerAnimationComponent>();
 
     m_player = entityManager.createEntity();
     entityManager.addComponent(m_player, Position{ Vec3(0, 80, 0) });
     //entityManager.entityEmplaceComponent<Position>(m_player, Vec3(-31, -7, -237));
     entityManager.addComponent(m_player, Rotation{ Quat::identity });
     entityManager.addComponent(m_player, PlayerMovementComponent{});
+    entityManager.addComponent(m_player, PlayerAnimationComponent{});
 
     PhysicsAabbCollider collider;
     collider.centerOffset = Vec3(0, -(1.62 - 0.5 * (1.875)), 0);
@@ -96,11 +99,13 @@ void GameScene::update()
     const Vec2 windowSize = Vec2(engine.window().getWindowSize());
     m_renderingSystem.update(
         windowSize,
+        m_player,
         playerPos, playerRot,
         entityManager,
         m_blockSystem.chunkSystem,
-        itemData
-    );
+        itemData,
+        input,
+        m_inventorySystem.heldItem(m_inventory));
     m_inventorySystem.render(m_inventory, itemData, m_blockSystem.blockData, Vec2(windowSize));
 
     m_console.update();

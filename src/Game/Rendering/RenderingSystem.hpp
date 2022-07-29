@@ -46,12 +46,15 @@ public:
 	RenderingSystem(Scene& scene);
 
 	void update(
-		const Vec2& screenSize, 
+		const Vec2& screenSize,
+		Entity playerEntity,
 		const Vec3& cameraPos, 
 		const Quat& cameraRot, 
 		EntityManager& entityManger, 
 		const ChunkSystem& chunkSystem, 
-		const ItemData& itemData);
+		const ItemData& itemData,
+		const InputManager& input,
+		const Opt<ItemStack>& heldItem);
 
 private:
 	void onScreenResize();
@@ -77,6 +80,11 @@ private:
 	std::array<Vec3, 8> getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view);
 	Mat4 getLightSpaceMatrix(float fov, float aspectRatio, const float nearPlane, const float farPlane, const Mat4& view, const Vec3& lightDir);
 	std::vector<Mat4> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& shadowCascadeLevels);
+
+	void itemBlockShaderSetPerPass(const Mat4& view, const Mat4& projection);
+	void itemBlockDraw(const BlockData::Entry& blockInfo, const Mat4& model);
+
+	void waterShaderConfig();
 
 private:
 	float m_farPlaneZ = 20.0 * Chunk::SIZE_X;
@@ -121,7 +129,6 @@ private:
 
 	SkyboxData m_skyboxData;
 
-	ShaderProgram m_texturedSquareShader;
 	Vao m_squareTrianglesVao2;
 	Vbo m_squareTrianglesVbo2;
 
@@ -160,4 +167,18 @@ private:
 	size_t m_voxelizedTextureItemsDrawn = 0;
 	size_t m_totalMeshesToDraw = 0;
 	size_t m_meshesDrawn = 0;
+
+	int octaves = 1;
+	float persistence = 0.5;
+	float diagonalNormalOffset = 1;
+	float inputNoiseScale = 0.5;
+	int specularIntensity = 10;
+	float diagonalScale = 1;
+	float diagonalNoiseScale = 0.2;
+	Vec3 colorWater = Vec3(24 / 256.0, 134 / 256.0, 226 / 256.0);
+	Vec3 colorSpecular = Vec3(0.7);
+	float timeScale = 1;
+	Vec3 color;
+
+	float swing;
 };

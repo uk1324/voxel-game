@@ -1,4 +1,5 @@
 #include <Game/Player/PlayerInteracationSystem.hpp>
+#include <Game/Player/PlayerAnimationComponent.hpp>
 #include <Game/EntitySystem.hpp>
 #include <Game/Blocks/BlockSystem.hpp>
 #include <Game/Components/Position.hpp>
@@ -22,6 +23,7 @@ void PlayerInteractionSystem::update(
 	const Vec3& playerPos = entites.getComponent<Position>(player).value;
 	const Quat& playerRot = entites.getComponent<Rotation>(player).value;
 	const Vec3 playerDir = playerRot * Vec3::forward;
+	auto& playerAnimationComponent = entites.getComponent<PlayerAnimationComponent>(player);
 	const auto& collider = entites.getComponent<PhysicsAabbCollider>(player);
 	const auto& colliderPos = playerPos + collider.centerOffset;
 
@@ -54,6 +56,7 @@ void PlayerInteractionSystem::update(
 			Vec3& entityVel = entites.getComponent<PhysicsVelocity>(entityRaycastHit->entity).value;
 			entityVel += ((rayEnd - playerPos).normalized() + Vec3::up * 3) * playerAttackKnockbackForce;
 		}
+		playerAnimationComponent.playSwingAnimation();
 	}
 	else if (input.isButtonDown("use"))
 	{
@@ -68,12 +71,13 @@ void PlayerInteractionSystem::update(
 			const auto blockPos = voxelRaycastHit->blockPos + *voxelRaycastHit->entryNormal;
 			const auto blockAAbb = Aabb(Vec3(blockPos), Vec3(blockPos) + Vec3(1));
 
-			if (playerAabb.intersects(blockAAbb) == false )
+			if (playerAabb.intersects(blockAAbb) == false)
 			{
 				blockSystem.trySet( 
 					blockPos,
 					itemData[heldItem->item].blockType
 				);
+				playerAnimationComponent.playSwingAnimation();
 
 				heldItem->count--;
 				if (heldItem->count == 0)

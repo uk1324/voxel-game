@@ -15,8 +15,7 @@ SkyboxData::SkyboxData(
 	cubeVao.bind();
 	cubeVbo.bind();
 	Vao::setAttribute(0, ShaderDataType::Float, 3, false, sizeof(float) * 3, 0);
-
-	shader.setTexture("cubemapSampler", 0);
+	shader.setTexture("skybox", 0);
 }
 
 void Renderer::drawSkybox(const Mat4& view, const Mat4& projection, SkyboxData& data)

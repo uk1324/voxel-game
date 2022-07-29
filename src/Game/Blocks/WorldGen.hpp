@@ -31,6 +31,8 @@ private:
 	float minHeight() const;
 
 private:
+	int32_t waterLevel = Chunk::SIZE_Y / 3;
+
 	float heightMapScale = 0.05f;
 	int heightMapOctaves = 4;
 	float heightMapOctaveLacunarity = 0.934f;

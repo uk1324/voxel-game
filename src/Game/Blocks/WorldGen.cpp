@@ -189,7 +189,10 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos) const
 				{
 					if (pos.y >= n)
 					{
-						chunk.set(posInChunk, BlockType::Grass);
+						if (y < waterLevel)
+							chunk.set(posInChunk, BlockType::Sand);
+						else
+							chunk.set(posInChunk, BlockType::Grass);
 					}
 					else
 					{
@@ -199,13 +202,16 @@ void WorldGen::generateChunk(Chunk& chunk, const Vec3I& chunkPos) const
 						}
 						else
 						{
-							chunk.set(posInChunk, BlockType::Dirt);
+							if (y < waterLevel - 1)
+								chunk.set(posInChunk, BlockType::Sand);
+							else
+								chunk.set(posInChunk, BlockType::Dirt);
 						}
 					}
 				}
 				else
 				{
-					if (y < maxHeight() / 2)
+					if (y < waterLevel)
 					{
 						chunk.set(posInChunk, BlockType::Water);
 					}
@@ -294,22 +300,24 @@ std::vector<Structure> WorldGen::getStructures(const Vec3I& chunkPos) const
 {
 	std::vector<Structure> structures;
 
-	Vec2I start = (Vec2I(chunkPos.x, chunkPos.z) - Vec2I(1)) * Vec2I(Chunk::SIZE_X, Chunk::SIZE_Z);
-	Vec2I end = (Vec2I(chunkPos.x, chunkPos.z) + Vec2I(1)) * Vec2I(Chunk::SIZE_X, Chunk::SIZE_Z);
+	const auto start = (Vec2I(chunkPos.x, chunkPos.z) - Vec2I(1)) * Vec2I(Chunk::SIZE_X, Chunk::SIZE_Z);
+	const auto end = (Vec2I(chunkPos.x, chunkPos.z) + Vec2I(1)) * Vec2I(Chunk::SIZE_X, Chunk::SIZE_Z);
 
-	for (int32_t x = start.x; x < end.x; x++)
+	for (auto x = start.x; x < end.x; x++)
 	{
-		for (int32_t z = start.y; z < end.y; z++)
+		for (auto z = start.y; z < end.y; z++)
 		{
 			if (hash(Vec2I(x, z)) < treeSpawnChance)
 			{
-				int32_t treeY = findGroundY(Vec2(x + m_tree.size.x / 2, z + m_tree.size.z / 2));
-				structures.push_back(Structure(Vec3I(x, floor(treeY), z), m_tree));
+				const auto treeY = findGroundY(Vec2(x + m_tree.size.x / 2, z + m_tree.size.z / 2));
+				if (treeY > waterLevel)
+					structures.push_back(Structure(Vec3I(x, floor(treeY), z), m_tree));
 			}
 			else if (hash(Vec2I(x, z)) > 0.96)
 			{
-				int32_t treeY = findGroundY(Vec2(x, z));
-				structures.push_back(Structure(Vec3I(x, floor(treeY), z), m_flower));
+				const auto treeY = findGroundY(Vec2(x, z));
+				if (treeY > waterLevel)
+					structures.push_back(Structure(Vec3I(x, floor(treeY), z), m_flower));
 			}
 		}
 	}

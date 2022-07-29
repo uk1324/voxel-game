@@ -6,6 +6,7 @@
 #include <Game/EntitySystem.hpp>
 #include <Log/Log.hpp>
 #include <Math/Interpolation.hpp>
+#include <Game/Player/PlayerAnimationComponent.hpp>
 #include <Math/Sphere.hpp>
 
 #include <string>
@@ -112,15 +113,13 @@ RenderingSystem::RenderingSystem(Scene& scene)
 		"assets/textures/skybox/back.png")
 
 	, m_chunkShader(SHADERS_PATH "Objects/chunk.vert", SHADERS_PATH "Objects/chunk.frag")
-	, m_chunkWaterShader(SHADERS_PATH "Objects/chunkWater.vert", SHADERS_PATH "Objects/chunkWater.frag")
+	, m_chunkWaterShader(SHADERS_PATH "Forward/chunkWater.vert", SHADERS_PATH "Forward/chunkWater.frag")
 	, m_itemBlockShader(SHADERS_PATH "Objects/itemBlock.vert", SHADERS_PATH "Objects/itemBlock.frag")
 	, m_itemModelShader(SHADERS_PATH "Objects/itemModel.vert", SHADERS_PATH "Objects/itemModel.frag")
 	, m_modelShader(SHADERS_PATH "Objects/model.vert", SHADERS_PATH "Objects/model.frag")
 
 	, m_crosshairTexture("assets/textures/crosshair.png")
-	//, m_squareShader("src/Game/Rendering/Shaders/2dTextured.vert", "src/Game/Rendering/Shaders/2dTextured.frag")
 	, m_debugShader(SHADERS_PATH "Other/debugShapes.vert", SHADERS_PATH "Other/debugShapes.frag")
-	//, m_texturedSquareShader("src/Game/Inventory/Shaders/uiTextured.vert", "src/Game/Rendering/Shaders/debugDepth.frag")
 
 	, m_cubeLinesVbo(cubeLinesVertices, sizeof(cubeLinesVertices))
 	, m_squareTrianglesVbo(squareTrianglesVertices, sizeof(squareTrianglesVertices))
@@ -249,7 +248,9 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_postprocessDepthTexture.handle(), 0);
 	Fbo::unbind();
 
-	glReadBuffer(GL_NONE);
+	//glReadBuffer(GL_NONE);
+	// Set the uniforms at start.
+	waterShaderConfig();
 }
 
 // Sometimes when the rendering happens the framebuffer is still incomplete.
@@ -280,20 +281,23 @@ void RenderingSystem::onScreenResize()
 }
 
 void RenderingSystem::update(
-	const Vec2& screenSize, 
+	const Vec2& screenSize,
+	Entity playerEntity,
 	const Vec3& cameraPos,
 	const Quat& cameraRot, 
 	EntityManager& entites,
 	const ChunkSystem& chunkSystem, 
-	const ItemData& itemData)
+	const ItemData& itemData,
+	const InputManager& input,
+	const Opt<ItemStack>& heldItem)
 {
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	if (m_screenSize != screenSize)
 	{
 		m_screenSize = screenSize;
 		onScreenResize();
 	}
 	glDisable(GL_BLEND);
-
 	static constexpr auto fov = degToRad(90.0f);
 	const auto cameraDir = cameraRot * Vec3::forward;
 	const auto aspectRatio = screenSize.x / screenSize.y;
@@ -301,6 +305,7 @@ void RenderingSystem::update(
 	const auto view = Mat4::lookAt(cameraPos, cameraPos + cameraDir, Vec3::up);
 	const auto worldToLightSpaceMats = 
 		getLightSpaceMatrices(fov, aspectRatio, view, m_directionalLightDir, m_nearPlaneZ, m_farPlaneZ, m_cascadeZ);
+	Frustum frustum(view * projection);
 
 	auto drawToGeometryBuffer = [&]
 	{
@@ -308,7 +313,61 @@ void RenderingSystem::update(
 		glViewport(0, 0, screenSize.x, screenSize.y);
 		drawScene(entites, itemData, chunkSystem, projection, view);
 		glFrontFace(GL_CW);
-		Fbo::unbind();;
+
+		if (heldItem.has_value())
+		{
+			const auto itemInfo = itemData[heldItem->item];
+
+			const auto& playerAnimationComponent = entites.getComponent<PlayerAnimationComponent>(playerEntity);
+			const auto swingProgress = playerAnimationComponent.swingProgress();
+			float curve0 = sin(swingProgress * swingProgress * PI<float>); // Slow then fast
+			float curve1 = sin(sqrt(swingProgress) * PI<float>); // Fast then slow
+			const auto swingRotation = 
+				Quat(degToRad(curve0 * 20.0f), Vec3(Vec3::up))
+				* Quat(degToRad(curve1 * 30.0f), Vec3(Vec3::left))
+				* Quat(degToRad(curve1 * 80.0f), Vec3(Vec3::forward));
+			const auto orientAndPutInFrontOfCamera =
+				(cameraRot * Quat(degToRad(90.0f), Vec3::up)).asMatrix()
+				* Mat4::translation(cameraPos + cameraDir);
+
+			if (itemInfo.isBlock)
+			{
+				static constexpr auto scale = 0.3;
+				const auto model = 
+					Mat4::scale(Vec3(scale))
+					* Quat(degToRad(45.0f), Vec3::up).asMatrix()
+					* Mat4::translation(Vec3(0, 1 * scale, 0))
+					* swingRotation.asMatrix()
+					* Mat4::translation(Vec3(0, -1 * scale, 0))
+					* Mat4::translation(Vec3(0.588, -0.405, -0.502))
+					* orientAndPutInFrontOfCamera;
+
+				const auto& blockInfo = chunkSystem.blockData[itemInfo.blockType];
+				itemBlockShaderSetPerPass(view, projection);
+				itemBlockDraw(blockInfo, model);
+			}
+			else
+			{
+				static constexpr auto scale = 0.5f;
+				const auto model =
+					Mat4::scale(Vec3(scale))
+					* Quat(degToRad(32.393f), Vec3::forward).asMatrix()
+					* Mat4::translation(Vec3(0, 1 * scale, 0))
+					* swingRotation.asMatrix()
+					* Mat4::translation(Vec3(0, -1 * scale, 0))
+					* Mat4::translation(Vec3(0.588f, -0.275f, -0.580f))
+					* orientAndPutInFrontOfCamera;
+
+				m_itemModelShader.setMat4("model", model);
+				m_itemModelShader.setMat4("view", view);
+				m_itemModelShader.setMat4("projection", projection);
+				m_itemModelShader.use();
+				itemData.voxelizedItemModelsVao.bind();
+				glDrawArrays(GL_TRIANGLES, itemInfo.model.vboVertexOffset, itemInfo.model.vertexCount);
+			}
+		}
+
+		Fbo::unbind(); 
 	};
 	
 	auto drawToShadowMaps = [&]
@@ -407,6 +466,79 @@ void RenderingSystem::update(
 		Renderer::drawSkybox(view, projection, m_skyboxData);
 	};
 
+	auto drawWater = [&]
+	{
+		auto drawWaterChunks = [&]
+		{
+			for (const auto& chunk : chunkSystem.m_chunksToDraw)
+			{
+				auto min = Vec3(chunk->pos) * Chunk::SIZE_V;
+				auto max = min + Chunk::SIZE_V;
+				if (frustum.intersects(Aabb(min, max)) == false)
+					continue;
+
+				m_chunkWaterShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE_V));
+				chunk->waterVao.bind();
+				glDrawArrays(GL_TRIANGLES, 0, chunk->waterVertexCount);
+			}
+		};
+
+		m_chunkWaterShader.use();
+		m_chunkWaterShader.setMat4("projection", projection);
+		m_chunkWaterShader.setMat4("camera", view);
+		m_chunkWaterShader.setVec3("viewPos", cameraPos);
+		m_chunkWaterShader.setFloat("time", Time::currentTime());
+
+
+
+
+		for (size_t i = 0; i < m_shadowMapTextures.size(); i++)
+		{
+			constexpr size_t START = 4;
+			glActiveTexture(GL_TEXTURE0 + START + i);
+			m_shadowMapTextures[i].bind();
+			m_chunkWaterShader.setTexture("shadowMaps[" + std::to_string(i) + "]", START + i);
+		}
+		for (size_t i = 0; i < worldToLightSpaceMats.size(); i++)
+		{
+			m_chunkWaterShader.setMat4("worldToShadowMap[" + std::to_string(i) + "]", worldToLightSpaceMats[i]);
+		}
+		for (size_t i = 0; i < m_cascadeZ.size(); i++)
+		{
+			m_chunkWaterShader.setFloat("cascadeZ[" + std::to_string(i) + "]", m_cascadeZ[i]);
+		}
+		m_chunkWaterShader.setInt("cascadeCount", m_cascadeZ.size());
+		m_chunkWaterShader.setFloat("farPlane", m_farPlaneZ);
+		m_chunkWaterShader.setMat4("worldToView", view);
+
+
+
+
+
+		// First draw depth so later only the closest transparent object is rendered.
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		glDepthFunc(GL_LESS);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_CULL_FACE);
+		drawWaterChunks();
+		glEnable(GL_CULL_FACE);
+		glDisable(GL_BLEND);
+		
+		glDepthFunc(GL_LEQUAL);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glActiveTexture(GL_TEXTURE0);
+		m_postprocessTexture.bind();
+		m_chunkWaterShader.setTexture("background", 0);
+		m_chunkWaterShader.setVec2("screenSize", screenSize);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_CULL_FACE);
+		drawWaterChunks();
+		glEnable(GL_CULL_FACE);
+		glDisable(GL_BLEND);
+	};
+
 	enum DefferedType
 	{
 		Final,
@@ -448,113 +580,6 @@ void RenderingSystem::update(
 		ImGui::End();
 	}
 
-	const auto test = [&]
-	{
-		// TODO: Move to forward draw function.
-// For rendering transparent objects it is best to disable writing to the depth buffer.
-		glDepthFunc(GL_LESS);
-		m_chunkWaterShader.use();
-		m_chunkWaterShader.setMat4("projection", projection);
-		m_chunkWaterShader.setMat4("camera", view);
-		m_chunkWaterShader.setVec3("viewPos", cameraPos);
-		m_chunkWaterShader.setFloat("time", Time::currentTime());
-		glActiveTexture(GL_TEXTURE0);
-		chunkSystem.blockData.textureArray.bind();
-		m_chunkWaterShader.setTexture("blockTextureArray", 0);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-		glDisable(GL_CULL_FACE);
-		// Using a second loop to reduce the amount of state changes.
-		for (const auto& chunk : chunkSystem.m_chunksToDraw)
-		{
-			auto min = Vec3(chunk->pos) * Chunk::SIZE_V;
-			auto max = min + Chunk::SIZE_V;
-			/*if (frustum.intersects(Aabb(min, max)) == false)
-				continue;*/
-
-			m_chunkWaterShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE_V));
-			chunk->waterVao.bind();
-			glDrawArrays(GL_TRIANGLES, 0, chunk->waterVertexCount);
-		}
-		glEnable(GL_CULL_FACE);
-		glDisable(GL_BLEND);
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		glDepthFunc(GL_LEQUAL);
-
-		static int octaves = 1;
-		static float persistence = 0.5;
-		static float diagonalNormalOffset = 1;
-		static float inputNoiseScale = 0.5;
-		static int specularIntensity = 10;
-		static float diagonalScale = 1;
-		static float diagonalNoiseScale = 0.2;
-		static Vec3 colorWater = Vec3(24 / 256.0, 134 / 256.0, 226 / 256.0);
-		static Vec3 colorSpecular(0.7);
-		static float timeScale = 1;		
-		static Vec3 color;
-
-		using namespace ImGui;
-
-
-		Begin("water");
-
-		SliderInt("octaves", &octaves, 1, 6);
-		SliderFloat("persistence", &persistence, 0.1, 2);
-		SliderFloat("diagonalNormalOffset", &diagonalNormalOffset, 0.1, 5);
-		SliderFloat("inputNoiseScale", &inputNoiseScale, 0.05, 2);
-		SliderInt("specularIntensity", &specularIntensity, 1, 256);
-		SliderFloat("diagonalScale", &diagonalScale, 0.1, 2);
-		SliderFloat("diagonalNoiseScale", &diagonalNoiseScale, 0.1, 2);
-		ColorPicker3("colorWater", colorWater.data());
-		ColorPicker3("colorSpecular", colorSpecular.data());
-		SliderFloat("timeScale", &timeScale, 0.1, 10);
-
-		End();
-
-		m_chunkWaterShader.setInt("octaves", octaves);
-		m_chunkWaterShader.setFloat("persistence", persistence);
-		m_chunkWaterShader.setFloat("diagonalNormalOffset", diagonalNormalOffset);
-		m_chunkWaterShader.setFloat("inputNoiseScale", inputNoiseScale);
-		m_chunkWaterShader.setInt("specularIntensity", specularIntensity);
-		m_chunkWaterShader.setFloat("diagonalScale", diagonalScale);
-		m_chunkWaterShader.setFloat("diagonalNoiseScale", diagonalNoiseScale);
-		m_chunkWaterShader.setVec3("colorWater", colorWater);
-		m_chunkWaterShader.setVec3("colorSpecular", colorSpecular);
-		m_chunkWaterShader.setFloat("timeScale", timeScale);
-
-		m_chunkWaterShader.use();
-		m_chunkWaterShader.setMat4("projection", projection);
-		m_chunkWaterShader.setMat4("camera", view);
-		glActiveTexture(GL_TEXTURE0);
-		chunkSystem.blockData.textureArray.bind();
-		m_chunkWaterShader.setTexture("blockTextureArray", 0);
-
-		glActiveTexture(GL_TEXTURE1);
-		m_postprocessTexture.bind();
-		m_chunkWaterShader.setTexture("background", 1);
-
-		m_chunkWaterShader.setVec2("screenSize", screenSize);
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glDisable(GL_CULL_FACE);
-		// Using a second loop to reduce the amount of state changes.
-		for (const auto& chunk : chunkSystem.m_chunksToDraw)
-		{
-			auto min = Vec3(chunk->pos) * Chunk::SIZE_V;
-			auto max = min + Chunk::SIZE_V;
-			/*if (frustum.intersects(Aabb(min, max)) == false)
-				continue;*/
-
-			m_chunkWaterShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE_V));
-			chunk->waterVao.bind();
-			glDrawArrays(GL_TRIANGLES, 0, chunk->waterVertexCount);
-		}
-		glEnable(GL_CULL_FACE);
-		glDisable(GL_BLEND);
-	};
-
 	resetStatistics();
 
 	drawToGeometryBuffer();
@@ -569,7 +594,9 @@ void RenderingSystem::update(
 	}
 
 	m_postProcessFbo.bind();
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	defferedDraw();
+
 	Fbo::unbind();
 
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -583,7 +610,7 @@ void RenderingSystem::update(
 	glViewport(0, 0, screenSize.x, screenSize.y);
 	m_squareTrianglesVao2.bind();
 	glDrawArrays(GL_TRIANGLES, 0, 6);
-	test();
+	drawWater();
 
 	drawCrosshair(screenSize);
 }
@@ -628,29 +655,6 @@ void RenderingSystem::drawScene(
 				Debug::drawCube(Vec3(chunk->pos) * Chunk::SIZE_V * Block::SIZE + Chunk::SIZE_V / 2.0, Chunk::SIZE_V, Vec3(1, 1, 1));
 			}
 		}
-
-		//m_chunkWaterShader.use();
-		//m_chunkWaterShader.setMat4("projection", projection);
-		//m_chunkWaterShader.setMat4("camera", view);
-		//glActiveTexture(GL_TEXTURE0);
-		//chunkSystem.blockData.textureArray.bind();
-		//m_chunkWaterShader.setTexture("blockTextureArray", 0);
-		//glEnable(GL_BLEND);
-		//glDisable(GL_CULL_FACE);
-		//// Using a second loop to reduce the amount of state changes.
-		//for (const auto& chunk : chunkSystem.m_chunksToDraw)
-		//{
-		//	auto min = Vec3(chunk->pos) * Chunk::SIZE_V;
-		//	auto max = min + Chunk::SIZE_V;
-		//	if (frustum.intersects(Aabb(min, max)) == false)
-		//		continue;
-
-		//	m_chunkWaterShader.setMat4("model", Mat4::translation(Vec3(chunk->pos) * Chunk::SIZE_V));
-		//	chunk->waterVao.bind();
-		//	glDrawArrays(GL_TRIANGLES, 0, chunk->waterVertexCount);
-		//}
-		//glEnable(GL_CULL_FACE);
-		//glDisable(GL_BLEND);
 	};
 
 	auto drawItems = [&]
@@ -675,21 +679,14 @@ void RenderingSystem::drawScene(
 					continue;
 				m_blockItemsDrawn++;
 
-				m_itemBlockShader.setMat4("model",
+				const auto model = 
 					Quat(timeSinceSpawned, Vec3::yAxis).asMatrix()
 					* Mat4::scale(Vec3(0.25f))
-					* Mat4::translation(pos + Vec3(0.0f, (sin(timeSinceSpawned) + 1.0f) / 10.0f, 0.0)));
+					* Mat4::translation(pos + Vec3(0.0f, (sin(timeSinceSpawned) + 1.0f) / 10.0f, 0.0));
 
 				const auto& blockInfo = chunkSystem.blockData[itemInfo.blockType];
-				m_itemBlockShader.use();
-				m_itemBlockShader.setUnsignedInt("faceTextureIndex[0]", blockInfo.frontTextureIndex);
-				m_itemBlockShader.setUnsignedInt("faceTextureIndex[1]", blockInfo.backTextureIndex);
-				m_itemBlockShader.setUnsignedInt("faceTextureIndex[2]", blockInfo.rightTextureIndex);
-				m_itemBlockShader.setUnsignedInt("faceTextureIndex[3]", blockInfo.leftTextureIndex);
-				m_itemBlockShader.setUnsignedInt("faceTextureIndex[4]", blockInfo.bottomTextureIndex);
-				m_itemBlockShader.setUnsignedInt("faceTextureIndex[5]", blockInfo.topTextureIndex);
-				m_cubeTrianglesVao.bind();
-				glDrawArrays(GL_TRIANGLES, 0, 36);
+				itemBlockShaderSetPerPass(view, projection);
+				itemBlockDraw(blockInfo, model);
 			}
 			else
 			{
@@ -841,6 +838,58 @@ std::vector<Mat4> RenderingSystem::getLightSpaceMatrices(float fov, float aspect
 		}
 	}
 	return matrices;
+}
+
+void RenderingSystem::itemBlockShaderSetPerPass(const Mat4& view, const Mat4& projection)
+{
+	m_itemBlockShader.setMat4("view", view);
+	m_itemBlockShader.setMat4("projection", projection);
+}
+
+void RenderingSystem::itemBlockDraw(const BlockData::Entry& blockInfo, const Mat4& model)
+{
+	// Whether these should be set per pass or draw depends on the usage.
+	m_itemBlockShader.use();
+	m_cubeTrianglesVao.bind();
+
+	m_itemBlockShader.setUnsignedInt("faceTextureIndex[0]", blockInfo.frontTextureIndex);
+	m_itemBlockShader.setUnsignedInt("faceTextureIndex[1]", blockInfo.backTextureIndex);
+	m_itemBlockShader.setUnsignedInt("faceTextureIndex[2]", blockInfo.rightTextureIndex);
+	m_itemBlockShader.setUnsignedInt("faceTextureIndex[3]", blockInfo.leftTextureIndex);
+	m_itemBlockShader.setUnsignedInt("faceTextureIndex[4]", blockInfo.bottomTextureIndex);
+	m_itemBlockShader.setUnsignedInt("faceTextureIndex[5]", blockInfo.topTextureIndex);
+	m_itemBlockShader.setMat4("model", model);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void RenderingSystem::waterShaderConfig()
+{
+	using namespace ImGui;
+	//Begin("water");
+
+	//SliderInt("octaves", &octaves, 1, 6);
+	//SliderFloat("persistence", &persistence, 0.1, 2);
+	//SliderFloat("diagonalNormalOffset", &diagonalNormalOffset, 0.1, 5);
+	//SliderFloat("inputNoiseScale", &inputNoiseScale, 0.05, 2);
+	//SliderInt("specularIntensity", &specularIntensity, 1, 256);
+	//SliderFloat("diagonalScale", &diagonalScale, 0.1, 2);
+	//SliderFloat("diagonalNoiseScale", &diagonalNoiseScale, 0.1, 2);
+	//ColorPicker3("colorWater", colorWater.data());
+	//ColorPicker3("colorSpecular", colorSpecular.data());
+	//SliderFloat("timeScale", &timeScale, 0.1, 10);
+
+	//End();
+
+	m_chunkWaterShader.setInt("octaves", octaves);
+	m_chunkWaterShader.setFloat("persistence", persistence);
+	m_chunkWaterShader.setFloat("diagonalNormalOffset", diagonalNormalOffset);
+	m_chunkWaterShader.setFloat("inputNoiseScale", inputNoiseScale);
+	m_chunkWaterShader.setInt("specularIntensity", specularIntensity);
+	m_chunkWaterShader.setFloat("diagonalScale", diagonalScale);
+	m_chunkWaterShader.setFloat("diagonalNoiseScale", diagonalNoiseScale);
+	m_chunkWaterShader.setVec3("colorWater", colorWater);
+	m_chunkWaterShader.setVec3("colorSpecular", colorSpecular);
+	m_chunkWaterShader.setFloat("timeScale", timeScale);
 }
 
 std::array<Vec3, 8> RenderingSystem::getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view)
