@@ -111,6 +111,12 @@ void ShaderProgram::setFloat(std::string_view name, float value)
 	glProgramUniform1f(m_handle, getUniformLocation(name.data()), value);
 }
 
+void ShaderProgram::setBool(std::string_view name, bool value)
+{
+	// There is no special function for bools.
+	setInt(name, value);
+}
+
 void ShaderProgram::setColor(std::string_view name, const Color& value)
 {
 	glProgramUniform4fv(m_handle, getUniformLocation(name.data()), 1, value.data());

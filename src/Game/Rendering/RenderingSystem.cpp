@@ -194,7 +194,9 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	m_depthTexture.bind();
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.handle(), 0);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.handle(), 0);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.handle(), 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.handle(), 0);
 	GLenum attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 	glDrawBuffers(3, attachments);
 	Fbo::unbind();
@@ -267,8 +269,10 @@ void RenderingSystem::onScreenResize()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, m_screenSize.x, m_screenSize.y, 0, GL_RGB, GL_FLOAT, nullptr);
 	m_depthTexture.bind();
 	// Maybe use GL_DEPTH24_STENCIL8 - better driver compatiblity apparently.
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_screenSize.x, m_screenSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_screenSize.x, m_screenSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+	// Also try GL_DEPTH32F_STENCIL8
+	/*glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_screenSize.x, m_screenSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);*/
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_screenSize.x, m_screenSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 	m_debugTexture.bind();
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, m_screenSize.x, m_screenSize.y, 0, GL_RGB, GL_FLOAT, nullptr);
 
@@ -309,31 +313,27 @@ void RenderingSystem::update(
 
 	auto drawToGeometryBuffer = [&]
 	{
-		m_geometryBufferFbo.bind();
-		glViewport(0, 0, screenSize.x, screenSize.y);
-		drawScene(entites, itemData, chunkSystem, projection, view);
-		glFrontFace(GL_CW);
+		// Use the same rotation for both the stencil and normal draw.
+		const auto& playerAnimationComponent = entites.getComponent<PlayerAnimationComponent>(playerEntity);
+		const auto swingProgress = playerAnimationComponent.swingProgress();
+		float curve0 = sin(swingProgress * swingProgress * PI<float>); // Slow then fast
+		float curve1 = sin(sqrt(swingProgress) * PI<float>); // Fast then slow
+		const auto swingRotation =
+			Quat(degToRad(curve0 * 20.0f), Vec3(Vec3::up))
+			* Quat(degToRad(curve1 * 30.0f), Vec3(Vec3::left))
+			* Quat(degToRad(curve1 * 80.0f), Vec3(Vec3::forward));
+		const auto orientAndPutInFrontOfCamera =
+			(cameraRot * Quat(degToRad(90.0f), Vec3::up)).asMatrix()
+			* Mat4::translation(cameraPos + cameraDir);
 
-		if (heldItem.has_value())
+		auto drawFirstPersonItem = [&]
 		{
 			const auto itemInfo = itemData[heldItem->item];
-
-			const auto& playerAnimationComponent = entites.getComponent<PlayerAnimationComponent>(playerEntity);
-			const auto swingProgress = playerAnimationComponent.swingProgress();
-			float curve0 = sin(swingProgress * swingProgress * PI<float>); // Slow then fast
-			float curve1 = sin(sqrt(swingProgress) * PI<float>); // Fast then slow
-			const auto swingRotation = 
-				Quat(degToRad(curve0 * 20.0f), Vec3(Vec3::up))
-				* Quat(degToRad(curve1 * 30.0f), Vec3(Vec3::left))
-				* Quat(degToRad(curve1 * 80.0f), Vec3(Vec3::forward));
-			const auto orientAndPutInFrontOfCamera =
-				(cameraRot * Quat(degToRad(90.0f), Vec3::up)).asMatrix()
-				* Mat4::translation(cameraPos + cameraDir);
 
 			if (itemInfo.isBlock)
 			{
 				static constexpr auto scale = 0.3;
-				const auto model = 
+				const auto model =
 					Mat4::scale(Vec3(scale))
 					* Quat(degToRad(45.0f), Vec3::up).asMatrix()
 					* Mat4::translation(Vec3(0, 1 * scale, 0))
@@ -365,6 +365,37 @@ void RenderingSystem::update(
 				itemData.voxelizedItemModelsVao.bind();
 				glDrawArrays(GL_TRIANGLES, itemInfo.model.vboVertexOffset, itemInfo.model.vertexCount);
 			}
+		};
+
+		glViewport(0, 0, screenSize.x, screenSize.y);
+		m_geometryBufferFbo.bind();
+
+		// Draw the first person item to the stencil buffer then draw the scene everywere but inside the shape in the stencil buffer.
+		// Then acutally draw the first person item.
+		glClear(GL_STENCIL_BUFFER_BIT);
+		glEnable(GL_STENCIL_TEST);
+		glStencilMask(0xFF);
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		glDepthMask(GL_FALSE);
+		glStencilFunc(GL_ALWAYS, 1, 0); // Always pass and write 1.
+		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE); // Always replace.
+
+		if (heldItem.has_value())
+		{
+			drawFirstPersonItem();
+		}
+		
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glDepthMask(GL_TRUE);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP); // Never replace.
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF); // Only draw if not 1.
+
+		drawScene(entites, itemData, chunkSystem, projection, view);
+
+		glDisable(GL_STENCIL_TEST);
+		if (heldItem.has_value())
+		{
+			drawFirstPersonItem();
 		}
 
 		Fbo::unbind(); 
@@ -427,6 +458,16 @@ void RenderingSystem::update(
 		m_defferedPassShader.setFloat("farPlane", m_farPlaneZ);
 		m_defferedPassShader.setMat4("worldToView", view);
 		m_defferedPassShader.setVec3("directionalLightDir", m_directionalLightDir);
+
+		static bool normalBias;
+		static float normalBiasScale = 1.0f;
+
+		ImGui::Begin("sdfasd");
+		ImGui::Checkbox("normalBias", &normalBias);
+		ImGui::SliderFloat("normalBiasScale", &normalBiasScale, 0.01, 1);
+		ImGui::End();
+
+		m_defferedPassShader.setBool("doNormal", normalBias);
 	};
 
 	auto setupDefferedDrawNormals = [&]
@@ -488,32 +529,6 @@ void RenderingSystem::update(
 		m_chunkWaterShader.setMat4("camera", view);
 		m_chunkWaterShader.setVec3("viewPos", cameraPos);
 		m_chunkWaterShader.setFloat("time", Time::currentTime());
-
-
-
-
-		for (size_t i = 0; i < m_shadowMapTextures.size(); i++)
-		{
-			constexpr size_t START = 4;
-			glActiveTexture(GL_TEXTURE0 + START + i);
-			m_shadowMapTextures[i].bind();
-			m_chunkWaterShader.setTexture("shadowMaps[" + std::to_string(i) + "]", START + i);
-		}
-		for (size_t i = 0; i < worldToLightSpaceMats.size(); i++)
-		{
-			m_chunkWaterShader.setMat4("worldToShadowMap[" + std::to_string(i) + "]", worldToLightSpaceMats[i]);
-		}
-		for (size_t i = 0; i < m_cascadeZ.size(); i++)
-		{
-			m_chunkWaterShader.setFloat("cascadeZ[" + std::to_string(i) + "]", m_cascadeZ[i]);
-		}
-		m_chunkWaterShader.setInt("cascadeCount", m_cascadeZ.size());
-		m_chunkWaterShader.setFloat("farPlane", m_farPlaneZ);
-		m_chunkWaterShader.setMat4("worldToView", view);
-
-
-
-
 
 		// First draw depth so later only the closest transparent object is rendered.
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);

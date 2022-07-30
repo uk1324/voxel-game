@@ -175,10 +175,8 @@ private:
 	int specularIntensity = 10;
 	float diagonalScale = 1;
 	float diagonalNoiseScale = 0.2;
-	Vec3 colorWater = Vec3(24 / 256.0, 134 / 256.0, 226 / 256.0);
-	Vec3 colorSpecular = Vec3(0.7);
+	Vec3 colorWater = Vec3(13 / 256.0, 53 / 256.0, 82 / 256.0);
+	Vec3 colorSpecular = Vec3(55 / 255.0f, 62 / 255.0f, 72 / 255.0f);
 	float timeScale = 1;
 	Vec3 color;
-
-	float swing;
 };
