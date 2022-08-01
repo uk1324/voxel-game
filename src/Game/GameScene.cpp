@@ -108,12 +108,12 @@ void GameScene::update()
         m_inventorySystem.heldItem(m_inventory));
     m_inventorySystem.render(m_inventory, itemData, m_blockSystem.blockData, Vec2(windowSize));
 
-    m_console.update();
-    Debug::shouldDisplayDeveloperConsole = true;
-    if (Debug::shouldDisplayDeveloperConsole && m_isGamePaused)
-    {
-        m_console.draw();
-    }
+    //m_console.update();
+    //Debug::shouldDisplayDeveloperConsole = true;
+    //if (Debug::shouldDisplayDeveloperConsole && m_isGamePaused)
+    //{
+    //    m_console.draw();
+    //}
 
     m_blockSystem.chunkSystem.m_worldGen.updateDebugConfig();
 

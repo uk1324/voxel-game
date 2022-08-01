@@ -98,7 +98,8 @@ public:
 	// Another issue is that if during world generation chunks are split vertically then chunk below and above would need
 	// to recompute the vertical noise value. A soultion might be to use a cache, but this isn't without cost. Because multiple
 	// threads can access and write to the cache it would need to be locked and also cpu cache ping pong would happen.
-	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 4;
+	//static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 4;
+	static constexpr int32_t HORIZONTAL_RENDER_DISTANCE = 12;
 
 	static constexpr int32_t CHUNKS_IN_RENDER_DISTANCE = (2 * HORIZONTAL_RENDER_DISTANCE + 1) * (2 * HORIZONTAL_RENDER_DISTANCE + 1);
 	static constexpr size_t VERTEX_DATA_PER_CHUNK_BYTE_SIZE = (Chunk::BLOCK_COUNT * 6 * 3 * 2 * 4) * 0.2; // * 0.2 for testing

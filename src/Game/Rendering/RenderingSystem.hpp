@@ -78,18 +78,20 @@ private:
 	void resetStatistics();
 
 	std::array<Vec3, 8> getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view);
-	Mat4 getLightSpaceMatrix(float fov, float aspectRatio, const float nearPlane, const float farPlane, const Mat4& view, const Vec3& lightDir);
-	std::vector<Mat4> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& shadowCascadeLevels);
+	std::pair<Mat4, Vec3> getLightSpaceMatrix(float fov, float aspectRatio, const float nearPlane, const float farPlane, const Mat4& proj, const Mat4& view, const Vec3& lightDir);
+	std::vector<std::pair<Mat4, Vec3>> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Mat4& proj, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& shadowCascadeLevels);
 
 	void itemBlockShaderSetPerPass(const Mat4& view, const Mat4& projection);
 	void itemBlockDraw(const BlockData::Entry& blockInfo, const Mat4& model);
 
 	void waterShaderConfig();
+	void drawTexturedQuad(Texture& texture);
 
 private:
-	float m_farPlaneZ = 20.0 * Chunk::SIZE_X;
+	static constexpr float m_farPlaneZ = 20.0 * Chunk::SIZE_X;
 	float m_nearPlaneZ = 0.1f;
 	float m_fov = degToRad(90.0f);
+	float zMult = 160.0f;
 
 	static constexpr size_t SHADOW_MAP_SIZE = 2048;
 
@@ -134,6 +136,8 @@ private:
 
 	ShaderProgram m_squareShader;
 	Texture m_crosshairTexture;
+
+	ShaderProgram m_texturedQuad;
 
 	ShaderProgram m_debugShader;
 

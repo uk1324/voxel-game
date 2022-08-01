@@ -139,16 +139,15 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	, m_defferedDrawNormals(SHADERS_PATH "Other/texturedQuad.vert", SHADERS_PATH "Deffered/Debug/normals.frag")
 	, m_defferedDrawAlbedo(SHADERS_PATH "Other/texturedQuad.vert", SHADERS_PATH "Deffered/Debug/albedo.frag")
 	, m_defferedDrawDepth(SHADERS_PATH "Other/texturedQuad.vert", SHADERS_PATH "Deffered/Debug/depth.frag")
+	, m_texturedQuad(SHADERS_PATH "Other/texturedQuad.vert", SHADERS_PATH "Other/texturedQuad.frag")
 
 	, m_postProcessFbo(Fbo::generate())
 	, m_postprocessTexture(Texture::generate())
 	, m_postprocessDepthTexture(Texture::generate())
 	, m_postProcessShader(SHADERS_PATH "Other/texturedQuad.vert", SHADERS_PATH "PostProcess/postProcess.frag")
 
-	, m_directionalLightDir(Vec3(-0.5, -1, -0.5).normalized())
-
 	, m_shadowMapFbo(Fbo::generate())
-	, m_cascadeZ({ 10, 30, 50, 60 })
+	, m_cascadeZ({ 10, 30, 80, 150 })
 	, m_debugFbo(Fbo::generate())
 	, m_debugTexture(Texture::generate())
 
@@ -207,8 +206,10 @@ RenderingSystem::RenderingSystem(Scene& scene)
 		m_shadowMapTextures.push_back(Texture::generate());
 		m_shadowMapTextures[i].bind();
 		// Not sure if I should use nearest or linear filtering.
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);*/
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -308,7 +309,8 @@ void RenderingSystem::update(
 	const auto projection = Mat4::perspective(fov, aspectRatio, m_nearPlaneZ, m_farPlaneZ);
 	const auto view = Mat4::lookAt(cameraPos, cameraPos + cameraDir, Vec3::up);
 	const auto worldToLightSpaceMats = 
-		getLightSpaceMatrices(fov, aspectRatio, view, m_directionalLightDir, m_nearPlaneZ, m_farPlaneZ, m_cascadeZ);
+		getLightSpaceMatrices(fov, aspectRatio, projection, view, m_directionalLightDir, m_nearPlaneZ, m_farPlaneZ, m_cascadeZ);
+
 	Frustum frustum(view * projection);
 
 	auto drawToGeometryBuffer = [&]
@@ -412,7 +414,7 @@ void RenderingSystem::update(
 			glCullFace(GL_FRONT);
 			if (m_enableShadowMapPass)
 			{
-				drawScene(entites, itemData, chunkSystem, Mat4::identity, worldToLightSpaceMats[i]);
+				drawScene(entites, itemData, chunkSystem, Mat4::identity, worldToLightSpaceMats[i].first);
 			}
 			else
 			{
@@ -448,26 +450,55 @@ void RenderingSystem::update(
 		}
 		for (size_t i = 0; i < worldToLightSpaceMats.size(); i++)
 		{
-			m_defferedPassShader.setMat4("worldToShadowMap[" + std::to_string(i) + "]", worldToLightSpaceMats[i]);
+			m_defferedPassShader.setMat4("worldToShadowMap[" + std::to_string(i) + "]", worldToLightSpaceMats[i].first);
 		}
 		for (size_t i = 0; i < m_cascadeZ.size(); i++)
 		{
 			m_defferedPassShader.setFloat("cascadeZ[" + std::to_string(i) + "]", m_cascadeZ[i]);
+			m_defferedPassShader.setVec3("cascadeScale[" + std::to_string(i) + "]", worldToLightSpaceMats[i].second);
 		}
 		m_defferedPassShader.setInt("cascadeCount", m_cascadeZ.size());
 		m_defferedPassShader.setFloat("farPlane", m_farPlaneZ);
 		m_defferedPassShader.setMat4("worldToView", view);
 		m_defferedPassShader.setVec3("directionalLightDir", m_directionalLightDir);
 
-		static bool normalBias;
-		static float normalBiasScale = 1.0f;
+		static bool normalBias = true;
+		static float normalBiasScale = 67.969f;
+		static float constantBias = 0.00005f;
+		static bool useScaleAabb = false;
+		static bool slopeBias = true;
+		static float slopeBiasScale = -9.70881e-06;
 
 		ImGui::Begin("sdfasd");
 		ImGui::Checkbox("normalBias", &normalBias);
-		ImGui::SliderFloat("normalBiasScale", &normalBiasScale, 0.01, 1);
+		ImGui::SliderFloat("normalBiasScale", &normalBiasScale, 0.01, 300);
+		ImGui::Checkbox("slopeBias", &slopeBias);
+		ImGui::SliderFloat("slopeBiasScale", &slopeBiasScale, -0.003, 0.003, "%g");
+		ImGui::SliderFloat("constantBias", &constantBias, 0.00001f, 1.0f, "%g");
+		ImGui::Checkbox("useScaleAabb", &useScaleAabb);
+		static float angle1;
+		static float angle2;
+		ImGui::SliderFloat("angle1", &angle1, 0, 360);
+		ImGui::SliderFloat("angle2", &angle2, 0, 360);
+		ImGui::SliderFloat("zMult", &zMult, 0, 200);
+
+		ImGui::SliderFloat("z1", &m_cascadeZ[0], m_nearPlaneZ, m_farPlaneZ);
+		ImGui::SliderFloat("z2", &m_cascadeZ[1], m_nearPlaneZ, m_farPlaneZ);
+		ImGui::SliderFloat("z3", &m_cascadeZ[2], m_nearPlaneZ, m_farPlaneZ);
+		ImGui::SliderFloat("z4", &m_cascadeZ[3], m_nearPlaneZ, m_farPlaneZ);
+
 		ImGui::End();
 
-		m_defferedPassShader.setBool("doNormal", normalBias);
+		m_directionalLightDir = Quat(degToRad(angle1), Vec3::up) * Quat(degToRad(angle2), Vec3::right) * Vec3(-0.5, -1, -0.5).normalized();
+
+		/*m_defferedPassShader.setVec3("directionalLightDir", Quat(degToRad(angle2), Vec3::right) * Quat(degToRad(angle1), Vec3::up) * Vec3(-0.5, -1, -0.5).normalized());*/
+		m_defferedPassShader.setVec3("directionalLightDir", m_directionalLightDir);
+		m_defferedPassShader.setBool("normalBias", normalBias);
+		m_defferedPassShader.setFloat("normalBiasScale", normalBiasScale);
+		m_defferedPassShader.setBool("slopeBias", slopeBias);
+		m_defferedPassShader.setFloat("slopeBiasScale", slopeBiasScale);
+		m_defferedPassShader.setFloat("constantBias", constantBias);
+		m_defferedPassShader.setFloat("useScaleAabb", useScaleAabb);
 	};
 
 	auto setupDefferedDrawNormals = [&]
@@ -628,6 +659,13 @@ void RenderingSystem::update(
 	drawWater();
 
 	drawCrosshair(screenSize);
+
+	float size = m_screenSize.x / 4;
+	for (size_t i = 0; i < 4; i++)
+	{
+		glViewport(size * i, 0, size, size);
+		drawTexturedQuad(m_shadowMapTextures[i]);
+	}
 }
 
 void RenderingSystem::drawScene(
@@ -783,21 +821,52 @@ void RenderingSystem::resetStatistics()
 	m_meshesDrawn = 0;
 }
 
-Mat4 RenderingSystem::getLightSpaceMatrix(float fov, float aspectRatio, const float nearPlane, const float farPlane, const Mat4& view, const Vec3& lightDir)
+std::pair<Mat4, Vec3> RenderingSystem::getLightSpaceMatrix(float fov, float aspectRatio, const float nearPlane, const float farPlane, const Mat4& proj, const Mat4& view, const Vec3& lightDir)
 {
-	const auto proj = Mat4::perspective(fov, aspectRatio, nearPlane, farPlane);
-	const auto corners = getFrustumCornersWorldSpace(proj, view);
+	// project the new center using the previous projection & snap its
+	// position to a whole texel value, before re-projecting back into world
+	// space
+
+	const auto projection = Mat4::perspective(fov, aspectRatio, nearPlane, farPlane);
+
+	auto corners = getFrustumCornersWorldSpace(projection, view);
+	//for (size_t i = 0; i < 4; ++i)
+	//{
+	//	const auto cornerRay = corners[i + 4] - corners[i];
+	//	const auto nearCornerRay = cornerRay * nearPlane;
+	//	const auto farCornerRay = cornerRay * farPlane;
+	//	corners[i + 4] = corners[i] + farCornerRay;
+	//	corners[i] = corners[i] + nearCornerRay;
+	//}
 
 	Vec3 center(0);
 	for (const auto& corner : corners)
 		center += corner;
 	center /= corners.size();
 
+
+
+	//// Calculate the radius of a bounding sphere surrounding the frustum corners
+	//float sphereRadius = 0.0f;
+	//for (size_t i = 0; i < 8; ++i)
+	//{
+	//	float dist = (corners[i] - center).length();
+	//	sphereRadius = std::max(sphereRadius, dist);
+	//}
+
+	//sphereRadius = std::ceil(sphereRadius * 16.0f) / 16.0f;
+
+	//Vec3 max(sphereRadius, sphereRadius, sphereRadius);
+	//Vec3 min = -max;
+
 	const auto lightView = Mat4::lookAt(center - lightDir, center, Vec3::up);
+
+
 
 	// Create an AABB of frustum from the light's view.
 	Vec3 min(std::numeric_limits<float>::infinity());
 	Vec3 max(-std::numeric_limits<float>::infinity());
+
 	for (const auto& corner : corners)
 	{
 		const auto transformed = lightView * corner;
@@ -811,7 +880,8 @@ Mat4 RenderingSystem::getLightSpaceMatrix(float fov, float aspectRatio, const fl
 
 	// Maybe just set the max.z of the non transformed AABB to max height.
 	// Also include geometry the is behind the camera because it can also cast shadows.
-	constexpr float zMult = 160.0f;
+	//constexpr float zMult = 160.0f;
+
 	if (min.z < 0)
 	{
 		min.z *= zMult;
@@ -830,26 +900,27 @@ Mat4 RenderingSystem::getLightSpaceMatrix(float fov, float aspectRatio, const fl
 	}
 
 	const Mat4 lightProjection = Mat4::orthographic(min, max);
+	const Mat4 light = lightView * lightProjection;
 
-	return lightView * lightProjection;
+	return { lightView * lightProjection, Vec3(1.0f / (max.z - min.z)) };
 }
 
-std::vector<Mat4> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& cascadeZ)
+std::vector<std::pair<Mat4, Vec3>> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Mat4& proj, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& cascadeZ)
 {
-	std::vector<Mat4> matrices;
+	std::vector<std::pair<Mat4, Vec3>> matrices;
 	for (size_t i = 0; i < cascadeZ.size() + 1; ++i)
 	{
 		if (i == 0)
 		{
-			matrices.push_back(getLightSpaceMatrix(fov, aspectRatio, nearZ, cascadeZ[i], view, lightDir));
+			matrices.push_back(getLightSpaceMatrix(fov, aspectRatio, nearZ, cascadeZ[i], proj, view, lightDir));
 		}
 		else if (i < cascadeZ.size())
 		{
-			matrices.push_back(getLightSpaceMatrix(fov, aspectRatio, cascadeZ[i - 1], cascadeZ[i], view, lightDir));
+			matrices.push_back(getLightSpaceMatrix(fov, aspectRatio, cascadeZ[i - 1], cascadeZ[i], proj, view, lightDir));
 		}
 		else
 		{
-			matrices.push_back(getLightSpaceMatrix(fov, aspectRatio, cascadeZ[i - 1], farZ, view, lightDir));
+			matrices.push_back(getLightSpaceMatrix(fov, aspectRatio, cascadeZ[i - 1], farZ, proj, view, lightDir));
 		}
 	}
 	return matrices;
@@ -907,18 +978,29 @@ void RenderingSystem::waterShaderConfig()
 	m_chunkWaterShader.setFloat("timeScale", timeScale);
 }
 
+void RenderingSystem::drawTexturedQuad(Texture& texture)
+{
+	glClear(GL_DEPTH_BUFFER_BIT);
+	m_squareTrianglesVao2.bind();
+	glActiveTexture(GL_TEXTURE0);
+	texture.bind();
+	m_texturedQuad.use();
+	m_texturedQuad.setTexture("texture", 0);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
 std::array<Vec3, 8> RenderingSystem::getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view)
 {
 	// NDC cube corners
 	std::array<Vec3, 8> corners = {
-		Vec3(1,  1,  1),
-		Vec3(1, -1,  1),
-		Vec3(-1,  1,  1),
-		Vec3(-1, -1,  1),
 		Vec3(1,  1, -1),
 		Vec3(1, -1, -1),
 		Vec3(-1,  1, -1),
 		Vec3(-1, -1, -1),
+		Vec3(1,  1,  1),
+		Vec3(1, -1,  1),
+		Vec3(-1,  1,  1),
+		Vec3(-1, -1,  1)
 	};
 	// To projection matrix projects the frustum into the NDC cube.
 	// Doing the inverse will give the frustum coodinates.

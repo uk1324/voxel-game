@@ -60,6 +60,7 @@ void main()
 	vec3 reflectionDir = reflect(directionalLightDir, normal);
 	float specular = clamp(pow(dot(reflectionDir, viewDir), specularIntensity), 0, 1);
 
+	// TODO: This effect doesn't take into account the normal of the surface. Maybe try to do something with the actual refraction calculation.
 	vec4 refractedBackgroundColor = texture(background, gl_FragCoord.xy / screenSize + noiseScale * 0.01);
 
 	// Could also multiply colorSpecular and/or waterColor by diffuse.
