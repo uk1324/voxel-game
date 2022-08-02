@@ -16,6 +16,11 @@ uniform float constantBias;
 uniform bool slopeBias;
 uniform float slopeBiasScale;
 
+uniform float scaleScale;
+
+uniform bool doFiltering;
+uniform float filteringRadius;
+
 uniform bool useScaleAabb;
 
 float shadow(vec3 posWorldSpace, vec3 normal)
@@ -57,13 +62,15 @@ float shadow(vec3 posWorldSpace, vec3 normal)
             scale = 1 / (cascadeZ[layer] * biasModifier);
         }
     }
+    //scale = 1.0f / scale;
+    scale *= scaleScale;
 
 
     float d = dot(normal, directionalLightDir);
     float a = sqrt(1 - d * d);
     if (normalBias)
     {
-        posWorldSpace += normal * a * normalBiasScale * cascadeScale[layer].z;
+        posWorldSpace += normal * a * normalBiasScale;
     }
 
     // Perspective divide isn't needed becuase orthographic projection is used.
@@ -90,7 +97,6 @@ float shadow(vec3 posWorldSpace, vec3 normal)
     // cascade though this way creates visible transitions between cascaded(further cascaded have more acne).
     // Should also probably scale the bias based on the shadow map resolution.
 
-    bias *= scale;
 //     if (useScaleAabb)
 //     {
 //        bias *= cascadeScale[layer].z;
@@ -204,12 +210,24 @@ vec2(-3.273238927234555, 0.2650555134295571),
 
     };
 
+    float slope = slopeBias ? (a / d) * scale : 0;
+    bias *= scale * scaleScale;
+//    float slope = slopeBias ? (a / d) : 0;
+
+
+    // If there are color transitions between cascades disable it is caused by self shadowing before changing the values disable the filtering and just use one shadow map sample per pixel.
+
+    if (doFiltering == false)
+    {
+        float closestDeptha = texture2D(shadowMaps[layer], posLightSpace.xy).r;
+        return (currentDepth - bias - slope * slopeBiasScale) > closestDeptha ? 1.0 : 0.0; 
+    }
+
     vec2 texelSize = 1.0 / vec2(textureSize(shadowMaps[layer], 0));
-    float slope = slopeBias ? a / d : 0;
     float shadow = 0.0;
     for (int i = 0; i < samples.length(); i++)
     {
-        float closestDepth = texture2D(shadowMaps[layer], posLightSpace.xy + samples[i] * texelSize).r;
+        float closestDepth = texture2D(shadowMaps[layer], posLightSpace.xy + samples[i] * filteringRadius * (scale) * texelSize).r;
         shadow += (currentDepth - bias - slope * slopeBiasScale) > closestDepth ? 1.0 : 0.0;        
     }
     return shadow / 81.0;

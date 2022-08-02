@@ -463,24 +463,30 @@ void RenderingSystem::update(
 		m_defferedPassShader.setVec3("directionalLightDir", m_directionalLightDir);
 
 		static bool normalBias = true;
-		static float normalBiasScale = 67.969f;
+		static float normalBiasScale = 2.0f;
 		static float constantBias = 0.00005f;
-		static bool useScaleAabb = false;
+		static bool useScaleAabb = true;
 		static bool slopeBias = true;
 		static float slopeBiasScale = -9.70881e-06;
+		static bool doFiltering = false;
 
 		ImGui::Begin("sdfasd");
 		ImGui::Checkbox("normalBias", &normalBias);
-		ImGui::SliderFloat("normalBiasScale", &normalBiasScale, 0.01, 300);
+		ImGui::SliderFloat("normalBiasScale", &normalBiasScale, 0.01, 2.0f);
 		ImGui::Checkbox("slopeBias", &slopeBias);
-		ImGui::SliderFloat("slopeBiasScale", &slopeBiasScale, -0.003, 0.003, "%g");
-		ImGui::SliderFloat("constantBias", &constantBias, 0.00001f, 1.0f, "%g");
+		ImGui::SliderFloat("slopeBiasScale", &slopeBiasScale, -0.1, 0, "%g");
+		ImGui::SliderFloat("constantBias", &constantBias, 0.0000000f, 0.2f, "%g");
 		ImGui::Checkbox("useScaleAabb", &useScaleAabb);
+		static float filteringRadius = 1.0f;
+		ImGui::Checkbox("doFiltering", &doFiltering);
+		ImGui::SliderFloat("filteringRadius", &filteringRadius, 1.0f / 5.0f, 30.0f);
 		static float angle1;
 		static float angle2;
 		ImGui::SliderFloat("angle1", &angle1, 0, 360);
 		ImGui::SliderFloat("angle2", &angle2, 0, 360);
 		ImGui::SliderFloat("zMult", &zMult, 0, 200);
+		static float scaleScale = 1.0f;
+		ImGui::SliderFloat("scaleScale", &scaleScale, 0.0, 20.0f);
 
 		ImGui::SliderFloat("z1", &m_cascadeZ[0], m_nearPlaneZ, m_farPlaneZ);
 		ImGui::SliderFloat("z2", &m_cascadeZ[1], m_nearPlaneZ, m_farPlaneZ);
@@ -493,12 +499,15 @@ void RenderingSystem::update(
 
 		/*m_defferedPassShader.setVec3("directionalLightDir", Quat(degToRad(angle2), Vec3::right) * Quat(degToRad(angle1), Vec3::up) * Vec3(-0.5, -1, -0.5).normalized());*/
 		m_defferedPassShader.setVec3("directionalLightDir", m_directionalLightDir);
+		m_defferedPassShader.setFloat("scaleScale", scaleScale);
 		m_defferedPassShader.setBool("normalBias", normalBias);
 		m_defferedPassShader.setFloat("normalBiasScale", normalBiasScale);
 		m_defferedPassShader.setBool("slopeBias", slopeBias);
 		m_defferedPassShader.setFloat("slopeBiasScale", slopeBiasScale);
 		m_defferedPassShader.setFloat("constantBias", constantBias);
 		m_defferedPassShader.setFloat("useScaleAabb", useScaleAabb);
+		m_defferedPassShader.setBool("doFiltering", doFiltering);
+		m_defferedPassShader.setFloat("filteringRadius", filteringRadius);
 	};
 
 	auto setupDefferedDrawNormals = [&]
@@ -660,12 +669,12 @@ void RenderingSystem::update(
 
 	drawCrosshair(screenSize);
 
-	float size = m_screenSize.x / 4;
-	for (size_t i = 0; i < 4; i++)
-	{
-		glViewport(size * i, 0, size, size);
-		drawTexturedQuad(m_shadowMapTextures[i]);
-	}
+	//float size = m_screenSize.x / 4;
+	//for (size_t i = 0; i < 4; i++)
+	//{
+	//	glViewport(size * i, 0, size, size);
+	//	drawTexturedQuad(m_shadowMapTextures[i]);
+	//}
 }
 
 void RenderingSystem::drawScene(
@@ -676,6 +685,7 @@ void RenderingSystem::drawScene(
 	const Mat4& view)
 {
 	// TODO: Disable blend for faster rendering.
+	glDisable(GL_BLEND);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -823,86 +833,214 @@ void RenderingSystem::resetStatistics()
 
 std::pair<Mat4, Vec3> RenderingSystem::getLightSpaceMatrix(float fov, float aspectRatio, const float nearPlane, const float farPlane, const Mat4& proj, const Mat4& view, const Vec3& lightDir)
 {
-	// project the new center using the previous projection & snap its
-	// position to a whole texel value, before re-projecting back into world
-	// space
+	Vec3 frustumCornersWS[8] =
+	{
+		Vec3(-1.0f,  1.0f, -1.0f),
+		Vec3(1.0f,  1.0f, -1.0f),
+		Vec3(1.0f, -1.0f, -1.0f),
+		Vec3(-1.0f, -1.0f, -1.0f),
+		Vec3(-1.0f,  1.0f, 1.0f),
+		Vec3(1.0f,  1.0f, 1.0f),
+		Vec3(1.0f, -1.0f, 1.0f),
+		Vec3(-1.0f, -1.0f, 1.0f),
+	};
 
-	const auto projection = Mat4::perspective(fov, aspectRatio, nearPlane, farPlane);
+	float prevSplitDist = nearPlane;
+	float splitDist = farPlane;
 
-	auto corners = getFrustumCornersWorldSpace(projection, view);
+	Mat4 p = Mat4::perspective(fov, aspectRatio, nearPlane, farPlane);
+	Mat4 invViewProj = (view * p).inverse();
+	for (size_t i = 0; i < 8; ++i)
+		frustumCornersWS[i] = invViewProj * frustumCornersWS[i];
+
+	// Get the corners of the current cascade slice of the view frustum
 	//for (size_t i = 0; i < 4; ++i)
 	//{
-	//	const auto cornerRay = corners[i + 4] - corners[i];
-	//	const auto nearCornerRay = cornerRay * nearPlane;
-	//	const auto farCornerRay = cornerRay * farPlane;
-	//	corners[i + 4] = corners[i] + farCornerRay;
-	//	corners[i] = corners[i] + nearCornerRay;
+	//	Vec3 cornerRay = frustumCornersWS[i + 4] - frustumCornersWS[i];
+	//	Vec3 nearCornerRay = cornerRay * -prevSplitDist;
+	//	Vec3 farCornerRay = cornerRay * -splitDist;
+	//	frustumCornersWS[i + 4] = frustumCornersWS[i] + farCornerRay;
+	//	frustumCornersWS[i] = frustumCornersWS[i] + nearCornerRay;
 	//}
 
-	Vec3 center(0);
-	for (const auto& corner : corners)
-		center += corner;
-	center /= corners.size();
+	// Calculate the centroid of the view frustum slice
+	Vec3 frustumCenter(0.0f);
+	for (size_t i = 0; i < 8; ++i)
+		frustumCenter = frustumCenter + frustumCornersWS[i];
+	frustumCenter *= 1.0f / 8.0f;
 
+	// Pick the up vector to use for the light camera
+	Vec3 upDir = Vec3::up;
 
-
-	//// Calculate the radius of a bounding sphere surrounding the frustum corners
-	//float sphereRadius = 0.0f;
-	//for (size_t i = 0; i < 8; ++i)
-	//{
-	//	float dist = (corners[i] - center).length();
-	//	sphereRadius = std::max(sphereRadius, dist);
-	//}
-
-	//sphereRadius = std::ceil(sphereRadius * 16.0f) / 16.0f;
-
-	//Vec3 max(sphereRadius, sphereRadius, sphereRadius);
-	//Vec3 min = -max;
-
-	const auto lightView = Mat4::lookAt(center - lightDir, center, Vec3::up);
-
-
-
-	// Create an AABB of frustum from the light's view.
-	Vec3 min(std::numeric_limits<float>::infinity());
-	Vec3 max(-std::numeric_limits<float>::infinity());
-
-	for (const auto& corner : corners)
+	Vec3 minExtents;
+	Vec3 maxExtents;
 	{
-		const auto transformed = lightView * corner;
-		min.x = std::min(min.x, transformed.x);
-		max.x = std::max(max.x, transformed.x);
-		min.y = std::min(min.y, transformed.y);
-		max.y = std::max(max.y, transformed.y);
-		min.z = std::min(min.z, transformed.z);
-		max.z = std::max(max.z, transformed.z);
+		// Calculate the radius of a bounding sphere surrounding the frustum corners
+		float sphereRadius = 0.0f;
+		for (size_t i = 0; i < 8; ++i)
+		{
+			float dist = (frustumCornersWS[i] - frustumCenter).length();
+			sphereRadius = std::max(sphereRadius, dist);
+		}
+
+		sphereRadius = std::ceil(sphereRadius * 16.0f) / 16.0f;
+
+		maxExtents = Vec3(sphereRadius, sphereRadius, sphereRadius) * 1;
+		minExtents = -maxExtents;
 	}
 
-	// Maybe just set the max.z of the non transformed AABB to max height.
-	// Also include geometry the is behind the camera because it can also cast shadows.
-	//constexpr float zMult = 160.0f;
+	Vec3 cascadeExtents = maxExtents - minExtents;
 
-	if (min.z < 0)
+	// Get position of the shadow camera
+	Vec3 shadowCameraPos = frustumCenter + -m_directionalLightDir * -minExtents.z;
+
+	// Come up with a new orthographic camera for the shadow caster
+	auto shadowProjection = Mat4::orthographic(Vec3(minExtents.x, minExtents.y, -cascadeExtents.z), Vec3(maxExtents.x, maxExtents.y, cascadeExtents.z));
+	/*OrthographicCamera shadowCamera(minExtents.x, minExtents.y, maxExtents.x,
+		maxExtents.y, 0.0f, cascadeExtents.z);*/
+	const auto shadowView = Mat4::lookAt(shadowCameraPos, frustumCenter, Vec3::up);
+	//shadowCamera.SetLookAt(shadowCameraPos, frustumCenter, upDir);
+
 	{
-		min.z *= zMult;
-	}
-	else
-	{
-		min.z /= zMult;
-	}
-	if (max.z < 0)
-	{
-		max.z /= zMult;
-	}
-	else
-	{
-		max.z *= zMult;
+		// Create the rounding matrix, by projecting the world-space origin and determining
+		// the fractional offset in texel space
+		Mat4 shadowMatrix = shadowView * shadowProjection;
+		Vec3 shadowOrigin(0.0f);
+		shadowOrigin = shadowMatrix * shadowOrigin;
+		shadowOrigin = shadowOrigin * (2048.0f / 2.0f);
+
+		Vec3 roundedOrigin = shadowOrigin.applied(floor);
+		Vec3 roundOffset = roundedOrigin - shadowOrigin;
+		roundOffset = roundOffset *  (2.0f / 2048.0f);
+		roundOffset.z = 0.0f;
+		//roundOffset = XMVectorSetW(roundOffset, 0.0f);
+
+		//XMMATRIX shadowProj = shadowCamera.ProjectionMatrix().ToSIMD();
+		//shadowProj.r[3] = XMVectorAdd(shadowProj.r[3], roundOffset);
+		//shadowCamera.SetProjection(shadowProj);
+		shadowProjection(3, 0) += roundOffset.x;
+		shadowProjection(3, 1) += roundOffset.y;
 	}
 
-	const Mat4 lightProjection = Mat4::orthographic(min, max);
-	const Mat4 light = lightView * lightProjection;
+	return { shadowView * shadowProjection, Vec3(1.0f / (cascadeExtents.z * 2)) / 2048 };
 
-	return { lightView * lightProjection, Vec3(1.0f / (max.z - min.z)) };
+	// Draw the mesh with depth only, using the new shadow camera
+	//RenderDepthCPU(context, shadowCamera, world, characterWorld, true);
+
+	//// Apply the scale/offset matrix, which transforms from [-1,1]
+	//// post-projection space to [0,1] UV space
+	//XMMATRIX texScaleBias;
+	//texScaleBias.r[0] = XMVectorSet(0.5f, 0.0f, 0.0f, 0.0f);
+	//texScaleBias.r[1] = XMVectorSet(0.0f, -0.5f, 0.0f, 0.0f);
+	//texScaleBias.r[2] = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+	//texScaleBias.r[3] = XMVectorSet(0.5f, 0.5f, 0.0f, 1.0f);
+	//XMMATRIX shadowMatrix = shadowCamera.ViewProjectionMatrix().ToSIMD();
+	//shadowMatrix = XMMatrixMultiply(shadowMatrix, texScaleBias);
+
+	//// Store the split distance in terms of view space depth
+	//const float clipDist = camera.FarClip() - camera.NearClip();
+	//meshPSConstants.Data.CascadeSplits[cascadeIdx] = camera.NearClip() + splitDist * clipDist;
+
+	//// Calculate the position of the lower corner of the cascade partition, in the UV space
+	//// of the first cascade partition
+	//Float4x4 invCascadeMat = Float4x4::Invert(shadowMatrix);
+	//Float3 cascadeCorner = Float3::Transform(Float3(0.0f, 0.0f, 0.0f), invCascadeMat);
+	//cascadeCorner = Float3::Transform(cascadeCorner, globalShadowMatrix);
+
+	//// Do the same for the upper corner
+	//Float3 otherCorner = Float3::Transform(Float3(1.0f, 1.0f, 1.0f), invCascadeMat);
+	//otherCorner = Float3::Transform(otherCorner, globalShadowMatrix);
+
+	//// Calculate the scale and offset
+	//Float3 cascadeScale = Float3(1.0f, 1.0f, 1.0f) / (otherCorner - cascadeCorner);
+	//meshPSConstants.Data.CascadeOffsets[cascadeIdx] = Float4(-cascadeCorner, 0.0f);
+	//meshPSConstants.Data.CascadeScales[cascadeIdx] = Float4(cascadeScale, 1.0f);
+
+	//if (AppSettings::UseFilterableShadows())
+	//	ConvertToVSM(context, cascadeIdx, meshPSConstants.Data.CascadeScales[cascadeIdx].To3D(),
+	//		meshPSConstants.Data.CascadeScales[0].To3D());
+
+
+
+
+//	// project the new center using the previous projection & snap its
+//	// position to a whole texel value, before re-projecting back into world
+//	// space
+//
+//	const auto projection = Mat4::perspective(fov, aspectRatio, nearPlane, farPlane);
+//
+//	auto corners = getFrustumCornersWorldSpace(proj, view);
+//	for (size_t i = 0; i < 4; ++i)
+//	{
+//		const auto cornerRay = corners[i + 4] - corners[i];
+//		const auto nearCornerRay = cornerRay * nearPlane;
+//		const auto farCornerRay = cornerRay * farPlane;
+//		corners[i + 4] = corners[i] + farCornerRay;
+//		corners[i] = corners[i] + nearCornerRay;
+//	}
+//
+//	Vec3 center(0);
+//	for (const auto& corner : corners)
+//		center += corner;
+//	center /= corners.size();
+//
+//	// Calculate the radius of a bounding sphere surrounding the frustum corners
+//	float sphereRadius = 0.0f;
+//	for (size_t i = 0; i < 8; ++i)
+//	{
+//		float dist = (corners[i] - center).length();
+//		sphereRadius = std::max(sphereRadius, dist);
+//	}
+//
+//	sphereRadius = std::ceil(sphereRadius * 16.0f) / 16.0f;
+//
+//	Vec3 max(sphereRadius, sphereRadius, sphereRadius);
+//	Vec3 min = -max;
+//
+//	const auto lightView = Mat4::lookAt(center - lightDir, center, Vec3::up);
+//
+//
+//
+//	// Create an AABB of frustum from the light's view.
+//	//Vec3 min(std::numeric_limits<float>::infinity());
+//	//Vec3 max(-std::numeric_limits<float>::infinity());
+//
+//	//for (const auto& corner : corners)
+//	//{
+//	//	const auto transformed = lightView * corner;
+//	//	min.x = std::min(min.x, transformed.x);
+//	//	max.x = std::max(max.x, transformed.x);
+//	//	min.y = std::min(min.y, transformed.y);
+//	//	max.y = std::max(max.y, transformed.y);
+//	//	min.z = std::min(min.z, transformed.z);
+//	//	max.z = std::max(max.z, transformed.z);
+//	//}
+//
+//	// Maybe just set the max.z of the non transformed AABB to max height.
+//	// Also include geometry the is behind the camera because it can also cast shadows.
+//	//constexpr float zMult = 160.0f;
+//
+//	if (min.z < 0)
+//	{
+//		min.z *= zMult;
+//	}
+//	else
+//	{
+//		min.z /= zMult;
+//	}
+//	if (max.z < 0)
+//	{
+//		max.z /= zMult;
+//	}
+//	else
+//	{
+//		max.z *= zMult;
+//	}
+//
+//	const Mat4 lightProjection = Mat4::orthographic(min, max);
+//	const Mat4 light = lightView * lightProjection;
+//
+//	return { lightView * lightProjection, Vec3(1.0f / (max.z - min.z)) };
 }
 
 std::vector<std::pair<Mat4, Vec3>> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Mat4& proj, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& cascadeZ)

@@ -15,6 +15,7 @@
 struct ChunkData
 {
 	Chunk blocks;
+	// Could store multiple vertex counts and offsets for different height ranges. This would allow for better frustum culling.
 	size_t vertexCount;
 	size_t vboByteOffset;
 	Vec3I pos;
