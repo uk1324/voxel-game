@@ -1,21 +1,15 @@
-#include "Time.hpp"
+#include <Engine/Time.hpp>
 
 #include <GLFW/glfw3.h>
 
-Time::Time()
-	: m_deltaTime(0.0)
-	, m_lastFrameTime(0.0)
-	, m_currentTick(0)
-{}
-
-float Time::deltaTime() const
+float Time::deltaTime()
 {
-	return static_cast<float>(m_deltaTime);
+	return static_cast<float>(_deltaTime);
 }
 
-uint64_t Time::currentTick() const
+uint64_t Time::currentTick()
 {
-	return m_currentTick;
+	return _currentTick;
 }
 
 float Time::currentTime()
@@ -28,8 +22,11 @@ void Time::update(float deltaTime)
 	// Don't know if I should use the actual delta time or should it be a constant so every program execution is the same.
 	double currentTime = glfwGetTime();
 	//m_deltaTime = currentTime - m_lastFrameTime;
-	m_deltaTime = deltaTime;
-	m_lastFrameTime = currentTime;
-
-	m_currentTick++;
+	_deltaTime = deltaTime;
+	_lastFrameTime = currentTime;
+	_currentTick++;
 }
+
+double Time::_deltaTime = 0.0;
+double Time::_lastFrameTime = 0.0;
+uint64_t Time::_currentTick = 0;

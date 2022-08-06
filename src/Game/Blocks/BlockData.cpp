@@ -46,6 +46,7 @@ BlockData::BlockData()
 		entry.walkSpeed = walkSpeed;
 		entry.isSolid = isSolid;
 		entry.isDecoration = false;
+		entry.isLiquid = false;
 		entry.drop = drop;
 		return entry;
 	};
@@ -59,6 +60,32 @@ BlockData::BlockData()
 		entry.textureIndex = getTextureIndex(texture);
 		entry.isSolid = false;
 		entry.isDecoration = true;
+		entry.isLiquid = false;
+		entry.drop = ItemStack(Item(ItemType::Dirt), 1);
+		return entry;
+	};
+
+	auto liquidEntry = [getTextureIndex]
+	(
+		std::string texture,
+		float liquidFriction,
+		ItemStack drop
+	)
+	{
+		Entry entry;
+		entry.topTextureIndex = getTextureIndex(texture);
+		entry.bottomTextureIndex = getTextureIndex(texture);
+		entry.leftTextureIndex = getTextureIndex(texture);
+		entry.rightTextureIndex = getTextureIndex(texture);
+		entry.frontTextureIndex = getTextureIndex(texture);
+		entry.backTextureIndex = getTextureIndex(texture);
+		entry.isSolid = false;
+		entry.isDecoration = false;
+		entry.isLiquid = true;
+		entry.liquid.friction = liquidFriction;
+		entry.friction = 0.85f;
+		entry.walkSpeed = 1.0f;
+		entry.drop = drop;
 		return entry;
 	};
 
@@ -131,19 +158,6 @@ BlockData::BlockData()
 		ItemStack(ItemType::Cobblestone, 1)
 	));
 
-	set(BlockType::Water, entry(
-		PATH "water.png",
-		PATH "water.png",
-		PATH "water.png",
-		PATH "water.png",
-		PATH "water.png",
-		PATH "water.png",
-		0.85,
-		1,
-		false,
-		ItemStack(ItemType::Debug, 1)
-	));
-
 	set(BlockType::Sand, entry(
 		PATH "sand.png",
 		PATH "sand.png",
@@ -198,6 +212,8 @@ BlockData::BlockData()
 		false,
 		ItemStack(ItemType::Debug, 1)
 	));
+
+	set(BlockType::Water, liquidEntry(PATH "water.png", 0.85f, ItemStack(Item(ItemType::Debug), 1)));
 
 	textureArray = TextureArray(16, 16, std::vector<std::string_view>(texturesNames.begin(), texturesNames.end()));
 }

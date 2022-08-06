@@ -1,6 +1,7 @@
 #version 430 core
 
 #include "../Util/noise.glsl"
+#include "../Util/miscellaneous.glsl"
 
 uniform vec3 viewPos;
 uniform float time;
@@ -26,11 +27,6 @@ in vec3 fragPosWorld;
 
 out vec4 outColor;
 
-vec4 blend(vec4 src, vec4 dest)
-{
-	return vec4(src.a * src.rgb + (1 - src.a) * dest.rgb, 1);
-}
-
 float waveHeightMapNoise(vec2 pos)
 {
 	float accumulator = 0, scale = 1;
@@ -42,6 +38,7 @@ float waveHeightMapNoise(vec2 pos)
 	return accumulator;
 }
 
+// TODO: Maybe attenute the color based on the depth difference between the water and the ground depth.
 void main()
 {
 	vec3 directionalLightDir = normalize(vec3(-0.5, -1, -0.5));

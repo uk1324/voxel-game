@@ -41,19 +41,22 @@ void PlayerInteractionSystem::update(
 			if (optBlock.has_value())
 			{
 				auto velocity = Vec3::randomInRange(Vec3(-0.04, 0.08, -0.04), Vec3(0.04, 0.09, 0.04));
+				const auto blockCenter = Vec3(voxelRaycastHit->blockPos) + Vec3(Block::SIZE) / 2.0f;
 
 				Entity item = EntitySystem::spawnItemEntity(
 					entites,
-					Vec3(voxelRaycastHit->blockPos) + Vec3(Block::SIZE) / 2.0f,
+					blockCenter,
 					blockSystem.chunkSystem.blockData[optBlock->type].drop,
 					velocity); 
 
 				blockSystem.trySet(voxelRaycastHit->blockPos, BlockType::Air);
+				// TODO: Make a function break block that does all of this.
+				EntitySystem::spawnBlockParticles(blockCenter, optBlock->type, entites);
 			}
 		}
 		else if (entityRaycastHit.has_value())
 		{
-			Vec3& entityVel = entites.getComponent<PhysicsVelocity>(entityRaycastHit->entity).value;
+			Vec3& entityVel = entites.getComponent<PhysicsComponent>(entityRaycastHit->entity).velocity;
 			entityVel += ((rayEnd - playerPos).normalized() + Vec3::up * 3) * playerAttackKnockbackForce;
 		}
 		playerAnimationComponent.playSwingAnimation();
@@ -85,6 +88,15 @@ void PlayerInteractionSystem::update(
 			}
 		}  
 	}
+	 
+	if (input.isButtonDown("dropItem") && heldItem.has_value())
+	{
+		EntitySystem::spawnItemEntity(entites, playerPos, ItemStack(heldItem->item, 1), playerDir * 0.15f);
+		// TODO: Make a static function take item.
+		heldItem->count -= 1;
+		if (heldItem->count == 0)
+			heldItem = std::nullopt;
+	}
 
 	auto pickupAabb = Aabb(colliderPos - collider.halfSize - Vec3(1, 0.5, 1), colliderPos + collider.halfSize + Vec3(1, 0.5, 1));
 	for (auto& [itemEntity, itemComponent] : entites.getComponents<ItemComponent>())
@@ -94,12 +106,13 @@ void PlayerInteractionSystem::update(
 		static constexpr float PICKUP_DISTANCE = 2.0f;
 		static constexpr float PICKUP_COOLDOWN = 0.5f;
 		if (((Time::currentTime() - itemComponent.spawnTime) > PICKUP_COOLDOWN)
-			//&& (Vec3::distanceSquared(pos, playerPos) < PICKUP_DISTANCE))
-			&& (pickupAabb.contains(pos)))
+			&& (pickupAabb.contains(pos))
+			&& itemComponent.item.count > 0) // Deleted items exist until the end of the frame, so this check is needed here.
 		{
 			const auto rest = inventory.tryAdd(itemData, itemComponent.item);
 			if (rest.has_value())
 			{
+				ASSERT(rest->count != 0);
 				itemComponent.item = *rest;
 			}
 			else
@@ -108,14 +121,6 @@ void PlayerInteractionSystem::update(
 				entites.destroyEntity(itemEntity);
 			}
 		}
-	}
-
-	if (input.isButtonDown("dropItem") && heldItem.has_value())
-	{
-		EntitySystem::spawnItemEntity(entites, playerPos, ItemStack(heldItem->item, 1), playerDir * 0.15f);
-		heldItem->count -= 1;
-		if (heldItem->count == 0)
-			heldItem = std::nullopt;
 	}
 
 	if (voxelRaycastHit.has_value())

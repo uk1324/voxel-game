@@ -1,9 +1,10 @@
 #include <Game/PhysicsSystem.hpp>
 #include <Game/Components/Position.hpp>
+#include <Game/EntitySystem.hpp>
 
 PhysicsSystem::PhysicsSystem(Scene& scene)
 {
-	scene.entityManager.registerComponent<PhysicsVelocity>();
+	scene.entityManager.registerComponent<PhysicsComponent>();
 	scene.entityManager.registerComponent<PhysicsAabbCollider>();
 	scene.entityManager.registerComponent<Grounded>();
 }
@@ -12,30 +13,36 @@ PhysicsSystem::PhysicsSystem(Scene& scene)
 
 #include <Game/Debug/Debug.hpp>
 
+// TODO: A lot of this code is frame rate dependent. Fix this.
 void PhysicsSystem::update(const Time& time, EntityManager& entityManager, const ChunkSystem& chunkSystem)
 {
-	for (auto& [entity, velocityComponent] : entityManager.getComponents<PhysicsVelocity>())
+	for (auto& [entity, physicsComponent] : entityManager.getComponents<PhysicsComponent>())
 	{
-		Vec3& entityVel = velocityComponent.value;
+		Vec3& entityVel = physicsComponent.velocity;
 		Vec3& entityPos = entityManager.getComponent<Position>(entity).value;
 		Opt<Grounded*> isEntityGrounded = entityManager.getOptComponent<Grounded>(entity);
 		const PhysicsAabbCollider& collider = entityManager.getComponent<PhysicsAabbCollider>(entity);
 
 		entityVel.y -= gravity * time.deltaTime();
 
-		entityVel.y *= 0.98;
+		physicsComponent.liquidCollisionBlockType = aabbVsLiquidCollision(chunkSystem, entityPos, collider.halfSize);
+		if (physicsComponent.liquidCollisionBlockType.has_value())
+		{
+			entityVel *= chunkSystem.blockData[*physicsComponent.liquidCollisionBlockType].liquid.friction;
+		}
 
+		entityVel.y *= airFriction;
 		if (isEntityGrounded.has_value())
 		{
 			if ((*isEntityGrounded)->value)
 			{
-				entityVel.x *= 0.85;
-				entityVel.z *= 0.85;
+				entityVel.x *= groundFriction;
+				entityVel.z *= groundFriction;
 			}
 			else
 			{
-				entityVel.x *= 0.98;
-				entityVel.z *= 0.98;
+				entityVel.x *= airFriction;
+				entityVel.z *= airFriction;
 			}
 
 			(*isEntityGrounded)->value = false;
@@ -45,7 +52,11 @@ void PhysicsSystem::update(const Time& time, EntityManager& entityManager, const
 		// Doing collsion 3 times so the sliding collision response on one axis doesn't allow to go through blocks.
 		for (int i = 0; i < 3; i++)
 		{
-			TerrainCollision collision = aabbVsTerrainCollision(chunkSystem, entityPos + collider.centerOffset, collider.halfSize, entityVel);
+			TerrainCollision collision = aabbVsTerrainCollision(
+				chunkSystem, 
+				entityPos + collider.centerOffset, 
+				collider.halfSize, 
+				entityVel);
 
 			static constexpr float EPSILON = 0.01f;
 			// Subtracting epsilon to move the player right before the collision.
@@ -86,6 +97,14 @@ void PhysicsSystem::update(const Time& time, EntityManager& entityManager, const
 		if (Debug::shouldShowHitboxes)
 		{
 			Debug::drawCube(entityPos + collider.centerOffset, collider.halfSize * 2);
+		}
+	}
+
+	for (auto& [particleEmmiterEntity, particleEmmiter] : entityManager.getComponents<BlockParticleEmmiter>())
+	{
+		for (auto& particle : particleEmmiter.particles)
+		{
+			particleUpdatePosition(chunkSystem, particle.pos, particle.vel);
 		}
 	}
 }
@@ -370,47 +389,23 @@ PhysicsSystem::TerrainCollision PhysicsSystem::aabbVsTerrainCollision(const Chun
 						if (entryTime.x > entryTime.y && entryTime.x > entryTime.z)
 						{
 							if (entryDistance.x < 0.0f)
-							{
-								result.normal.x = 1.0f;
-								result.normal.y = 0.0f;
-								result.normal.z = 0.0f;
-							}
+								result.normal = Vec3(1.0f, 0.0f, 0.0f);
 							else
-							{
-								result.normal.x = -1.0f;
-								result.normal.y = 0.0f;
-								result.normal.z = 0.0f;
-							}
+								result.normal = Vec3(-1.0f, 0.0f, 0.0f);
 						}
 						else if (entryTime.y > entryTime.x && entryTime.y > entryTime.z)
 						{
 							if (entryDistance.y < 0.0f)
-							{
-								result.normal.x = 0.0f;
-								result.normal.y = 1.0f;
-								result.normal.z = 0.0f;
-							}
+								result.normal = Vec3(0.0f, 1.0f, 0.0f);
 							else
-							{
-								result.normal.x = 0.0f;
-								result.normal.y = -1.0f;
-								result.normal.z = 0.0f;
-							}
+								result.normal = Vec3(0.0f, -1.0f, 0.0f);
 						}
 						else
 						{
 							if (entryDistance.z < 0.0f)
-							{
-								result.normal.x = 0.0f;
-								result.normal.y = 0.0f;
-								result.normal.z = 1.0f;
-							}
+								result.normal = Vec3(0.0f, 0.0f, 1.0f);
 							else
-							{
-								result.normal.x = 0.0f;
-								result.normal.y = 0.0f;
-								result.normal.z = -1.0f;
-							}
+								result.normal = Vec3(0.0f, 0.0f, -1.0f);
 						}
 					}				
 				}
@@ -421,9 +416,78 @@ PhysicsSystem::TerrainCollision PhysicsSystem::aabbVsTerrainCollision(const Chun
 	return result;
 }
 
+Opt<BlockType> PhysicsSystem::aabbVsLiquidCollision(const ChunkSystem& chunkSystem, const Vec3& pos, const Vec3& halfColliderSize)
+{
+	// Minecraft doesn't do swept collision for liquids.
+	// How would swept collision for liquids without using an infinite loop even work?
+	// Maybe first check for the closest liquid hit and then do the terrains collision.
+	const auto collisionAreaMin = (pos - halfColliderSize).applied(floor);
+	const auto collisionAreaMax = (pos + halfColliderSize).applied(ceil);
+	Opt<BlockType> liquidBlock;
+	const auto& blockData = chunkSystem.blockData;
+	for (float z = collisionAreaMin.z; z < collisionAreaMax.z; z++)
+	{
+		for (float y = collisionAreaMin.y; y < collisionAreaMax.y; y++)
+		{
+			for (float x = collisionAreaMin.x; x < collisionAreaMax.x; x++)
+			{
+				if (const auto block = chunkSystem.tryGetBlock(Vec3I(x, y, z)); 
+					block.has_value() 
+					&& block->type != BlockType::Air
+					&& blockData[block->type].isLiquid
+					&& (
+						(liquidBlock.has_value() == false)
+						|| (blockData[block->type].liquid.friction < blockData[*liquidBlock].liquid.friction)
+					))
+				{
+					liquidBlock = block->type;
+				}
+			}
+		}
+	}
+	return liquidBlock;
+}
+
 bool PhysicsSystem::isBlockVsAabbCollision(const Vec3& blockPos, const Vec3& pos, const Vec3& halfSize)
 {
 	return (pos.x - halfSize.x < blockPos.x + Block::SIZE) && (pos.x + halfSize.x > blockPos.x)
 		&& (pos.y - halfSize.y < blockPos.y + Block::SIZE) && (pos.y + halfSize.y > blockPos.y)
 		&& (pos.z - halfSize.z < blockPos.z + Block::SIZE) && (pos.z + halfSize.z > blockPos.z);
+}
+
+Vec3 PhysicsSystem::particleUpdatePosition(const ChunkSystem& chunkSystem, Vec3& pos, Vec3& vel)
+{
+	vel.y -= gravity * Time::deltaTime();
+	vel *= airFriction;
+	auto newPos = pos;
+	const auto newBlockPos = Vec3I(newPos.applied(floor));
+	{
+		
+		for (size_t i = 0; i < 3; i++)
+		{
+			auto newPosAxis = pos;
+			newPosAxis[i] += vel[i];
+			const auto blockPos = Vec3I(newPosAxis.applied(floor));
+			if (const auto block = chunkSystem.tryGetBlock(blockPos); 
+				block.has_value() && (block->type != BlockType::Air) && chunkSystem.blockData[block->type].isSolid)
+			{
+				if (vel[i] < 0.0f)
+				{
+					pos[i] = blockPos[i] + 1.001f;
+				}
+				else
+				{
+					pos[i] = blockPos[i] - 0.001f;
+				}
+				if (i == 1)
+				{
+					vel.x *= groundFriction;
+					vel.z *= groundFriction;
+				}
+				vel[i] = 0.0f;
+			}
+		}
+	}
+	pos += vel;
+	return Vec3(0.0f);
 }

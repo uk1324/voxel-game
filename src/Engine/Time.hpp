@@ -5,18 +5,15 @@
 class Time
 {
 public:
-	Time();
-
-	float deltaTime() const;
-	uint64_t currentTick() const;
+	static float deltaTime();
+	static uint64_t currentTick();
 
 	static float currentTime();
 
-	void update(float deltaTime);
+	static void update(float deltaTime);
 
 private:
-	double m_deltaTime;
-	double m_lastFrameTime;	
-
-	uint64_t m_currentTick;
+	static double _deltaTime;
+	static double _lastFrameTime;	
+	static uint64_t _currentTick;
 };

@@ -89,7 +89,7 @@ Opt<BlockSystem::RaycastHit> BlockSystem::raycast(const Vec3& start, const Vec3&
         }
 
 
-        if (block->type != BlockType::Air)
+        if ((block->type != BlockType::Air) && (blockData[block->type].isLiquid == false))
         {
             RaycastHit result;
             result.blockPos = currentBlockPos;

@@ -26,6 +26,7 @@ public:
 	float lastJump = 0.0f;
 	float airSpeed = 0.8f;
 	float jumpForce = 0.17f;
+	float swimForce = 0.17f * 0.1;
 	float jumpVelMultiplier = 1.2;
 
 	double m_jumpPressedTime;

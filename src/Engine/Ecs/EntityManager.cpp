@@ -75,7 +75,7 @@ void EntityManager::removeDestrotedComponents()
 		// False warning this doesn't dereference a nullptr unless you remove
 		// a component that an entity doesn't have.
 		pool->remove(*componentReferenceLocation);
-		componentReferenceLocation = nullptr;
+		*componentReferenceLocation = nullptr;
 	}
 	m_componentsToRemove.clear();
 }

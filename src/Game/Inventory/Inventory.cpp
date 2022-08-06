@@ -21,6 +21,7 @@ Inventory::Inventory(size_t size)
 	m_data[0] = ItemStack(ItemType::Water, 64);
 }
 
+// Returns rest that couldn't fit.
 Opt<ItemStack> Inventory::tryAdd(const ItemData& itemData, const ItemStack& itemStack)
 {
 	Opt<size_t> firstEmptySlot;

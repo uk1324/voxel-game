@@ -7,6 +7,7 @@
 #include <string_view>
 #include <vector>
 
+// TODO: Make this global or static.
 class BlockData
 {
 public:
@@ -26,11 +27,18 @@ public:
 				uint32_t backTextureIndex;
 			};
 			uint32_t textureIndex;
+
+			struct
+			{
+				float friction;
+			} liquid;
 		};
+		// TODO Maybe make an enum BlockType with solid decoration and liquid. Non 
 		float friction;
 		float walkSpeed;
 		bool isSolid;
 		bool isDecoration;
+		bool isLiquid;
 		ItemStack drop;
 	};
 

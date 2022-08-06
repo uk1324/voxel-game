@@ -13,7 +13,8 @@ PlayerMovementSystem::PlayerMovementSystem(Scene& scene)
 
 void PlayerMovementSystem::update(Entity& player, const InputManager& input, const Time& time, EntityManager& entityManager)
 {
-	Vec3& playerVel = entityManager.getComponent<PhysicsVelocity>(player).value;
+	auto& playerPhysicsComponent = entityManager.getComponent<PhysicsComponent>(player);
+	Vec3& playerVel = playerPhysicsComponent.velocity;
 	Quat& playerRotation = entityManager.getComponent<Rotation>(player).value;
 	PlayerMovementComponent& playerMovement = entityManager.getComponent<PlayerMovementComponent>(player);
 
@@ -68,8 +69,13 @@ void PlayerMovementSystem::update(Entity& player, const InputManager& input, con
 #if 1
 	movementDirection.normalize();
 
-
+	bool isInLiqud = playerPhysicsComponent.liquidCollisionBlockType.has_value();
 	const bool isEntityGrounded = entityManager.getComponent<Grounded>(player).value;
+
+	if (isInLiqud)
+	{
+		playerVel += (rotationX * movementDirection) * (walkSpeed / 3.0f) * time.deltaTime();
+	}
 	if (isEntityGrounded)
 	{
 		playerVel += (rotationX * movementDirection) * walkSpeed * time.deltaTime();
@@ -93,6 +99,8 @@ void PlayerMovementSystem::update(Entity& player, const InputManager& input, con
 	if (input.isButtonHeld("jump"))
 	{
 		m_jumpPressedTime = Time::currentTime();
+		if (isInLiqud)
+			playerVel += Vec3::up * swimForce;
 	}
 
 	static constexpr double JUMP_BUFFER_THRESHOLD = 0.2;

@@ -160,7 +160,7 @@ void EntityManager::removeComponent(Entity entity)
 	size_t componentIndex = getComponentIndex<T>();
 	toRemove.pool = m_componentPools[componentIndex].get();
 	toRemove.compoentReferenceLocation = &m_entityComponent[componentIndex][entity];
-	ASSERT(toRemove.compoentReferenceLocation != nullptr);
+	ASSERT(*toRemove.compoentReferenceLocation != nullptr);
 	m_componentsToRemove.push_back(toRemove);
 }
 

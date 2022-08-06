@@ -23,7 +23,7 @@ public:
 	GenericVec3<T>& apply(T(*function)(T));
 
 	// TODO:
-	// Make more function chainable
+	// Make more functions chainable
 
 	GenericVec3<T> normalized() const;
 	void normalize();
@@ -41,6 +41,9 @@ public:
 	GenericVec3 operator/(const GenericVec3& rhs) const;
 	GenericVec3& operator/=(T rhs);
 	GenericVec3 operator-() const;
+	// To make this safer could make an axis enum and an iterator for them.
+	T& operator[](size_t i);
+	const T& operator[](size_t i) const;
 
 	GenericVec2<T> xz() const;
 
@@ -234,6 +237,20 @@ template<typename T>
 GenericVec3<T> GenericVec3<T>::operator-() const
 {
 	return GenericVec3<T>(-x, -y, -z);
+}
+
+template<typename T>
+const T& GenericVec3<T>::operator[](size_t i) const
+{
+	ASSERT(i < 3);
+	return data()[i];
+}
+
+template<typename T>
+T& GenericVec3<T>::operator[](size_t i)
+{
+	ASSERT(i < 3);
+	return data()[i];
 }
 
 template<typename T>

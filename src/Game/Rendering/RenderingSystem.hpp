@@ -18,6 +18,7 @@
 // Some members could be static
 // Make a global debug class that will store the instance of this class.
 
+// Could constructor shaders inside the header file.
 class RenderingSystem
 {
 private:
@@ -77,9 +78,8 @@ private:
 		const Mat4& view);
 	void resetStatistics();
 
-	std::array<Vec3, 8> getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view);
-	std::pair<Mat4, Vec3> getLightSpaceMatrix(float fov, float aspectRatio, const float nearPlane, const float farPlane, const Mat4& proj, const Mat4& view, const Vec3& lightDir);
-	std::vector<std::pair<Mat4, Vec3>> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Mat4& proj, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& shadowCascadeLevels);
+	std::pair<Mat4, Vec3> getShadowMatrix(float fov, float aspectRatio, const float nearPlane, const float farPlane, const Mat4& proj, const Mat4& view, const Vec3& lightDir);
+	std::vector<std::pair<Mat4, Vec3>> getShadowMatrices(float fov, float aspectRatio, const Mat4& proj, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& shadowCascadeLevels);
 
 	void itemBlockShaderSetPerPass(const Mat4& view, const Mat4& projection);
 	void itemBlockDraw(const BlockData::Entry& blockInfo, const Mat4& model);
@@ -95,7 +95,7 @@ private:
 
 	static constexpr size_t SHADOW_MAP_SIZE = 2048;
 
-	Vec3 m_directionalLightDir;
+	Vec3 m_directionalLightDir = Vec3(-0.5, -1, -0.5).normalized();
 
 	Fbo m_debugFbo;
 	Texture m_debugTexture;
@@ -109,6 +109,19 @@ private:
 	ShaderProgram m_itemModelShader;
 	ShaderProgram m_modelShader;
 
+	ShaderProgram m_blockParticleShader;
+	Vbo m_blockParticleVerticesVbo;
+	Vbo m_blockParticleVbo;
+	Vao m_blockParticleVao;
+	struct BlockParticleInstance
+	{
+		Mat4 model;
+		uint32_t blockTextureIndex;
+	};
+	static constexpr size_t MAX_PARTICLES_PER_INSTANCED_DRAW_CALL = 100;
+	std::array<BlockParticleInstance, MAX_PARTICLES_PER_INSTANCED_DRAW_CALL> m_blockParticleInstances;
+
+
 	Fbo m_shadowMapFbo;
 	// Make shadowMapTextures store depth and color so stained glass casts colored shadows.
 	std::vector<Texture> m_shadowMapTextures;
@@ -119,13 +132,16 @@ private:
 	ShaderProgram m_defferedDrawAlbedo;
 	ShaderProgram m_defferedDrawDepth;
 
-	Fbo m_postProcessFbo;
-	Texture m_postprocessTexture;
-	// Postprocess has to have a texture because after the deffered pass the skybox and debug shapes are drawn.
-	// It also makes it easier to make togglable SSAO and other postprocessing effects although they could be implemented
-	// in the deffered pass.
-	Texture m_postprocessDepthTexture;
+	Fbo m_postProcessFbo0;
+	Texture m_postprocessTexture0;
+	Texture m_postprocessDepthTexture0;
+
+	Fbo m_postProcessFbo1;
+	Texture m_postprocessTexture1;
+	Texture m_postprocessDepthTexture1;
+
 	ShaderProgram m_postProcessShader;
+	ShaderProgram m_postProcessWaterShader;
 
 	Vec2 m_screenSize;
 

@@ -48,7 +48,7 @@ void EntitySystem::update(EntityManager& entites, const InputManager& input, con
 				// TODO Rotation goes in the oposite direction. Fix this.
 				const auto acutalRotation = rotation * Quat::fromEuler(0, PI<float>, 0);
 				const auto direction = acutalRotation * Vec3::forward;
-				auto& velocity = entites.getComponent<PhysicsVelocity>(entity).value;
+				auto& velocity = entites.getComponent<PhysicsComponent>(entity).velocity;
 				const auto& isGrounded = entites.getComponent<Grounded>(entity).value;
 				if (isGrounded)
 				{
@@ -70,6 +70,16 @@ void EntitySystem::update(EntityManager& entites, const InputManager& input, con
 			}
 		}
 	}
+
+	for (const auto& [particleEmmiterEntity, particleEmmiter] : entites.getComponents<BlockParticleEmmiter>())
+	{
+		static constexpr auto DESPAWN_TIME = 2.0f;
+		if ((Time::currentTime() - particleEmmiter.spawnTime) > DESPAWN_TIME)
+		{
+			entites.destroyEntity(particleEmmiterEntity);
+			std::cout << "despawn\n";
+		}
+	}
 }
 
 void EntitySystem::spawnZombie(const Vec3& position, EntityManager& entityManager)
@@ -78,23 +88,35 @@ void EntitySystem::spawnZombie(const Vec3& position, EntityManager& entityManage
 	entityManager.addComponent(entity, Position{ position });
 	entityManager.addComponent(entity, Rotation{ Quat::identity });
 	PhysicsAabbCollider collider;
-	//collider.centerOffset = Vec3(0, -(1.62 - 0.5 * (1.875)), 0);
 	collider.centerOffset = Vec3(0, (1.72 - 0.5 * (1.875)), 0);
 	collider.halfSize = Vec3(0.6, 1.875, 0.6) / 2.0f;
 	entityManager.addComponent(entity, collider);
-	entityManager.addComponent(entity, PhysicsVelocity{});
+	entityManager.addComponent(entity, PhysicsComponent{});
 	entityManager.addComponent(entity, Grounded{});
 	entityManager.addComponent(entity, ZombieComponent{ Time::currentTime(), true, Quat::identity, Quat::identity });
 	auto& animator = entityManager.addComponent(entity, AnimatedModel{m_zombieModel});
 	animator.playAnimation(0, AnimatedModelPlayType::PlayLoop, 0);
 }
 
-Entity EntitySystem::spawnItemEntity(EntityManager& entityManager, const Vec3& position, ItemStack item, const Vec3& velocity)
+void EntitySystem::spawnBlockParticles(const Vec3& position, BlockType blockType, EntityManager& entityManager)
 {
 	Entity entity = entityManager.createEntity();
 	entityManager.addComponent(entity, Position{ position });
+	auto& particleEmmiter = entityManager.addComponent(entity, BlockParticleEmmiter{ {}, Time::currentTime(), blockType });
+	for (auto& particle : particleEmmiter.particles)
+	{
+		particle.pos = position;
+		particle.vel = Vec3::randomInRange(Vec3(-0.05f, 0.05f, -0.05f), Vec3(0.05f, 0.1f, 0.05f));
+	}
+}
+
+Entity EntitySystem::spawnItemEntity(EntityManager& entityManager, const Vec3& position, ItemStack item, const Vec3& velocity)
+{
+	ASSERT(item.count > 0);
+	Entity entity = entityManager.createEntity();
+	entityManager.addComponent(entity, Position{ position });
 	entityManager.addComponent(entity, ItemComponent{ item, Time::currentTime() });
-	entityManager.addComponent(entity, PhysicsVelocity{ velocity });
+	entityManager.addComponent(entity, PhysicsComponent{ velocity });
 	entityManager.addComponent(entity, Grounded{});
 	entityManager.addComponent(entity, PhysicsAabbCollider{ Vec3(0), Vec3(0.25f) });
 	return entity;

@@ -20,6 +20,18 @@ struct ZombieComponent
 	Quat oldRotation;
 };
 
+struct BlockParticleEmmiter
+{
+	struct Particle
+	{
+		Vec3 pos;
+		Vec3 vel;
+	};
+	std::array<Particle, 10> particles;
+	float spawnTime;
+	BlockType blockType;
+};
+
 class EntitySystem
 {
 public:
@@ -28,6 +40,7 @@ public:
 
 	void spawnZombie(const Vec3& position, EntityManager& entityManager);
 
+	static void spawnBlockParticles(const Vec3& position, BlockType blockType, EntityManager& entityManager);
 	static Entity spawnItemEntity(EntityManager& entityManager, const Vec3& position, ItemStack item, const Vec3& velocity = Vec3(0.0f));
 
 private:

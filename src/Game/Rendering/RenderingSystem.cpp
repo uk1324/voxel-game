@@ -117,6 +117,7 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	, m_itemBlockShader(SHADERS_PATH "Objects/itemBlock.vert", SHADERS_PATH "Objects/itemBlock.frag")
 	, m_itemModelShader(SHADERS_PATH "Objects/itemModel.vert", SHADERS_PATH "Objects/itemModel.frag")
 	, m_modelShader(SHADERS_PATH "Objects/model.vert", SHADERS_PATH "Objects/model.frag")
+	, m_blockParticleShader(SHADERS_PATH "Objects/blockParticle.vert", SHADERS_PATH "Objects/blockParticle.frag")
 
 	, m_crosshairTexture("assets/textures/crosshair.png")
 	, m_debugShader(SHADERS_PATH "Other/debugShapes.vert", SHADERS_PATH "Other/debugShapes.frag")
@@ -141,13 +142,18 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	, m_defferedDrawDepth(SHADERS_PATH "Other/texturedQuad.vert", SHADERS_PATH "Deffered/Debug/depth.frag")
 	, m_texturedQuad(SHADERS_PATH "Other/texturedQuad.vert", SHADERS_PATH "Other/texturedQuad.frag")
 
-	, m_postProcessFbo(Fbo::generate())
-	, m_postprocessTexture(Texture::generate())
-	, m_postprocessDepthTexture(Texture::generate())
+	, m_postProcessFbo0(Fbo::generate())
+	, m_postprocessTexture0(Texture::generate())
+	, m_postprocessDepthTexture0(Texture::generate())
+	, m_postProcessFbo1(Fbo::generate())
+	, m_postprocessTexture1(Texture::generate())
+	, m_postprocessDepthTexture1(Texture::generate())
+
 	, m_postProcessShader(SHADERS_PATH "Other/texturedQuad.vert", SHADERS_PATH "PostProcess/postProcess.frag")
+	, m_postProcessWaterShader(SHADERS_PATH "Other/texturedQuad.vert", SHADERS_PATH "PostProcess/waterPostProcess.frag")
 
 	, m_shadowMapFbo(Fbo::generate())
-	, m_cascadeZ({ 10, 30, 70.0f, 150 })
+	, m_cascadeZ({ 10, 30, 60.0f, 150 })
 	, m_debugFbo(Fbo::generate())
 	, m_debugTexture(Texture::generate())
 
@@ -230,28 +236,44 @@ RenderingSystem::RenderingSystem(Scene& scene)
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 	Fbo::unbind();
 
-	m_postProcessFbo.bind();
-	m_postprocessTexture.bind();
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_postprocessTexture.handle(), 0);
-	// Is this needed?
-	//glDrawBuffer(GL_COLOR_ATTACHMENT0);
-	m_postprocessDepthTexture.bind();
-	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);*/
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_postprocessDepthTexture.handle(), 0);
-	Fbo::unbind();
+	auto initializePostProcessTexture = [](Fbo& fbo, Texture& color, Texture& depth)
+	{
+		fbo.bind();
+		color.bind();
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color.handle(), 0);
+		depth.bind();
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth.handle(), 0);
+		Fbo::unbind();
+	};
+	initializePostProcessTexture(m_postProcessFbo0, m_postprocessTexture0, m_postprocessDepthTexture0);
+	initializePostProcessTexture(m_postProcessFbo1, m_postprocessTexture1, m_postprocessDepthTexture1);
 
-	//glReadBuffer(GL_NONE);
+
+	m_blockParticleVao.bind();
+	m_blockParticleVerticesVbo = Vbo(squareTrianglesVertices2, sizeof(squareTrianglesVertices2));
+	m_blockParticleVerticesVbo.bind();
+	Vao::setAttribute(0, BufferLayout(ShaderDataType::Float, 2, 0, sizeof(float) * 4, false));
+	Vao::setAttribute(1, BufferLayout(ShaderDataType::Float, 2, sizeof(float) * 2, sizeof(float) * 4, false));
+	m_blockParticleVbo = Vbo(sizeof(BlockParticleInstance) * MAX_PARTICLES_PER_INSTANCED_DRAW_CALL);
+	m_blockParticleVbo.bind();
+	Vao::setAttribute(2, ShaderDataType::Float, 4, false, sizeof(BlockParticleInstance), offsetof(BlockParticleInstance, model));
+	Vao::setAttribute(3, ShaderDataType::Float, 4, false, sizeof(BlockParticleInstance), offsetof(BlockParticleInstance, model) + sizeof(float) * 4);
+	Vao::setAttribute(4, ShaderDataType::Float, 4, false, sizeof(BlockParticleInstance), offsetof(BlockParticleInstance, model) + sizeof(float) * 8);
+	Vao::setAttribute(5, ShaderDataType::Float, 4, false, sizeof(BlockParticleInstance), offsetof(BlockParticleInstance, model) + sizeof(float) * 12);
+	Vao::setIntAttribute(6, ShaderDataType::UnsignedInt, 1, sizeof(BlockParticleInstance), offsetof(BlockParticleInstance, blockTextureIndex));
+	glVertexAttribDivisor(2, 1);
+	glVertexAttribDivisor(3, 1);
+	glVertexAttribDivisor(4, 1);
+	glVertexAttribDivisor(5, 1);
+	glVertexAttribDivisor(6, 1); 
 	// Set the uniforms at start.
 	waterShaderConfig();
 }
@@ -277,9 +299,14 @@ void RenderingSystem::onScreenResize()
 	m_debugTexture.bind();
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, m_screenSize.x, m_screenSize.y, 0, GL_RGB, GL_FLOAT, nullptr);
 
-	m_postprocessTexture.bind();
+	m_postprocessTexture0.bind();
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, m_screenSize.x, m_screenSize.y, 0, GL_RGB, GL_FLOAT, nullptr);
-	m_postprocessDepthTexture.bind();
+	m_postprocessDepthTexture0.bind();
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_screenSize.x, m_screenSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+	m_postprocessTexture1.bind();
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, m_screenSize.x, m_screenSize.y, 0, GL_RGB, GL_FLOAT, nullptr);
+	m_postprocessDepthTexture1.bind();
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_screenSize.x, m_screenSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
 	glViewport(0, 0, m_screenSize.x, m_screenSize.y);
@@ -309,7 +336,7 @@ void RenderingSystem::update(
 	const auto projection = Mat4::perspective(fov, aspectRatio, m_nearPlaneZ, m_farPlaneZ);
 	const auto view = Mat4::lookAt(cameraPos, cameraPos + cameraDir, Vec3::up);
 	const auto worldToLightSpaceMats = 
-		getLightSpaceMatrices(fov, aspectRatio, projection, view, m_directionalLightDir, m_nearPlaneZ, m_farPlaneZ, m_cascadeZ);
+		getShadowMatrices(fov, aspectRatio, projection, view, m_directionalLightDir, m_nearPlaneZ, m_farPlaneZ, m_cascadeZ);
 
 	Frustum frustum(view * projection);
 
@@ -394,11 +421,53 @@ void RenderingSystem::update(
 
 		drawScene(entites, itemData, chunkSystem, projection, view);
 
+		m_blockParticleShader.setVec3("directionalLightDir", m_directionalLightDir);
+		m_blockParticleShader.use();
+		m_blockParticleVao.bind();
+		m_blockParticleShader.setMat4("projection", projection);
+		m_blockParticleShader.setMat4("view", view);
+		m_blockParticleShader.setTexture("blockTextureArray", 0);
+		glActiveTexture(GL_TEXTURE0);
+		chunkSystem.blockData.textureArray.bind();
+		glDisable(GL_CULL_FACE);
+		size_t particlesToDrawInThisInstancedCall = 0;
+		auto drawParticles = [this, &particlesToDrawInThisInstancedCall]
+		{
+			m_blockParticleVbo.bind(); 
+			Vbo::setData(0, m_blockParticleInstances.data(), sizeof(BlockParticleInstance) * particlesToDrawInThisInstancedCall);
+			//Vbo::allocateData(m_blockParticleInstances.data(), sizeof(BlockParticleInstance) * particlesToDrawInThisInstancedCall);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, particlesToDrawInThisInstancedCall);
+		};
+		for (const auto& [particleEmmiterEntity, particleEmmiter] : entites.getComponents<BlockParticleEmmiter>())
+		{
+			const auto& pos = entites.getComponent<Position>(particleEmmiterEntity);
+			const auto& blockInfo = chunkSystem.blockData[particleEmmiter.blockType];
+			const auto textureIndex = blockInfo.isDecoration ? blockInfo.textureIndex : blockInfo.frontTextureIndex;
+			for (const auto& particle : particleEmmiter.particles)
+			{
+				if (particlesToDrawInThisInstancedCall >= MAX_PARTICLES_PER_INSTANCED_DRAW_CALL)
+				{
+					drawParticles();
+					particlesToDrawInThisInstancedCall = 0;
+				}
+				auto& particleInstance = m_blockParticleInstances[particlesToDrawInThisInstancedCall];
+				particleInstance.model = Mat4::scale(Vec3(1.0f / 16.0f)) * cameraRot.asMatrix() * Mat4::translation(particle.pos);
+				particleInstance.blockTextureIndex = textureIndex;
+				particlesToDrawInThisInstancedCall++;
+			}
+		}
+		if (particlesToDrawInThisInstancedCall > 0)
+		{
+			drawParticles();
+		}
+
 		glDisable(GL_STENCIL_TEST);
 		if (heldItem.has_value())
 		{
 			drawFirstPersonItem();
 		}
+
+
 
 		Fbo::unbind(); 
 	};
@@ -460,54 +529,11 @@ void RenderingSystem::update(
 		m_defferedPassShader.setInt("cascadeCount", m_cascadeZ.size());
 		m_defferedPassShader.setFloat("farPlane", m_farPlaneZ);
 		m_defferedPassShader.setMat4("worldToView", view);
+
+		m_defferedPassShader.setMat4("viewProjection", view * projection);
+
+
 		m_defferedPassShader.setVec3("directionalLightDir", m_directionalLightDir);
-
-		static bool normalBias = true;
-		static float normalBiasScale = 0.087f;
-		static float constantBias = 8.09717e-5;
-		static bool useScaleAabb = true;
-		static bool slopeBias = true;
-		static float slopeBiasScale = -0.000161943;
-		static bool doFiltering = false;
-
-		ImGui::Begin("sdfasd");
-		ImGui::Checkbox("normalBias", &normalBias);
-		ImGui::SliderFloat("normalBiasScale", &normalBiasScale, 0.01, 10.0f);
-		ImGui::Checkbox("slopeBias", &slopeBias);
-		ImGui::SliderFloat("slopeBiasScale", &slopeBiasScale, -0.01f, 0, "%g");
-		ImGui::SliderFloat("constantBias", &constantBias, 0.0000000f, 0.01f, "%g");
-		ImGui::Checkbox("useScaleAabb", &useScaleAabb);
-		static float filteringRadius = 1.0f;
-		ImGui::Checkbox("doFiltering", &doFiltering);
-		ImGui::SliderFloat("filteringRadius", &filteringRadius, 1.0f / 50.0f, 1.0);
-		static float angle1;
-		static float angle2;
-		ImGui::SliderFloat("angle1", &angle1, 0, 360);
-		ImGui::SliderFloat("angle2", &angle2, 0, 360);
-		ImGui::SliderFloat("zMult", &zMult, 0, 200);
-		static float scaleScale = 1.0f;
-		ImGui::SliderFloat("scaleScale", &scaleScale, 0.0, 20.0f);
-
-		ImGui::SliderFloat("z1", &m_cascadeZ[0], m_nearPlaneZ, m_farPlaneZ);
-		ImGui::SliderFloat("z2", &m_cascadeZ[1], m_nearPlaneZ, m_farPlaneZ);
-		ImGui::SliderFloat("z3", &m_cascadeZ[2], m_nearPlaneZ, m_farPlaneZ);
-		ImGui::SliderFloat("z4", &m_cascadeZ[3], m_nearPlaneZ, m_farPlaneZ);
-
-		ImGui::End();
-
-		m_directionalLightDir = Quat(degToRad(angle1), Vec3::up) * Quat(degToRad(angle2), Vec3::right) * Vec3(-0.5, -1, -0.5).normalized();
-
-		/*m_defferedPassShader.setVec3("directionalLightDir", Quat(degToRad(angle2), Vec3::right) * Quat(degToRad(angle1), Vec3::up) * Vec3(-0.5, -1, -0.5).normalized());*/
-		m_defferedPassShader.setVec3("directionalLightDir", m_directionalLightDir);
-		m_defferedPassShader.setFloat("scaleScale", scaleScale);
-		m_defferedPassShader.setBool("normalBias", normalBias);
-		m_defferedPassShader.setFloat("normalBiasScale", normalBiasScale);
-		m_defferedPassShader.setBool("slopeBias", slopeBias);
-		m_defferedPassShader.setFloat("slopeBiasScale", slopeBiasScale);
-		m_defferedPassShader.setFloat("constantBias", constantBias);
-		m_defferedPassShader.setFloat("useScaleAabb", useScaleAabb);
-		m_defferedPassShader.setBool("doFiltering", doFiltering);
-		m_defferedPassShader.setFloat("filteringRadius", filteringRadius);
 	};
 
 	auto setupDefferedDrawNormals = [&]
@@ -583,7 +609,7 @@ void RenderingSystem::update(
 		glDepthFunc(GL_LEQUAL);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glActiveTexture(GL_TEXTURE0);
-		m_postprocessTexture.bind();
+		m_postprocessTexture0.bind();
 		m_chunkWaterShader.setTexture("background", 0);
 		m_chunkWaterShader.setVec2("screenSize", screenSize);
 		glEnable(GL_BLEND);
@@ -648,33 +674,56 @@ void RenderingSystem::update(
 	case Depth: setupDefferedDrawDepth(); break;
 	}
 
-	m_postProcessFbo.bind();
+	m_postProcessFbo0.bind();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	defferedDraw();
 
-	Fbo::unbind();
-
+	const auto blockAtHead = chunkSystem.tryGetBlock(Vec3I(cameraPos.applied(floor)));
+	const auto isUnderwater = blockAtHead.has_value() && (blockAtHead->type == BlockType::Water);
+	if (isUnderwater)
+	{
+		m_postProcessFbo1.bind();
+	}
+	else
+	{
+		Fbo::unbind();
+	}
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	m_postProcessShader.use();
 	glActiveTexture(GL_TEXTURE0);
-	m_postprocessTexture.bind();
+	m_postprocessTexture0.bind();
 	m_postProcessShader.setTexture("inputColorTexture", 0);
 	glActiveTexture(GL_TEXTURE1);
-	m_postprocessDepthTexture.bind();
+	m_postprocessDepthTexture0.bind();
 	m_postProcessShader.setTexture("inputDepthTexture", 1);
 	glViewport(0, 0, screenSize.x, screenSize.y);
 	m_squareTrianglesVao2.bind();
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	drawWater();
 
-	drawCrosshair(screenSize);
+	if (isUnderwater)
+	{
+		Fbo::unbind();
+		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+		m_postProcessWaterShader.use();
+		glActiveTexture(GL_TEXTURE0);
+		m_postprocessTexture1.bind();
+		m_postProcessWaterShader.setTexture("inputColorTexture", 0);
+		glActiveTexture(GL_TEXTURE1);
+		m_postprocessDepthTexture1.bind();
+		m_postProcessWaterShader.setTexture("inputDepthTexture", 1);
+		m_postProcessWaterShader.setVec3("waterColor", colorWater);
+		m_postProcessWaterShader.setVec2("screenSize", screenSize);
+		m_postProcessWaterShader.setMat4("inverseProjection", projection.inverse());
+		glViewport(0, 0, screenSize.x, screenSize.y);
+		m_squareTrianglesVao2.bind();
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+	}
+	
 
-	//float size = m_screenSize.x / 4;
-	//for (size_t i = 0; i < 4; i++)
-	//{
-	//	glViewport(size * i, 0, size, size);
-	//	drawTexturedQuad(m_shadowMapTextures[i]);
-	//}
+	//m_postProcessFbo0.bind();
+
+	drawCrosshair(screenSize);
 }
 
 void RenderingSystem::drawScene(
@@ -819,45 +868,6 @@ void RenderingSystem::drawScene(
 	drawMeshes();
 }
 
-static Mat4 MakeGlobalShadowMatrix(const Mat4& view, const Mat4& projection, const Vec3& lightDir)
-{
-	Vec3 frustumCorners[8] =
-	{
-		Vec3(-1.0f,  1.0f, -1.0f),
-		Vec3(1.0f,  1.0f, -1.0f),
-		Vec3(1.0f, -1.0f, -1.0f),
-		Vec3(-1.0f, -1.0f, -1.0f),
-		Vec3(-1.0f,  1.0f, 1.0f),
-		Vec3(1.0f,  1.0f, 1.0f),
-		Vec3(1.0f, -1.0f, 1.0f),
-		Vec3(-1.0f, -1.0f, 1.0f),
-	};
-
-	Mat4 invViewProj = (view * projection).inverse();
-	Vec3 frustumCenter(0.0f);
-	for (size_t i = 0; i < 8; ++i)
-	{
-		frustumCorners[i] = invViewProj * frustumCorners[i];
-		frustumCenter += frustumCorners[i];
-	}
-
-	frustumCenter /= 8.0f;
-
-	// Create a temporary view matrix for the light
-	Vec3 lightCameraPos = frustumCenter;
-	Vec3 lookAt = frustumCenter - -lightDir;
-	Mat4 lightView = Mat4::lookAt(lightCameraPos, lookAt, Vec3::up);
-
-	Vec3 shadowCameraPos = frustumCenter + -lightDir * -0.5f;
-
-	// Come up with a new orthographic camera for the shadow caster
-	;
-
-	Mat4 texScaleBias = Mat4::scale(Vec3(0.5f, -0.5f, 1.0f));
-	texScaleBias.setTranslation(Vec3(0.5f, 0.5f, -1.0f));
-	return (lightView * Mat4::orthographic(Vec3(-0.5, -0.5, -1.0), Vec3(0.5, 0.5, 1.0))) * texScaleBias;
-}
-
 void RenderingSystem::resetStatistics()
 {
 	m_totalChunksToDraw = 0;
@@ -870,125 +880,76 @@ void RenderingSystem::resetStatistics()
 	m_meshesDrawn = 0;
 }
 
-std::pair<Mat4, Vec3> RenderingSystem::getLightSpaceMatrix(float fov, float aspectRatio, const float nearPlane, const float farPlane, const Mat4& proj, const Mat4& view, const Vec3& lightDir)
+std::pair<Mat4, Vec3> RenderingSystem::getShadowMatrix(float fov, float aspectRatio, const float cascadeNearZ, const float cascadeFarZ, const Mat4& proj, const Mat4& view, const Vec3& lightDir)
 {
-	Vec3 frustumCornersWS[8] =
-	{
-		Vec3(-1.0f,  1.0f, -1.0f),
-		Vec3(1.0f,  1.0f, -1.0f),
+	const auto projection = Mat4::perspective(fov, aspectRatio, cascadeNearZ, cascadeFarZ);
+	const auto viewProjectionInverse = (view * projection).inverse();
+
+	std::array<Vec3, 8> frustumCornersWorldSpace = {
+		Vec3(-1.0f, 1.0f, -1.0f),
+		Vec3(1.0f, 1.0f, -1.0f),
 		Vec3(1.0f, -1.0f, -1.0f),
 		Vec3(-1.0f, -1.0f, -1.0f),
-		Vec3(-1.0f,  1.0f, 1.0f),
-		Vec3(1.0f,  1.0f, 1.0f),
+		Vec3(-1.0f, 1.0f, 1.0f),
+		Vec3(1.0f, 1.0f, 1.0f),
 		Vec3(1.0f, -1.0f, 1.0f),
 		Vec3(-1.0f, -1.0f, 1.0f),
 	};
+	for (auto& corner : frustumCornersWorldSpace)
+		corner = viewProjectionInverse * corner;
 
-	float prevSplitDist = nearPlane;
-	float splitDist = farPlane;
-
-	Mat4 p = Mat4::perspective(fov, aspectRatio, nearPlane, farPlane);
-	Mat4 invViewProj = (view * p).inverse();
-	for (size_t i = 0; i < 8; ++i)
-		frustumCornersWS[i] = invViewProj * frustumCornersWS[i];
-
-	// Calculate the centroid of the view frustum slice
 	Vec3 frustumCenter(0.0f);
-	for (size_t i = 0; i < 8; ++i)
-		frustumCenter = frustumCenter + frustumCornersWS[i];
-	frustumCenter *= 1.0f / 8.0f;
+	for (const auto& corner : frustumCornersWorldSpace)
+		frustumCenter += corner;
+	frustumCenter /= frustumCornersWorldSpace.size();
 
-	// Pick the up vector to use for the light camera
-	Vec3 upDir = Vec3::up;
-
-	Vec3 minExtents;
-	Vec3 maxExtents;
+	float boundingSphereRadius = 0.0f;
+	for (const auto& corner : frustumCornersWorldSpace)
 	{
-		// Calculate the radius of a bounding sphere surrounding the frustum corners
-		float sphereRadius = 0.0f;
-		for (size_t i = 0; i < 8; ++i)
-		{
-			float dist = (frustumCornersWS[i] - frustumCenter).length();
-			sphereRadius = std::max(sphereRadius, dist);
-		}
-
-		sphereRadius = std::ceil(sphereRadius * 16.0f) / 16.0f;
-
-		maxExtents = Vec3(sphereRadius, sphereRadius, sphereRadius) * 1;
-		minExtents = -maxExtents;
+		float distance = (corner - frustumCenter).length();
+		boundingSphereRadius = std::max(boundingSphereRadius, distance);
 	}
+	boundingSphereRadius = std::ceil(boundingSphereRadius * 16.0f) / 16.0f;
 
-	Vec3 cascadeExtents = maxExtents - minExtents;
+	const Vec3 max(boundingSphereRadius, boundingSphereRadius, boundingSphereRadius);
+	const auto min = -max;
+	const auto cascadeExtents = max - min;
 
-	// Get position of the shadow camera
-	Vec3 shadowCameraPos = frustumCenter + -m_directionalLightDir * -minExtents.z;
-
-	// Come up with a new orthographic camera for the shadow caster
-	auto shadowProjection = Mat4::orthographic(Vec3(minExtents.x, minExtents.y, -cascadeExtents.z), Vec3(maxExtents.x, maxExtents.y, cascadeExtents.z));
-	/*OrthographicCamera shadowCamera(minExtents.x, minExtents.y, maxExtents.x,
-		maxExtents.y, 0.0f, cascadeExtents.z);*/
+	const auto shadowCameraPos = frustumCenter + m_directionalLightDir * min.z;
 	const auto shadowView = Mat4::lookAt(shadowCameraPos, frustumCenter, Vec3::up);
-	//shadowCamera.SetLookAt(shadowCameraPos, frustumCenter, upDir);
 
-	{
-		// Create the rounding matrix, by projecting the world-space origin and determining
-		// the fractional offset in texel space
-		Mat4 shadowMatrix = shadowView * shadowProjection;
-		Vec3 shadowOrigin(0.0f);
-		shadowOrigin = shadowMatrix * shadowOrigin;
-		shadowOrigin = shadowOrigin * (2048.0f / 2.0f);
-
-		Vec3 roundedOrigin = shadowOrigin.applied(floor);
-		Vec3 roundOffset = roundedOrigin - shadowOrigin;
-		roundOffset = roundOffset *  (2.0f / 2048.0f);
-		roundOffset.z = 0.0f;
-		//roundOffset = XMVectorSetW(roundOffset, 0.0f);
-
-		//XMMATRIX shadowProj = shadowCamera.ProjectionMatrix().ToSIMD();
-		//shadowProj.r[3] = XMVectorAdd(shadowProj.r[3], roundOffset);
-		//shadowCamera.SetProjection(shadowProj);
-		shadowProjection(3, 0) += roundOffset.x;
-		shadowProjection(3, 1) += roundOffset.y;
-	}
-
+	/*auto shadowProjection = Mat4::orthographic(Vec3(min.x, min.y, -cascadeExtents.z), Vec3(max.x, max.y, cascadeExtents.z));*/
+	auto shadowProjection = Mat4::orthographic(Vec3(min.x, min.y, -Chunk::SIZE_Y), Vec3(max.x, max.y, cascadeExtents.z));
 	const auto shadowMatrix = shadowView * shadowProjection;
+	const auto shadowOrigin = (shadowMatrix * Vec3(0.0f)) * (SHADOW_MAP_SIZE / 2.0f);
 
-	const auto mat = MakeGlobalShadowMatrix(view, proj, m_directionalLightDir);
+	const auto roundedOrigin = shadowOrigin.applied(floor);
+	const auto roundOffset = (roundedOrigin - shadowOrigin) * (2.0f / SHADOW_MAP_SIZE);
 
-	Mat4 invCascadeMat = shadowMatrix.inverse();
-	Vec3 cascadeCorner = invCascadeMat * Vec3(-1.0f);
-	cascadeCorner = mat * cascadeCorner;
+	shadowProjection(3, 0) += roundOffset.x;
+	shadowProjection(3, 1) += roundOffset.y;
 
-	// Do the same for the upper corner
-	Vec3 otherCorner = invCascadeMat * Vec3(1.0f, 1.0f, 1.0f);
-	otherCorner = mat * otherCorner;
+	const auto texelAlignedShadowMatrix = (shadowView * shadowProjection);
 
-	// Calculate the scale and offset
-	Vec3 cascadeScale = Vec3(1.0f) / ((otherCorner - cascadeCorner) / 1024.0f);
-
-	//meshPSConstants.Data.CascadeOffsets[cascadeIdx] = Float4(-cascadeCorner, 0.0f);
-	//meshPSConstants.Data.CascadeScales[cascadeIdx] = Float4(cascadeScale, 1.0f);
-
-	//return { shadowMatrix, cascadeScale };
-	return { shadowMatrix, Vec3(1.0f / cascadeExtents.x, 1.0f / cascadeExtents.y, cascadeExtents.z * 2) };
+	return { texelAlignedShadowMatrix, Vec3(1.0f / cascadeExtents.x, 1.0f / cascadeExtents.y, 1.0f / cascadeExtents.z * 2) };
 }
 
-std::vector<std::pair<Mat4, Vec3>> RenderingSystem::getLightSpaceMatrices(float fov, float aspectRatio, const Mat4& proj, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& cascadeZ)
+std::vector<std::pair<Mat4, Vec3>> RenderingSystem::getShadowMatrices(float fov, float aspectRatio, const Mat4& proj, const Mat4& view, const Vec3& lightDir, float nearZ, float farZ, const std::vector<float>& cascadeZ)
 {
 	std::vector<std::pair<Mat4, Vec3>> matrices;
 	for (size_t i = 0; i < cascadeZ.size() + 1; ++i)
 	{
 		if (i == 0)
 		{
-			matrices.push_back(getLightSpaceMatrix(fov, aspectRatio, nearZ, cascadeZ[i], proj, view, lightDir));
+			matrices.push_back(getShadowMatrix(fov, aspectRatio, nearZ, cascadeZ[i], proj, view, lightDir));
 		}
 		else if (i < cascadeZ.size())
 		{
-			matrices.push_back(getLightSpaceMatrix(fov, aspectRatio, cascadeZ[i - 1], cascadeZ[i], proj, view, lightDir));
+			matrices.push_back(getShadowMatrix(fov, aspectRatio, cascadeZ[i - 1], cascadeZ[i], proj, view, lightDir));
 		}
 		else
 		{
-			matrices.push_back(getLightSpaceMatrix(fov, aspectRatio, cascadeZ[i - 1], farZ, proj, view, lightDir));
+			matrices.push_back(getShadowMatrix(fov, aspectRatio, cascadeZ[i - 1], farZ, proj, view, lightDir));
 		}
 	}
 	return matrices;
@@ -1055,30 +1016,6 @@ void RenderingSystem::drawTexturedQuad(Texture& texture)
 	m_texturedQuad.use();
 	m_texturedQuad.setTexture("texture", 0);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
-}
-
-std::array<Vec3, 8> RenderingSystem::getFrustumCornersWorldSpace(const Mat4& proj, const Mat4& view)
-{
-	// NDC cube corners
-	std::array<Vec3, 8> corners = {
-		Vec3(1,  1, -1),
-		Vec3(1, -1, -1),
-		Vec3(-1,  1, -1),
-		Vec3(-1, -1, -1),
-		Vec3(1,  1,  1),
-		Vec3(1, -1,  1),
-		Vec3(-1,  1,  1),
-		Vec3(-1, -1,  1)
-	};
-	// To projection matrix projects the frustum into the NDC cube.
-	// Doing the inverse will give the frustum coodinates.
-	// There are faster ways to do this like calculating it based on camera position, rotation and near and far plane distances.
-	const auto inverse = (view * proj).inverse();
-	for (auto& corner : corners)
-	{
-		corner = inverse * corner;
-	}
-	return corners;
 }
 
 void RenderingSystem::drawCube(const Vec3& pos, const Vec3& scale, const Vec3& color)

@@ -30,6 +30,7 @@ GameScene::GameScene(Engine& engine)
     entityManager.registerComponent<AnimatedModel>();
     entityManager.registerComponent<ItemComponent>();
     entityManager.registerComponent<ZombieComponent>();
+    entityManager.registerComponent<BlockParticleEmmiter>();
     entityManager.registerComponent<PlayerAnimationComponent>();
 
     m_player = entityManager.createEntity();
@@ -43,7 +44,7 @@ GameScene::GameScene(Engine& engine)
     collider.centerOffset = Vec3(0, -(1.62 - 0.5 * (1.875)), 0);
     collider.halfSize = Vec3(0.6, 1.875, 0.6) / 2.0f;
     entityManager.addComponent(m_player, collider);
-    entityManager.addComponent(m_player, PhysicsVelocity{ Vec3(0, 0, 0) });
+    entityManager.addComponent(m_player, PhysicsComponent{ Vec3(0, 0, 0) });
     entityManager.addComponent(m_player, Grounded{ false });
 
     input.registerKeyboardButton("testtest", KeyCode::T);

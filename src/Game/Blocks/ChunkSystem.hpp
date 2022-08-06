@@ -78,7 +78,7 @@ private:
 	{
 		std::vector<uint32_t>& vertices;
 		std::vector<uint32_t>& waterVertices;
-	} meshFromChunk(Chunk& chunk);
+	} meshFromChunk(Chunk& chunk, const Vec3I& pos);
 	void addVertex(std::vector<GLuint>& vertices, size_t x, size_t y, size_t z, Block textureIndex, size_t texturePosIndex, size_t normalIndex);
 	void addCubeTop(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
 	void addCubeBottom(Block block, std::vector<GLuint>& vertices, size_t x, size_t y, size_t z);
@@ -130,6 +130,7 @@ public:
 	std::vector<ChunkData*> m_freeChunks;
 	std::vector<ChunkData*> m_chunksToGenerate;
 	std::vector<ChunkData*> m_generatedChunks;
+	std::vector<ChunkData*> m_chunksToMesh; // Already generated, but not meshed because chunks around it aren't generated yet.
 	std::vector<ChunkData*> m_chunksToDraw;
 
 	std::mutex mutex;

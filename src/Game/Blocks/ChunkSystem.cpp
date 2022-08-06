@@ -199,7 +199,7 @@ ChunkSystem::Pos ChunkSystem::posToChunkPosAndPosInChunk(const Vec3I& pos)
 	return block;
 }
 
-ChunkSystem::ChunkVertices ChunkSystem::meshFromChunk(Chunk& chunk)
+ChunkSystem::ChunkVertices ChunkSystem::meshFromChunk(Chunk& chunk, const Vec3I& pos)
 {
 	static std::vector<uint32_t> vertices(16 * 16 * 16 * 6 * 3);
 	static std::vector<uint32_t> waterVertices(16 * 16 * 16 * 6 * 3);
@@ -216,17 +216,46 @@ ChunkSystem::ChunkVertices ChunkSystem::meshFromChunk(Chunk& chunk)
 				{
 					const auto block = chunk(x, y, z);
 
-					auto shouldMesh = [this, &chunk](BlockType block, int32_t x, int32_t y, int32_t z)
+					auto shouldMesh = [this, &chunk, &pos](BlockType block, int32_t x, int32_t y, int32_t z)
 					{
 						// Don't know if the compiler does this in release mode, but removing the
 						// isInBounds(x, y, z) == false check in debug mode speeds it up significantly.
 						// This check doesn't need to be performed if the edges of the chunk aren't being meshed.
 						// So changing the iteration to range 1 to SIZE_AXIS - 1 and meshing the edges separately
 						// with each edges using a specialized check so the isInBound check on one side could be ommited.
-						return isInBounds(x, y, z) == false
-							|| chunk(x, y, z).type == BlockType::Air
-							|| (blockData[block].isSolid && (blockData[chunk(x, y, z).type].isSolid == false)
-							|| (blockData[block].isSolid == false && blockData[chunk(x, y, z).type].isSolid == false && block != chunk(x, y, z).type));
+
+						// Maybe use std::optional
+						bool inBounds = true;
+						Block outOfBoundsBlock(BlockType::Air);
+						if (x < 0)
+						{
+							outOfBoundsBlock = m_chunks.at(pos + Vec3I::right)->blocks(Chunk::SIZE_X - 1, y, z);
+							inBounds = false;
+						}
+						else if (x >= Chunk::SIZE_X)
+						{
+							outOfBoundsBlock = m_chunks.at(pos + Vec3I::left)->blocks(0, y, z);
+							inBounds = false;
+						}
+						else if (z < 0)
+						{
+							outOfBoundsBlock = m_chunks.at(pos + Vec3I::back)->blocks(x, y, Chunk::SIZE_Z - 1);
+							inBounds = false;
+						}
+						else if (z >= Chunk::SIZE_Z)
+						{
+							outOfBoundsBlock = m_chunks.at(pos + Vec3I::forward)->blocks(x, y, 0);
+							inBounds = false;
+						}
+						else if (y < 0 || y >= Chunk::SIZE_Y)
+						{
+							return true;
+						}
+						const auto adjacentBlock = inBounds ? chunk(x, y, z) : outOfBoundsBlock;
+				
+						return  adjacentBlock.type == BlockType::Air
+							|| (blockData[block].isSolid && (blockData[adjacentBlock.type].isSolid == false)
+							|| (blockData[block].isSolid == false && blockData[adjacentBlock.type].isSolid == false && block != adjacentBlock.type));
 					}; 
 
 					auto meshCube = [&shouldMesh, this, x, y, z, &block](std::vector<uint32_t>& vertices)
@@ -287,11 +316,37 @@ void ChunkSystem::update(const Vec3& loadPos)
 
 	while (m_generatedChunks.size() > 0)
 	{
-		ChunkData& chunk = *m_generatedChunks.back();
+		ChunkData* chunk = m_generatedChunks.back();
+		m_chunksToMesh.push_back(chunk);
+		m_chunks[chunk->pos] = chunk;
+		m_generatedChunks.pop_back();
+
+		/*ChunkData& chunk = *m_generatedChunks.back();
 		m_chunks[chunk.pos] = &chunk;
 		m_chunksToDraw.push_back(&chunk);
 		m_generatedChunks.pop_back();
-		meshChunk(chunk);
+		meshChunk(chunk);*/
+	}
+
+	for (auto it = m_chunksToMesh.begin(); it != m_chunksToMesh.end();)
+	{
+		const auto isAlreadyGenerated = [this, &it](const Vec3I& offset)
+		{
+			return (m_chunks.count((*it)->pos + offset) != 0);
+		};
+		if (isAlreadyGenerated(Vec3I::right)
+			&& isAlreadyGenerated(Vec3I::left)
+			&& isAlreadyGenerated(Vec3I::forward)
+			&& isAlreadyGenerated(Vec3I::back))
+		{
+			meshChunk(**it);
+			m_chunksToDraw.push_back(*it);
+			it = m_chunksToMesh.erase(it);
+		}
+		else
+		{
+			++it;
+		}
 	}
 
 	if (chunkPos == m_lastChunkPos)
@@ -338,6 +393,26 @@ void ChunkSystem::update(const Vec3& loadPos)
 			}
 		),
 		m_chunksToGenerate.end()
+	);
+	m_chunksToMesh.erase(
+		std::remove_if(
+			m_chunksToMesh.begin(),
+			m_chunksToMesh.end(),
+			[isChunkOutOfRenderDistance, this](ChunkData* chunk)
+			{
+				if (isChunkOutOfRenderDistance(chunk->pos))
+				{
+					m_chunks.erase(chunk->pos);
+					m_freeChunks.push_back(chunk);
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		),
+		m_chunksToMesh.end()
 	);
 	m_chunksToDraw.erase(
 		std::remove_if(
@@ -538,7 +613,7 @@ void ChunkSystem::regenerateAll()
 void ChunkSystem::meshChunk(ChunkData& chunk)
 {
 	//auto start = std::chrono::high_resolution_clock::now();
-	const auto mesh = meshFromChunk(chunk.blocks);
+	const auto mesh = meshFromChunk(chunk.blocks, chunk.pos);
 	//auto end = std::chrono::high_resolution_clock::now();
 	//std::cout << "meshing took: " << std::chrono::duration<double, std::milli>((end - start)).count() << '\n';
 	chunk.vertexCount = mesh.vertices.size();
