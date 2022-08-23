@@ -8,6 +8,7 @@
 #include <Utils/Opt.hpp>
 
 #include <unordered_map>
+#include <unordered_set>
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -16,6 +17,7 @@ struct ChunkData
 {
 	Chunk blocks;
 	// Could store multiple vertex counts and offsets for different height ranges. This would allow for better frustum culling.
+	// Merge multiple adjacent chunks. Use indirect draw calls.
 	size_t vertexCount;
 	size_t vboByteOffset;
 	Vec3I pos;
@@ -132,6 +134,9 @@ public:
 	std::vector<ChunkData*> m_generatedChunks;
 	std::vector<ChunkData*> m_chunksToMesh; // Already generated, but not meshed because chunks around it aren't generated yet.
 	std::vector<ChunkData*> m_chunksToDraw;
+	
+	// Already meshed, but got modified.
+	std::unordered_set<ChunkData*> m_chunksToRemesh;
 
 	std::mutex mutex;
 

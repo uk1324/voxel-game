@@ -1,0 +1,137 @@
+class Vec3
+{
+	$init(x, y, z) {
+		$.x = x;
+		$.y = y;
+		$.z = z;
+	}
+
+	$add(other) {
+		ret Vec3($.x + other.x, $.y + other.y, $.z + other.z);
+	}
+
+	$mul(lhs) {
+		match lhs {
+			Number => ret Vec3($.x * lhs, $.y * lhs, $.z * lhs);
+			Vec3 => ret Vec3($.x * lhs.x, $.y * lhs.y, $.z * lhs.z);
+		}
+	}
+
+	$str() {
+		ret "Vec3(" ++ $.x ++ ", " ++ $.y ++ ", " ++ $.z ++ ")";
+	}
+}
+
+Vec3.UP = Vec3(0, 1, 0);
+Vec3.DOWN = Vec3(0, -1, 0);
+Vec3.FORWARD = Vec3(0, 0, 1);
+
+impl Number {
+	min(other) {
+		if $ <= other {
+			ret $;
+		} else {
+			ret other;
+		}
+	}
+
+	max(other) {
+		if $ >= other {
+			ret $;
+		} else {
+			ret other;
+		}
+	}
+
+	len_sq() {
+		ret $.x * $.x + $.y * $.y + $.z * $.z;
+	}
+
+	len() {
+		ret ($.x * $.x + $.y * $.y + $.z * $.z).sqrt();
+	}
+
+	abs() {
+		if $ < 0 {
+			ret -$;
+		}
+		ret $;
+	}
+}
+
+class Block {}
+Block.AIR = 0;
+Block.STONE = 1;
+Block.COBBLESTONE = 5;
+
+class Range {
+	$init(start, end) {
+		if end < start {
+			$.current = end;
+		} else {
+			$.current = start;
+		}
+		$.end = end;
+	}
+
+	$iter() {
+		ret $;
+	}
+
+	$next() {
+		if $.current >= $.end {
+			throw StopIteration();
+		}
+		result : $.current;
+		$.current += 1;
+		ret result;
+	}
+}
+
+use "game";
+
+fn fill(min, max) {
+	for x in Range(min.x, max.x) {
+		for y in Range(min.y, max.y) {
+			for z in Range(min.z, max.z) {
+				game.set_block(Vec3(x, y, z), Block.STONE);
+			}	
+		}
+	}
+}
+
+fn build_shape(pos, extents, is_block) {
+	for x in Range(-extents.x, extents.x) {
+		for y in Range(-extents.y, extents.y) {
+			for z in Range(-extents.z, extents.z) {
+				if is_block(x, y, z) {
+					game.set_block(Vec3(pos.x + x, pos.y + y, pos.z + z), Block.STONE);
+				}
+			}	
+		}
+	}
+}
+
+fn build_sphere(pos, radius) {
+	build_shape(
+		pos, 
+		Vec3(radius, radius, radius), 
+		|x, y, z| (x * x) + (y * y) + (z * z) <= (radius * radius));
+}
+
+fn build_empty_sphere(pos, radius) {
+	build_shape(
+		pos, 
+		Vec3(radius + 1, radius + 1, radius + 1), 
+		|x, y, z| { distance : ((x * x) + (y * y) + (z * z)).sqrt(); ret distance > radius - 3 && distance <= radius; });
+}
+
+fn place_sphere() {
+	hit : game.raycast(game.player_pos(), game.player_dir() * 150);
+	if hit != null {
+		build_sphere(hit, 3);
+	}
+}
+fn test() {
+	game.set_on_use_held(place_sphere);
+} 

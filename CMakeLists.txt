@@ -22,6 +22,7 @@ include_directories(
 	dependencies/glfw/include
 	dependencies/stb_image/include
 	dependencies/imgui
+	dependencies/voxl/src
 )
 
 add_subdirectory(src)
@@ -35,7 +36,10 @@ add_executable(voxel-game-run "src/main.cpp" "dependencies/stb_image/src/stb_ima
 "dependencies/imgui/imgui_impl_opengl3.cpp"
 "dependencies/imgui/imgui_impl_opengl3.h"
 )
-target_link_libraries(voxel-game-run voxel-game-lib)
+
+add_subdirectory(dependencies/voxl/src)
+
+target_link_libraries(voxel-game-run voxel-game-lib voxl-lib)
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)

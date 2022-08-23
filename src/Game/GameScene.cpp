@@ -48,7 +48,7 @@ GameScene::GameScene(Engine& engine)
     entityManager.addComponent(m_player, Grounded{ false });
 
     input.registerKeyboardButton("testtest", KeyCode::T);
-    input.registerKeyboardButton("toggleFullscreen", KeyCode::V);
+    //input.registerKeyboardButton("toggleFullscreen", KeyCode::B);
 }
 
 // Maybe make an unloaded component and down update unloaded entites like player and remove unloaded entites that don't need to exist.
@@ -77,25 +77,25 @@ void GameScene::update()
         }
     }
 
-    if (input.isButtonDown("toggleFullscreen"))
-    {
-        const auto window = engine.window().handle();
-        if (glfwGetWindowAttrib(window, GLFW_MAXIMIZED))
-        {
-            glfwRestoreWindow(engine.window().handle());
-        }
-        else
-        {
-            glfwMaximizeWindow(engine.window().handle());
-        }
-        // Fullscreen
-        //const auto size = engine.window().getWindowSize();
-        //const auto monitor = glfwGetPrimaryMonitor();
-        //const auto mode = glfwGetVideoMode(monitor);
-        //glfwSetWindowMonitor(engine.window().handle(), monitor, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
-    }
+    //if (input.isButtonDown("toggleFullscreen"))
+    //{
+    //    const auto window = engine.window().handle();
+    //    if (glfwGetWindowAttrib(window, GLFW_MAXIMIZED))
+    //    {
+    //        glfwRestoreWindow(engine.window().handle());
+    //    }
+    //    else
+    //    {
+    //        glfwMaximizeWindow(engine.window().handle());
+    //    }
+    //    // Fullscreen
+    //    //const auto size = engine.window().getWindowSize();
+    //    //const auto monitor = glfwGetPrimaryMonitor();
+    //    //const auto mode = glfwGetVideoMode(monitor);
+    //    //glfwSetWindowMonitor(engine.window().handle(), monitor, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
+    //}
 
-    const Vec3 playerPos = entityManager.getComponent<Position>(m_player).value;
+    Vec3& playerPos = entityManager.getComponent<Position>(m_player).value;
     const Quat playerRot = entityManager.getComponent<Rotation>(m_player).value;
     const Vec2 windowSize = Vec2(engine.window().getWindowSize());
     m_renderingSystem.update(
@@ -109,12 +109,11 @@ void GameScene::update()
         m_inventorySystem.heldItem(m_inventory));
     m_inventorySystem.render(m_inventory, itemData, m_blockSystem.blockData, Vec2(windowSize));
 
-    //m_console.update();
-    //Debug::shouldDisplayDeveloperConsole = true;
-    //if (Debug::shouldDisplayDeveloperConsole && m_isGamePaused)
-    //{
-    //    m_console.draw();
-    //}
+    m_console.update(playerPos, playerRot, m_blockSystem, input);
+    if (Debug::shouldDisplayDeveloperConsole && m_isGamePaused)
+    {
+        m_console.draw();
+    }
 
     m_blockSystem.chunkSystem.m_worldGen.updateDebugConfig();
 
@@ -125,7 +124,8 @@ void GameScene::update()
     {
         m_playerMovementSystem.update(m_player, input, time, entityManager);
         m_playerInteractionSystem.update(m_player, itemData, m_inventorySystem.heldItem(m_inventory), input, entityManager, m_blockSystem, m_inventory);
-        if (input.isButtonDown("testtest") || time.currentTick() == 1)
+        /*if (input.isButtonDown("testtest") || time.currentTick() == 1)*/
+        if (time.currentTick() == 1)
         {
             m_entitySystem.spawnZombie(playerPos, entityManager);
         }

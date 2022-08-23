@@ -127,6 +127,6 @@ void PlayerInteractionSystem::update(
 	{
 		const auto block = blockSystem.tryGet(voxelRaycastHit->blockPos);
 		if (!(block.has_value() && (block->type == BlockType::Water)))
-			Debug::drawCube(Vec3(voxelRaycastHit->blockPos) + Vec3(Block::SIZE / 2.0f), Vec3(1), Vec3(1, 1, 1));
+			Debug::drawCube(Vec3(voxelRaycastHit->blockPos) + Vec3(Block::SIZE / 2.0f), Vec3(1.01), Vec3(1, 1, 1));
 	}
 }

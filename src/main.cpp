@@ -11,6 +11,7 @@
 
 int main()
 {
+	// TODO: run this in a loop so there is a way to reload things like shaders without relaunching the whole application.
 	{
 		Window window = Engine::init(800, 600, "game");
 		Engine engine(60, window);

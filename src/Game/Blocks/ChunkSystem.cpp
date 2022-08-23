@@ -206,6 +206,10 @@ ChunkSystem::ChunkVertices ChunkSystem::meshFromChunk(Chunk& chunk, const Vec3I&
 	vertices.clear();
 	waterVertices.clear();
 
+	const auto& rightChunk = m_chunks.at(pos + Vec3I::right);
+	const auto& leftChunk = m_chunks.at(pos + Vec3I::left);
+	const auto& backChunk = m_chunks.at(pos + Vec3I::back);
+	const auto& forwardChunk = m_chunks.at(pos + Vec3I::forward);
 	for (size_t z = 0; z < Chunk::SIZE_Z; z++)
 	{
 		for (size_t y = 0; y < Chunk::SIZE_Y; y++)
@@ -216,7 +220,8 @@ ChunkSystem::ChunkVertices ChunkSystem::meshFromChunk(Chunk& chunk, const Vec3I&
 				{
 					const auto block = chunk(x, y, z);
 
-					auto shouldMesh = [this, &chunk, &pos](BlockType block, int32_t x, int32_t y, int32_t z)
+					auto shouldMesh = [this, &chunk, &pos, &rightChunk, &leftChunk, &backChunk, &forwardChunk, meshedBlockY = y]
+						(BlockType block, int32_t x, int32_t y, int32_t z)
 					{
 						// Don't know if the compiler does this in release mode, but removing the
 						// isInBounds(x, y, z) == false check in debug mode speeds it up significantly.
@@ -229,22 +234,22 @@ ChunkSystem::ChunkVertices ChunkSystem::meshFromChunk(Chunk& chunk, const Vec3I&
 						Block outOfBoundsBlock(BlockType::Air);
 						if (x < 0)
 						{
-							outOfBoundsBlock = m_chunks.at(pos + Vec3I::right)->blocks(Chunk::SIZE_X - 1, y, z);
+							outOfBoundsBlock = rightChunk->blocks(Chunk::SIZE_X - 1, y, z);
 							inBounds = false;
 						}
 						else if (x >= Chunk::SIZE_X)
 						{
-							outOfBoundsBlock = m_chunks.at(pos + Vec3I::left)->blocks(0, y, z);
+							outOfBoundsBlock = leftChunk->blocks(0, y, z);
 							inBounds = false;
 						}
 						else if (z < 0)
 						{
-							outOfBoundsBlock = m_chunks.at(pos + Vec3I::back)->blocks(x, y, Chunk::SIZE_Z - 1);
+							outOfBoundsBlock = backChunk->blocks(x, y, Chunk::SIZE_Z - 1);
 							inBounds = false;
 						}
 						else if (z >= Chunk::SIZE_Z)
 						{
-							outOfBoundsBlock = m_chunks.at(pos + Vec3I::forward)->blocks(x, y, 0);
+							outOfBoundsBlock = forwardChunk->blocks(x, y, 0);
 							inBounds = false;
 						}
 						else if (y < 0 || y >= Chunk::SIZE_Y)
@@ -253,6 +258,13 @@ ChunkSystem::ChunkVertices ChunkSystem::meshFromChunk(Chunk& chunk, const Vec3I&
 						}
 						const auto adjacentBlock = inBounds ? chunk(x, y, z) : outOfBoundsBlock;
 				
+						// TODO:
+						// Check if the block the pair of blocks to the side and on up of the side block are also water.
+						//// Water waves don't touch the block so it has to be meshed.
+						//const auto meshingTop = (y - meshedBlockY) == 1;
+						//if (meshingTop && blockData[block].isLiquid && blockData[adjacentBlock.type].isSolid)
+						//	return true;
+
 						return  adjacentBlock.type == BlockType::Air
 							|| (blockData[block].isSolid && (blockData[adjacentBlock.type].isSolid == false)
 							|| (blockData[block].isSolid == false && blockData[adjacentBlock.type].isSolid == false && block != adjacentBlock.type));
@@ -349,6 +361,12 @@ void ChunkSystem::update(const Vec3& loadPos)
 		}
 	}
 
+	for (auto chunk : m_chunksToRemesh)
+	{
+		meshChunk(*chunk);
+	}
+	m_chunksToRemesh.clear();
+
 	if (chunkPos == m_lastChunkPos)
 	{
 		m_lastChunkPos = chunkPos;
@@ -434,7 +452,6 @@ void ChunkSystem::update(const Vec3& loadPos)
 		m_chunksToDraw.end()
 	);
 
-
 	std::unordered_set<Vec3I> chunksToGenerateSet;
 	for (auto a : m_chunksToGenerate)
 	{
@@ -477,7 +494,7 @@ void ChunkSystem::trySetBlock(const Vec3I& blockPos, Block block)
 	ChunkData& chunk = *optChunk.value();
 
 	chunk.blocks.set(pos.posInChunk, block);
-	meshChunk(chunk);
+	m_chunksToRemesh.insert(&chunk);
 	remeshChunksAround(pos);
 }
 
@@ -518,13 +535,13 @@ void ChunkSystem::remeshChunksAround(const Pos& pos)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(-1, 0, 0));
 			if (chunk.has_value())
-				meshChunk(*chunk.value());
+				m_chunksToRemesh.insert(*chunk);
 		}
 		if (pos.posInChunk.x == Chunk::SIZE_X - 1)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(1, 0, 0));
 			if (chunk.has_value())
-				meshChunk(*chunk.value());
+				m_chunksToRemesh.insert(*chunk);
 		}
 	}
 	else
@@ -533,13 +550,13 @@ void ChunkSystem::remeshChunksAround(const Pos& pos)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(-1, 0, 0));
 			if (chunk.has_value())
-				meshChunk(*chunk.value());
+				m_chunksToRemesh.insert(*chunk);
 		}
 		if (posInChunk.x == -1)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(1, 0, 0));
 			if (chunk.has_value())
-				meshChunk(*chunk.value());
+				m_chunksToRemesh.insert(*chunk);
 		}
 	}
 
@@ -549,13 +566,13 @@ void ChunkSystem::remeshChunksAround(const Pos& pos)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(0, -1, 0));
 			if (chunk.has_value())
-				meshChunk(*chunk.value());
+				m_chunksToRemesh.insert(*chunk);
 		}
 		if (posInChunk.y == Chunk::SIZE_Y - 1)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(0, 1, 0));
 			if (chunk.has_value())
-				meshChunk(*chunk.value());
+				m_chunksToRemesh.insert(*chunk);
 		}
 	}
 	else
@@ -564,13 +581,13 @@ void ChunkSystem::remeshChunksAround(const Pos& pos)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(-1, 0, 0));
 			if (chunk.has_value())
-				meshChunk(*chunk.value());
+				m_chunksToRemesh.insert(*chunk);
 		}
 		if (posInChunk.y == -1)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(1, 0, 0));
 			if (chunk.has_value())
-				meshChunk(*chunk.value());
+				m_chunksToRemesh.insert(*chunk);
 		}
 	}
 	if (posInChunk.z >= 0)
@@ -579,13 +596,13 @@ void ChunkSystem::remeshChunksAround(const Pos& pos)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(0, 0, -1));
 			if (chunk.has_value())
-				meshChunk(*chunk.value());
+				m_chunksToRemesh.insert(*chunk);
 		}
 		if (posInChunk.z == Chunk::SIZE_Z - 1)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(0, 0, 1));
 			if (chunk.has_value())
-				meshChunk(*chunk.value());
+				m_chunksToRemesh.insert(*chunk);
 		}
 	}
 	else
@@ -594,13 +611,13 @@ void ChunkSystem::remeshChunksAround(const Pos& pos)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(-1, 0, 0));
 			if (chunk.has_value())
-				meshChunk(*chunk.value());
+				m_chunksToRemesh.insert(*chunk);
 		}
 		if (posInChunk.z == -1)
 		{
 			auto chunk = tryGet(pos.chunkPos + Vec3I(1, 0, 0));
 			if (chunk.has_value())
-				meshChunk(*chunk.value());
+				m_chunksToRemesh.insert(*chunk);
 		}
 	}
 }

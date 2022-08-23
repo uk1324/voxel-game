@@ -72,6 +72,7 @@ float shadow(vec3 posWorldSpace, vec3 normal)
     return shadow / shadowSamplesPositions.length();
 }
 
+// I don't think SSAO looks very good with simple scenes. On it's own it looks nice. but when applied to the final image it makes it look unrealistic. Also this implementation is quite noisy. To make it look better the SSAO would probably need to be rendered to a separate texture and blurred. The sample distribution could also be improved.
 float ssao(vec3 posWorld, vec3 normal)
 {
 //    let r = ""
@@ -121,6 +122,4 @@ void main()
     color *= ambient + ((1 - shadow) * diffuse);
     outColor = vec4(color, 1);
     gl_FragDepth = depth;
-
-    outColor *= vec4(vec3(pow(ssao(posWorld, normal), 3)), 1.0);
 }

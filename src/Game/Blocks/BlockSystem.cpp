@@ -105,7 +105,7 @@ Opt<BlockSystem::RaycastHit> BlockSystem::raycast(const Vec3& start, const Vec3&
         }
 
         lastBlockPos = currentBlockPos;
-
+        // Breaks for nans
         if (tMaxX < tMaxY)
         {
             if (tMaxX < tMaxZ)

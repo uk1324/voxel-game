@@ -1050,6 +1050,7 @@ void RenderingSystem::drawCrosshair(const Vec2& screenSize)
 
 void RenderingSystem::drawDebugShapes(const Mat4& projection, const Mat4& view)
 {
+	glDepthFunc(GL_LEQUAL);
 	glLineWidth(2);
 	m_cubeLinesVao.bind();
 	m_debugShader.use();
